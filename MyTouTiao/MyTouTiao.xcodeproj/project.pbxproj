@@ -8,13 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		5150404BA9BA8534931E0B04 /* Pods_MyTouTiao.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 786D42D90117BD5422498525 /* Pods_MyTouTiao.framework */; };
-		9FA847BA20906FF1001E889A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847B920906FF1001E889A /* AppDelegate.swift */; };
 		9FA847BC20906FF1001E889A /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847BB20906FF1001E889A /* ViewController.swift */; };
 		9FA847BF20906FF1001E889A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9FA847BD20906FF1001E889A /* Main.storyboard */; };
 		9FA847C120906FFE001E889A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9FA847C020906FFE001E889A /* Assets.xcassets */; };
 		9FA847C420906FFE001E889A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9FA847C220906FFE001E889A /* LaunchScreen.storyboard */; };
 		9FA847CF20906FFE001E889A /* MyTouTiaoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847CE20906FFE001E889A /* MyTouTiaoTests.swift */; };
 		9FA847DA20906FFF001E889A /* MyTouTiaoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847D920906FFF001E889A /* MyTouTiaoUITests.swift */; };
+		9FA847F020907981001E889A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847EE20907980001E889A /* AppDelegate.swift */; };
+		9FA847F120907981001E889A /* Const.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847EF20907981001E889A /* Const.swift */; };
+		9FA847F520907A6A001E889A /* MyTabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847F420907A6A001E889A /* MyTabBarController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,7 +41,6 @@
 		4E3BD9568FB08EFCC3A33BC3 /* Pods-MyTouTiao.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MyTouTiao.debug.xcconfig"; path = "Pods/Target Support Files/Pods-MyTouTiao/Pods-MyTouTiao.debug.xcconfig"; sourceTree = "<group>"; };
 		786D42D90117BD5422498525 /* Pods_MyTouTiao.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MyTouTiao.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FA847B620906FF1001E889A /* MyTouTiao.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyTouTiao.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		9FA847B920906FF1001E889A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9FA847BB20906FF1001E889A /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		9FA847BE20906FF1001E889A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		9FA847C020906FFE001E889A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -51,6 +52,9 @@
 		9FA847D520906FFE001E889A /* MyTouTiaoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyTouTiaoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FA847D920906FFF001E889A /* MyTouTiaoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyTouTiaoUITests.swift; sourceTree = "<group>"; };
 		9FA847DB20906FFF001E889A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9FA847EE20907980001E889A /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		9FA847EF20907981001E889A /* Const.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Const.swift; sourceTree = "<group>"; };
+		9FA847F420907A6A001E889A /* MyTabBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyTabBarController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,7 +117,6 @@
 			isa = PBXGroup;
 			children = (
 				9FA847E720907796001E889A /* Classes */,
-				9FA847B920906FF1001E889A /* AppDelegate.swift */,
 				9FA847BB20906FF1001E889A /* ViewController.swift */,
 				9FA847BD20906FF1001E889A /* Main.storyboard */,
 				9FA847C020906FFE001E889A /* Assets.xcassets */,
@@ -144,6 +147,8 @@
 		9FA847E720907796001E889A /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				9FA847F220907A30001E889A /* Main */,
+				9FA847EA209078A9001E889A /* Others */,
 				9FA847E820907796001E889A /* Home */,
 			);
 			path = Classes;
@@ -160,6 +165,39 @@
 		9FA847E920907796001E889A /* Controller */ = {
 			isa = PBXGroup;
 			children = (
+			);
+			path = Controller;
+			sourceTree = "<group>";
+		};
+		9FA847EA209078A9001E889A /* Others */ = {
+			isa = PBXGroup;
+			children = (
+				9FA847EE20907980001E889A /* AppDelegate.swift */,
+				9FA847EF20907981001E889A /* Const.swift */,
+				9FA847EB209078A9001E889A /* Theme */,
+			);
+			path = Others;
+			sourceTree = "<group>";
+		};
+		9FA847EB209078A9001E889A /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		9FA847F220907A30001E889A /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				9FA847F320907A30001E889A /* Controller */,
+			);
+			path = Main;
+			sourceTree = "<group>";
+		};
+		9FA847F320907A30001E889A /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				9FA847F420907A6A001E889A /* MyTabBarController.swift */,
 			);
 			path = Controller;
 			sourceTree = "<group>";
@@ -358,8 +396,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9FA847F020907981001E889A /* AppDelegate.swift in Sources */,
+				9FA847F520907A6A001E889A /* MyTabBarController.swift in Sources */,
 				9FA847BC20906FF1001E889A /* ViewController.swift in Sources */,
-				9FA847BA20906FF1001E889A /* AppDelegate.swift in Sources */,
+				9FA847F120907981001E889A /* Const.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
