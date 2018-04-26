@@ -1,15 +1,23 @@
 PODS:
-  - Alamofire (4.3.0)
+  - Alamofire (4.7.2)
   - FDFullscreenPopGesture (1.1)
-  - MJRefresh (3.1.12)
-  - SVProgressHUD (2.1.2)
-  - SwiftTheme (0.3.1)
-  - SwiftyJSON (3.1.4)
+  - HandyJSON (4.1.1)
+  - MJRefresh (3.1.15.3)
+  - SGPagingView (1.3.6)
+  - SQLite.swift (0.11.5):
+    - SQLite.swift/standard (= 0.11.5)
+  - SQLite.swift/standard (0.11.5)
+  - SVProgressHUD (2.2.5)
+  - SwiftTheme (0.4.1)
+  - SwiftyJSON (4.1.0)
 
 DEPENDENCIES:
   - Alamofire
   - FDFullscreenPopGesture
+  - HandyJSON
   - MJRefresh
+  - SGPagingView
+  - SQLite.swift
   - SVProgressHUD
   - SwiftTheme
   - SwiftyJSON
@@ -18,19 +26,25 @@ SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
     - Alamofire
     - FDFullscreenPopGesture
+    - HandyJSON
     - MJRefresh
+    - SGPagingView
+    - SQLite.swift
     - SVProgressHUD
     - SwiftTheme
     - SwiftyJSON
 
 SPEC CHECKSUMS:
-  Alamofire: 856a113053a7bc9cbe5d6367a555d773fc5cfef7
+  Alamofire: e4fa87002c137ba2d8d634d2c51fabcda0d5c223
   FDFullscreenPopGesture: a8a620179e3d9c40e8e00256dcee1c1a27c6d0f0
-  MJRefresh: b96cdb21c4aa75a7b07654311ab2f315c497e806
-  SVProgressHUD: c404a55d78acbeb7ebb78b76d3faf986475a6994
-  SwiftTheme: 07e5297bd52a454d4a6ea0cfefa221b61c8901c1
-  SwiftyJSON: c2842d878f95482ffceec5709abc3d05680c0220
+  HandyJSON: 3a3de917c4118767ffe41c29b5acba23409649f4
+  MJRefresh: b48380ae2b927b46c4ef000de9adb8dc748e1df7
+  SGPagingView: 4e9204cc62e4b63b269fbf48b4e8c9333adcd071
+  SQLite.swift: 6e5356850bb1791459f8c16d6ee9195b28714a2e
+  SVProgressHUD: 1428aafac632c1f86f62aa4243ec12008d7a51d6
+  SwiftTheme: 36d71c4eed4b2c401c782cf036e4586c749a8173
+  SwiftyJSON: c29297daf073d2aa016295d5809cdd68045c39b3
 
-PODFILE CHECKSUM: 82bfa92bdf2a028cf17cabb5dc2221d61c9cf04b
+PODFILE CHECKSUM: 6da5bc719ee6b0f0d707c76f58ce208a870ecff9
 
 COCOAPODS: 1.5.0
