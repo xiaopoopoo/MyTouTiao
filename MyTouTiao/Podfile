@@ -7,11 +7,17 @@ target 'MyTouTiao' do
 
   pod 'Alamofire' #类仿afn
   pod 'SwiftyJSON' #json转model
-  pod 'SwiftTheme'
-  pod 'SVProgressHUD'
-  pod 'MJRefresh'
-  pod 'FDFullscreenPopGesture'
-  pod 'SGPagingView'
-  pod 'HandyJSON'
-  pod 'SQLite.swift'
+  pod 'SwiftTheme' #app样式
+  pod 'SVProgressHUD' #吐丝
+  pod 'MJRefresh' #下拉刷新
+  pod 'FDFullscreenPopGesture' #手势
+  pod 'SGPagingView' #滑动的标题
+  pod 'HandyJSON' #json转model
+  pod 'SQLite.swift' #数据库
+  pod 'RxCocoa' #函数响应式编程
+  pod 'RxSwift' #函数响应式编程
+  pod 'IBAnimatable' #转场动化
+  pod 'Kingfisher' #图片处理
+  pod 'BMPlayer'  #音视频效果
+  pod 'lottie-ios' #动画特效
 end
