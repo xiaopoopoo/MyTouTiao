@@ -19,7 +19,7 @@ public enum UIColorInputError : Error {
     mismatchedHexStringLength
 }
 
-extension UIColor {
+@objc extension UIColor {
     /**
      The shorthand three-digit hexadecimal representation of color.
      #RGB defines to the color #RRGGBB.
@@ -32,7 +32,12 @@ extension UIColor {
         let red     = CGFloat((hex3 & 0xF00) >> 8) / divisor
         let green   = CGFloat((hex3 & 0x0F0) >> 4) / divisor
         let blue    = CGFloat( hex3 & 0x00F      ) / divisor
-        self.init(red: red, green: green, blue: blue, alpha: alpha)
+        
+        if #available(iOS 10.0, *) {
+            self.init(displayP3Red: red, green: green, blue: blue, alpha: alpha)
+        } else {
+            self.init(red: red, green: green, blue: blue, alpha: alpha)
+        }
     }
     
     /**
@@ -47,7 +52,12 @@ extension UIColor {
         let green   = CGFloat((hex4 & 0x0F00) >>  8) / divisor
         let blue    = CGFloat((hex4 & 0x00F0) >>  4) / divisor
         let alpha   = CGFloat( hex4 & 0x000F       ) / divisor
-        self.init(red: red, green: green, blue: blue, alpha: alpha)
+        
+        if #available(iOS 10.0, *) {
+            self.init(displayP3Red: red, green: green, blue: blue, alpha: alpha)
+        } else {
+            self.init(red: red, green: green, blue: blue, alpha: alpha)
+        }
     }
     
     /**
@@ -60,7 +70,12 @@ extension UIColor {
         let red     = CGFloat((hex6 & 0xFF0000) >> 16) / divisor
         let green   = CGFloat((hex6 & 0x00FF00) >>  8) / divisor
         let blue    = CGFloat( hex6 & 0x0000FF       ) / divisor
-        self.init(red: red, green: green, blue: blue, alpha: alpha)
+        
+        if #available(iOS 10.0, *) {
+            self.init(displayP3Red: red, green: green, blue: blue, alpha: alpha)
+        } else {
+            self.init(red: red, green: green, blue: blue, alpha: alpha)
+        }
     }
     
     /**
@@ -74,7 +89,12 @@ extension UIColor {
         let green   = CGFloat((hex8 & 0x00FF0000) >> 16) / divisor
         let blue    = CGFloat((hex8 & 0x0000FF00) >>  8) / divisor
         let alpha   = CGFloat( hex8 & 0x000000FF       ) / divisor
-        self.init(red: red, green: green, blue: blue, alpha: alpha)
+        
+        if #available(iOS 10.0, *) {
+            self.init(displayP3Red: red, green: green, blue: blue, alpha: alpha)
+        } else {
+            self.init(red: red, green: green, blue: blue, alpha: alpha)
+        }
     }
     
     /**
@@ -87,14 +107,14 @@ extension UIColor {
             throw UIColorInputError.missingHashMarkAsPrefix
         }
         
-        let hexString: String = rgba.substring(from: rgba.characters.index(rgba.startIndex, offsetBy: 1))
+        let hexString: String = String(rgba[rgba.index(rgba.startIndex, offsetBy: 1)...])
         var hexValue:  UInt32 = 0
         
         guard Scanner(string: hexString).scanHexInt32(&hexValue) else {
             throw UIColorInputError.unableToScanHexValue
         }
         
-        switch (hexString.characters.count) {
+        switch (hexString.count) {
         case 3:
             self.init(hex3: UInt16(hexValue))
         case 4:

@@ -6,7 +6,7 @@
 //  Copyright © 2016年 Gesen. All rights reserved.
 //
 
-import UIKit
+import Foundation
 
 public let ThemeUpdateNotification = "ThemeUpdateNotification"
 
@@ -24,38 +24,47 @@ public enum ThemePath {
     
     public func plistPath(name: String) -> String? {
         switch self {
-        case .mainBundle:        return Bundle.main.path(forResource: name, ofType: "plist")
-        case .sandbox(let path): return Foundation.URL(string: name + ".plist", relativeTo: path)?.path
+        case .mainBundle:
+            return Bundle.main.path(forResource: name, ofType: "plist")
+        case .sandbox(let path):
+            let name = name.hasSuffix(".plist") ? name : name + ".plist"
+            let url = path.appendingPathComponent(name)
+            return url.path
         }
     }
 }
 
-open class ThemeManager: NSObject {
+@objc public final class ThemeManager: NSObject {
     
-    open static var animationDuration = 0.3
+    @objc public static var animationDuration = 0.3
     
-    open fileprivate(set) static var currentTheme      : NSDictionary?
-    open fileprivate(set) static var currentThemePath  : ThemePath?
-    open fileprivate(set) static var currentThemeIndex : Int = 0
+    @objc public fileprivate(set) static var currentTheme: NSDictionary?
+    @objc public fileprivate(set) static var currentThemeIndex: Int = 0
     
-    open class func setTheme(index: Int) {
+    public fileprivate(set) static var currentThemePath: ThemePath?
+
+}
+
+public extension ThemeManager {
+    
+    @objc class func setTheme(index: Int) {
         currentThemeIndex = index
         NotificationCenter.default.post(name: Notification.Name(rawValue: ThemeUpdateNotification), object: nil)
     }
     
-    public class func setTheme(plistName: String, path: ThemePath) {
+    class func setTheme(plistName: String, path: ThemePath) {
         guard let plistPath = path.plistPath(name: plistName)         else {
-            print("SwiftTheme WARNING: Not find plist '\(plistName)' with: \(path)")
+            print("SwiftTheme WARNING: Can't find plist '\(plistName)' at: \(path)")
             return
         }
         guard let plistDict = NSDictionary(contentsOfFile: plistPath) else {
-            print("SwiftTheme WARNING: Not read plist '\(plistName)' with: \(plistPath)")
+            print("SwiftTheme WARNING: Can't read plist '\(plistName)' at: \(plistPath)")
             return
         }
         self.setTheme(dict: plistDict, path: path)
     }
     
-    public class func setTheme(dict: NSDictionary, path: ThemePath) {
+    class func setTheme(dict: NSDictionary, path: ThemePath) {
         currentTheme = dict
         currentThemePath = path
         NotificationCenter.default.post(name: Notification.Name(rawValue: ThemeUpdateNotification), object: nil)

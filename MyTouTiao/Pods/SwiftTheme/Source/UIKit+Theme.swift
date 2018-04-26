@@ -8,192 +8,265 @@
 
 import UIKit
 
-extension UIView
+@objc public extension UIView
 {
-    public var theme_alpha: ThemeCGFloatPicker? {
+    var theme_alpha: ThemeCGFloatPicker? {
         get { return getThemePicker(self, "setAlpha:") as? ThemeCGFloatPicker }
         set { setThemePicker(self, "setAlpha:", newValue) }
     }
-    public var theme_backgroundColor: ThemeColorPicker? {
+    var theme_backgroundColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setBackgroundColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setBackgroundColor:", newValue) }
     }
-    public var theme_tintColor: ThemeColorPicker? {
+    var theme_tintColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setTintColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setTintColor:", newValue) }
     }
 }
-extension UIApplication
+@objc public extension UIApplication
 {
-    public func theme_setStatusBarStyle(_ picker: ThemeStatusBarStylePicker, animated: Bool) {
+    #if os(iOS)
+    func theme_setStatusBarStyle(_ picker: ThemeStatusBarStylePicker, animated: Bool) {
         picker.animated = animated
         setThemePicker(self, "setStatusBarStyle:animated:", picker)
     }
+    #endif
 }
-extension UIBarButtonItem
+@objc public extension UIBarButtonItem
 {
-    public var theme_tintColor: ThemeColorPicker? {
+    var theme_tintColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setTintColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setTintColor:", newValue) }
     }
 }
-extension UILabel
+@objc public extension UILabel
 {
-    public var theme_textColor: ThemeColorPicker? {
+    var theme_font: ThemeFontPicker? {
+        get { return getThemePicker(self, "setFont:") as? ThemeFontPicker }
+        set { setThemePicker(self, "setFont:", newValue) }
+    }
+    var theme_textColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setTextColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setTextColor:", newValue) }
     }
-    public var theme_highlightedTextColor: ThemeColorPicker? {
+    var theme_highlightedTextColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setHighlightedTextColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setHighlightedTextColor:", newValue) }
     }
-    public var theme_shadowColor: ThemeColorPicker? {
+    var theme_shadowColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setShadowColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setShadowColor:", newValue) }
     }
 }
-extension UINavigationBar
+@objc public extension UINavigationBar
 {
-    public var theme_barTintColor: ThemeColorPicker? {
+    #if os(iOS)
+    var theme_barStyle: ThemeBarStylePicker? {
+        get { return getThemePicker(self, "setBarStyle:") as? ThemeBarStylePicker }
+        set { setThemePicker(self, "setBarStyle:", newValue) }
+    }
+    #endif
+    var theme_barTintColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setBarTintColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setBarTintColor:", newValue) }
     }
-    public var theme_titleTextAttributes: ThemeDictionaryPicker? {
+    var theme_titleTextAttributes: ThemeDictionaryPicker? {
         get { return getThemePicker(self, "setTitleTextAttributes:") as? ThemeDictionaryPicker }
         set { setThemePicker(self, "setTitleTextAttributes:", newValue) }
     }
+    var theme_largeTitleTextAttributes: ThemeDictionaryPicker? {
+        get { return getThemePicker(self, "setLargeTitleTextAttributes:") as? ThemeDictionaryPicker }
+        set { setThemePicker(self, "setLargeTitleTextAttributes:", newValue) }
+    }
 }
-extension UITabBar
+@objc public extension UITabBar
 {
-    public var theme_barTintColor: ThemeColorPicker? {
+    #if os(iOS)
+    var theme_barStyle: ThemeBarStylePicker? {
+        get { return getThemePicker(self, "setBarStyle:") as? ThemeBarStylePicker }
+        set { setThemePicker(self, "setBarStyle:", newValue) }
+    }
+    #endif
+    var theme_barTintColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setBarTintColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setBarTintColor:", newValue) }
     }
 }
-extension UITableView
+@objc public extension UITableView
 {
-    public var theme_separatorColor: ThemeColorPicker? {
+    var theme_separatorColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setSeparatorColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setSeparatorColor:", newValue) }
     }
 }
-extension UITextField
+@objc public extension UITextField
 {
-    public var theme_textColor: ThemeColorPicker? {
+    var theme_font: ThemeFontPicker? {
+        get { return getThemePicker(self, "setFont:") as? ThemeFontPicker }
+        set { setThemePicker(self, "setFont:", newValue) }
+    }
+    var theme_keyboardAppearance: ThemeKeyboardAppearancePicker? {
+        get { return getThemePicker(self, "setKeyboardAppearance:") as? ThemeKeyboardAppearancePicker }
+        set { setThemePicker(self, "setKeyboardAppearance:", newValue) }
+    }
+    var theme_textColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setTextColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setTextColor:", newValue) }
     }
 }
-extension UITextView
+@objc public extension UITextView
 {
-    public var theme_textColor: ThemeColorPicker? {
+    var theme_font: ThemeFontPicker? {
+        get { return getThemePicker(self, "setFont:") as? ThemeFontPicker }
+        set { setThemePicker(self, "setFont:", newValue) }
+    }
+    var theme_keyboardAppearance: ThemeKeyboardAppearancePicker? {
+        get { return getThemePicker(self, "setKeyboardAppearance:") as? ThemeKeyboardAppearancePicker }
+        set { setThemePicker(self, "setKeyboardAppearance:", newValue) }
+    }
+    var theme_textColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setTextColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setTextColor:", newValue) }
     }
 }
-extension UIToolbar
+@objc public extension UISearchBar
 {
-    public var theme_barTintColor: ThemeColorPicker? {
+    #if os(iOS)
+    var theme_barStyle: ThemeBarStylePicker? {
+        get { return getThemePicker(self, "setBarStyle:") as? ThemeBarStylePicker }
+        set { setThemePicker(self, "setBarStyle:", newValue) }
+    }
+    #endif
+    var theme_keyboardAppearance: ThemeKeyboardAppearancePicker? {
+        get { return getThemePicker(self, "setKeyboardAppearance:") as? ThemeKeyboardAppearancePicker }
+        set { setThemePicker(self, "setKeyboardAppearance:", newValue) }
+    }
+    var theme_barTintColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setBarTintColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setBarTintColor:", newValue) }
     }
 }
-extension UISwitch
+@objc public extension UIProgressView
 {
-    public var theme_onTintColor: ThemeColorPicker? {
-        get { return getThemePicker(self, "setOnTintColor:") as? ThemeColorPicker }
-        set { setThemePicker(self, "setOnTintColor:", newValue) }
-    }
-    public var theme_thumbTintColor: ThemeColorPicker? {
-        get { return getThemePicker(self, "setThumbTintColor:") as? ThemeColorPicker }
-        set { setThemePicker(self, "setThumbTintColor:", newValue) }
-    }
-}
-extension UISlider
-{
-    public var theme_thumbTintColor: ThemeColorPicker? {
-        get { return getThemePicker(self, "setThumbTintColor:") as? ThemeColorPicker }
-        set { setThemePicker(self, "setThumbTintColor:", newValue) }
-    }
-    public var theme_minimumTrackTintColor: ThemeColorPicker? {
-        get { return getThemePicker(self, "setMinimumTrackTintColor:") as? ThemeColorPicker }
-        set { setThemePicker(self, "setMinimumTrackTintColor:", newValue) }
-    }
-    public var theme_maximumTrackTintColor: ThemeColorPicker? {
-        get { return getThemePicker(self, "setMaximumTrackTintColor:") as? ThemeColorPicker }
-        set { setThemePicker(self, "setMaximumTrackTintColor:", newValue) }
-    }
-}
-extension UISearchBar
-{
-    public var theme_barTintColor: ThemeColorPicker? {
-        get { return getThemePicker(self, "setBarTintColor:") as? ThemeColorPicker }
-        set { setThemePicker(self, "setBarTintColor:", newValue) }
-    }
-}
-extension UIProgressView
-{
-    public var theme_progressTintColor: ThemeColorPicker? {
+    var theme_progressTintColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setProgressTintColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setProgressTintColor:", newValue) }
     }
-    public var theme_trackTintColor: ThemeColorPicker? {
+    var theme_trackTintColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setTrackTintColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setTrackTintColor:", newValue) }
     }
 }
-extension UIPageControl
+@objc public extension UIPageControl
 {
-    public var theme_pageIndicatorTintColor: ThemeColorPicker? {
+    var theme_pageIndicatorTintColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setPageIndicatorTintColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setPageIndicatorTintColor:", newValue) }
     }
-    public var theme_currentPageIndicatorTintColor: ThemeColorPicker? {
+    var theme_currentPageIndicatorTintColor: ThemeColorPicker? {
         get { return getThemePicker(self, "setCurrentPageIndicatorTintColor:") as? ThemeColorPicker }
         set { setThemePicker(self, "setCurrentPageIndicatorTintColor:", newValue) }
     }
 }
-extension UIImageView
+@objc public extension UIImageView
 {
-    public var theme_image: ThemeImagePicker? {
+    var theme_image: ThemeImagePicker? {
         get { return getThemePicker(self, "setImage:") as? ThemeImagePicker }
         set { setThemePicker(self, "setImage:", newValue) }
     }
 }
-extension UIButton
+@objc public extension UIActivityIndicatorView
 {
-    public func theme_setImage(_ picker: ThemeImagePicker?, forState state: UIControlState) {
+    var theme_activityIndicatorViewStyle: ThemeActivityIndicatorViewStylePicker? {
+        get { return getThemePicker(self, "setActivityIndicatorViewStyle:") as? ThemeActivityIndicatorViewStylePicker }
+        set { setThemePicker(self, "setActivityIndicatorViewStyle:", newValue) }
+    }
+}
+@objc public extension UIButton
+{
+    func theme_setImage(_ picker: ThemeImagePicker?, forState state: UIControlState) {
         let statePicker = makeStatePicker(self, "setImage:forState:", picker, state)
         setThemePicker(self, "setImage:forState:", statePicker)
     }
-    public func theme_setBackgroundImage(_ picker: ThemeImagePicker?, forState state: UIControlState) {
+    func theme_setBackgroundImage(_ picker: ThemeImagePicker?, forState state: UIControlState) {
         let statePicker = makeStatePicker(self, "setBackgroundImage:forState:", picker, state)
         setThemePicker(self, "setBackgroundImage:forState:", statePicker)
     }
-    public func theme_setTitleColor(_ picker: ThemeColorPicker?, forState state: UIControlState) {
+    func theme_setTitleColor(_ picker: ThemeColorPicker?, forState state: UIControlState) {
         let statePicker = makeStatePicker(self, "setTitleColor:forState:", picker, state)
         setThemePicker(self, "setTitleColor:forState:", statePicker)
     }
 }
-extension CALayer
+@objc public extension CALayer
 {
-    public var theme_backgroundColor: ThemeCGColorPicker? {
+    var theme_backgroundColor: ThemeCGColorPicker? {
         get { return getThemePicker(self, "setBackgroundColor:") as? ThemeCGColorPicker}
         set { setThemePicker(self, "setBackgroundColor:", newValue) }
     }
-    public var theme_borderWidth: ThemeCGFloatPicker? {
+    var theme_borderWidth: ThemeCGFloatPicker? {
         get { return getThemePicker(self, "setBorderWidth:") as? ThemeCGFloatPicker }
         set { setThemePicker(self, "setBorderWidth:", newValue) }
     }
-    public var theme_borderColor: ThemeCGColorPicker? {
+    var theme_borderColor: ThemeCGColorPicker? {
         get { return getThemePicker(self, "setBorderColor:") as? ThemeCGColorPicker }
         set { setThemePicker(self, "setBorderColor:", newValue) }
     }
-    public var theme_shadowColor: ThemeCGColorPicker? {
+    var theme_shadowColor: ThemeCGColorPicker? {
         get { return getThemePicker(self, "setShadowColor:") as? ThemeCGColorPicker }
         set { setThemePicker(self, "setShadowColor:", newValue) }
     }
+    var theme_strokeColor: ThemeCGColorPicker? {
+        get { return getThemePicker(self, "setStrokeColor:") as? ThemeCGColorPicker }
+        set { setThemePicker(self, "setStrokeColor:", newValue) }
+    }
 }
+
+#if os(iOS)
+@objc public extension UIToolbar
+{
+    var theme_barStyle: ThemeBarStylePicker? {
+        get { return getThemePicker(self, "setBarStyle:") as? ThemeBarStylePicker }
+        set { setThemePicker(self, "setBarStyle:", newValue) }
+    }
+    var theme_barTintColor: ThemeColorPicker? {
+        get { return getThemePicker(self, "setBarTintColor:") as? ThemeColorPicker }
+        set { setThemePicker(self, "setBarTintColor:", newValue) }
+    }
+}
+@objc public extension UISwitch
+{
+    var theme_onTintColor: ThemeColorPicker? {
+        get { return getThemePicker(self, "setOnTintColor:") as? ThemeColorPicker }
+        set { setThemePicker(self, "setOnTintColor:", newValue) }
+    }
+    var theme_thumbTintColor: ThemeColorPicker? {
+        get { return getThemePicker(self, "setThumbTintColor:") as? ThemeColorPicker }
+        set { setThemePicker(self, "setThumbTintColor:", newValue) }
+    }
+}
+@objc public extension UISlider
+{
+    var theme_thumbTintColor: ThemeColorPicker? {
+        get { return getThemePicker(self, "setThumbTintColor:") as? ThemeColorPicker }
+        set { setThemePicker(self, "setThumbTintColor:", newValue) }
+    }
+    var theme_minimumTrackTintColor: ThemeColorPicker? {
+        get { return getThemePicker(self, "setMinimumTrackTintColor:") as? ThemeColorPicker }
+        set { setThemePicker(self, "setMinimumTrackTintColor:", newValue) }
+    }
+    var theme_maximumTrackTintColor: ThemeColorPicker? {
+        get { return getThemePicker(self, "setMaximumTrackTintColor:") as? ThemeColorPicker }
+        set { setThemePicker(self, "setMaximumTrackTintColor:", newValue) }
+    }
+}
+@objc public extension UIPopoverPresentationController
+{
+    var theme_backgroundColor: ThemeColorPicker? {
+        get { return getThemePicker(self, "setBackgroundColor:") as? ThemeColorPicker }
+        set { setThemePicker(self, "setBackgroundColor:", newValue) }
+    }
+}
+#endif
 
 private func getThemePicker(
     _ object : NSObject,

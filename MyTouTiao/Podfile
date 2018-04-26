@@ -11,4 +11,7 @@ target 'MyTouTiao' do
   pod 'SVProgressHUD'
   pod 'MJRefresh'
   pod 'FDFullscreenPopGesture'
+  pod 'SGPagingView'
+  pod 'HandyJSON'
+  pod 'SQLite.swift'
 end
