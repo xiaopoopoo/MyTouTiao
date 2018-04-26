@@ -10,13 +10,19 @@
 		5150404BA9BA8534931E0B04 /* Pods_MyTouTiao.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 786D42D90117BD5422498525 /* Pods_MyTouTiao.framework */; };
 		9FA847BC20906FF1001E889A /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847BB20906FF1001E889A /* ViewController.swift */; };
 		9FA847BF20906FF1001E889A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9FA847BD20906FF1001E889A /* Main.storyboard */; };
-		9FA847C120906FFE001E889A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9FA847C020906FFE001E889A /* Assets.xcassets */; };
+		9FA847C120906FFE001E889A /* activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9FA847C020906FFE001E889A /* activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets */; };
 		9FA847C420906FFE001E889A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9FA847C220906FFE001E889A /* LaunchScreen.storyboard */; };
 		9FA847CF20906FFE001E889A /* MyTouTiaoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847CE20906FFE001E889A /* MyTouTiaoTests.swift */; };
 		9FA847DA20906FFF001E889A /* MyTouTiaoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847D920906FFF001E889A /* MyTouTiaoUITests.swift */; };
-		9FA847F020907981001E889A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847EE20907980001E889A /* AppDelegate.swift */; };
-		9FA847F120907981001E889A /* Const.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847EF20907981001E889A /* Const.swift */; };
-		9FA847F520907A6A001E889A /* MyTabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847F420907A6A001E889A /* MyTabBarController.swift */; };
+		9FA8481A209080F0001E889A /* MyTabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA84802209080F0001E889A /* MyTabBarController.swift */; };
+		9FA8481B209080F0001E889A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA8480C209080F0001E889A /* AppDelegate.swift */; };
+		9FA8481C209080F0001E889A /* Const.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA8480D209080F0001E889A /* Const.swift */; };
+		9FA8482020908186001E889A /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA8481F20908186001E889A /* HomeViewController.swift */; };
+		9FA84822209081B4001E889A /* VideoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA84821209081B4001E889A /* VideoViewController.swift */; };
+		9FA84824209081DB001E889A /* RedPackageViewController2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA84823209081DB001E889A /* RedPackageViewController2.swift */; };
+		9FA8482620908228001E889A /* WeitoutiaoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA8482520908228001E889A /* WeitoutiaoViewController.swift */; };
+		9FA8482820908284001E889A /* HuoshanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA8482720908284001E889A /* HuoshanViewController.swift */; };
+		9FA8482A209083D0001E889A /* MyNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA84829209083D0001E889A /* MyNavigationController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,7 +49,7 @@
 		9FA847B620906FF1001E889A /* MyTouTiao.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyTouTiao.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FA847BB20906FF1001E889A /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		9FA847BE20906FF1001E889A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
-		9FA847C020906FFE001E889A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		9FA847C020906FFE001E889A /* activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets"; sourceTree = "<group>"; };
 		9FA847C320906FFE001E889A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9FA847C520906FFE001E889A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9FA847CA20906FFE001E889A /* MyTouTiaoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyTouTiaoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -52,9 +58,15 @@
 		9FA847D520906FFE001E889A /* MyTouTiaoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyTouTiaoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FA847D920906FFF001E889A /* MyTouTiaoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyTouTiaoUITests.swift; sourceTree = "<group>"; };
 		9FA847DB20906FFF001E889A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		9FA847EE20907980001E889A /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		9FA847EF20907981001E889A /* Const.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Const.swift; sourceTree = "<group>"; };
-		9FA847F420907A6A001E889A /* MyTabBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyTabBarController.swift; sourceTree = "<group>"; };
+		9FA84802209080F0001E889A /* MyTabBarController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MyTabBarController.swift; sourceTree = "<group>"; };
+		9FA8480C209080F0001E889A /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		9FA8480D209080F0001E889A /* Const.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Const.swift; sourceTree = "<group>"; };
+		9FA8481F20908186001E889A /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
+		9FA84821209081B4001E889A /* VideoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoViewController.swift; sourceTree = "<group>"; };
+		9FA84823209081DB001E889A /* RedPackageViewController2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedPackageViewController2.swift; sourceTree = "<group>"; };
+		9FA8482520908228001E889A /* WeitoutiaoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeitoutiaoViewController.swift; sourceTree = "<group>"; };
+		9FA8482720908284001E889A /* HuoshanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HuoshanViewController.swift; sourceTree = "<group>"; };
+		9FA84829209083D0001E889A /* MyNavigationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyNavigationController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -116,10 +128,10 @@
 		9FA847B820906FF1001E889A /* MyTouTiao */ = {
 			isa = PBXGroup;
 			children = (
-				9FA847E720907796001E889A /* Classes */,
+				9FA847F8209080F0001E889A /* Classes */,
 				9FA847BB20906FF1001E889A /* ViewController.swift */,
 				9FA847BD20906FF1001E889A /* Main.storyboard */,
-				9FA847C020906FFE001E889A /* Assets.xcassets */,
+				9FA847C020906FFE001E889A /* activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets */,
 				9FA847C220906FFE001E889A /* LaunchScreen.storyboard */,
 				9FA847C520906FFE001E889A /* Info.plist */,
 			);
@@ -144,62 +156,276 @@
 			path = MyTouTiaoUITests;
 			sourceTree = "<group>";
 		};
-		9FA847E720907796001E889A /* Classes */ = {
+		9FA847F8209080F0001E889A /* Classes */ = {
 			isa = PBXGroup;
 			children = (
-				9FA847F220907A30001E889A /* Main */,
-				9FA847EA209078A9001E889A /* Others */,
-				9FA847E820907796001E889A /* Home */,
+				9FA847F9209080F0001E889A /* Home */,
+				9FA847FC209080F0001E889A /* Huoshan */,
+				9FA84800209080F0001E889A /* Main */,
+				9FA84807209080F0001E889A /* Mine */,
+				9FA8480B209080F0001E889A /* Others */,
+				9FA8480E209080F0001E889A /* RedPackage */,
+				9FA84812209080F0001E889A /* Video */,
+				9FA84816209080F0001E889A /* Weitoutiao */,
 			);
 			path = Classes;
 			sourceTree = "<group>";
 		};
-		9FA847E820907796001E889A /* Home */ = {
+		9FA847F9209080F0001E889A /* Home */ = {
 			isa = PBXGroup;
 			children = (
-				9FA847E920907796001E889A /* Controller */,
+				9FA8481D20908111001E889A /* Controller */,
+				9FA847FA209080F0001E889A /* Model */,
+				9FA847FB209080F0001E889A /* View */,
 			);
 			path = Home;
 			sourceTree = "<group>";
 		};
-		9FA847E920907796001E889A /* Controller */ = {
+		9FA847FA209080F0001E889A /* Model */ = {
 			isa = PBXGroup;
 			children = (
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		9FA847FB209080F0001E889A /* View */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		9FA847FC209080F0001E889A /* Huoshan */ = {
+			isa = PBXGroup;
+			children = (
+				9FA847FD209080F0001E889A /* Controller */,
+				9FA847FE209080F0001E889A /* Model */,
+				9FA847FF209080F0001E889A /* View */,
+			);
+			path = Huoshan;
+			sourceTree = "<group>";
+		};
+		9FA847FD209080F0001E889A /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				9FA8482720908284001E889A /* HuoshanViewController.swift */,
 			);
 			path = Controller;
 			sourceTree = "<group>";
 		};
-		9FA847EA209078A9001E889A /* Others */ = {
-			isa = PBXGroup;
-			children = (
-				9FA847EE20907980001E889A /* AppDelegate.swift */,
-				9FA847EF20907981001E889A /* Const.swift */,
-				9FA847EB209078A9001E889A /* Theme */,
-			);
-			path = Others;
-			sourceTree = "<group>";
-		};
-		9FA847EB209078A9001E889A /* Theme */ = {
+		9FA847FE209080F0001E889A /* Model */ = {
 			isa = PBXGroup;
 			children = (
 			);
-			path = Theme;
+			path = Model;
 			sourceTree = "<group>";
 		};
-		9FA847F220907A30001E889A /* Main */ = {
+		9FA847FF209080F0001E889A /* View */ = {
 			isa = PBXGroup;
 			children = (
-				9FA847F320907A30001E889A /* Controller */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		9FA84800209080F0001E889A /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				9FA84801209080F0001E889A /* Controller */,
+				9FA84803209080F0001E889A /* Extension */,
+				9FA84804209080F0001E889A /* Model */,
+				9FA84805209080F0001E889A /* Tool */,
+				9FA84806209080F0001E889A /* View */,
 			);
 			path = Main;
 			sourceTree = "<group>";
 		};
-		9FA847F320907A30001E889A /* Controller */ = {
+		9FA84801209080F0001E889A /* Controller */ = {
 			isa = PBXGroup;
 			children = (
-				9FA847F420907A6A001E889A /* MyTabBarController.swift */,
+				9FA84802209080F0001E889A /* MyTabBarController.swift */,
+				9FA84829209083D0001E889A /* MyNavigationController.swift */,
 			);
 			path = Controller;
+			sourceTree = "<group>";
+		};
+		9FA84803209080F0001E889A /* Extension */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Extension;
+			sourceTree = "<group>";
+		};
+		9FA84804209080F0001E889A /* Model */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		9FA84805209080F0001E889A /* Tool */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Tool;
+			sourceTree = "<group>";
+		};
+		9FA84806209080F0001E889A /* View */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		9FA84807209080F0001E889A /* Mine */ = {
+			isa = PBXGroup;
+			children = (
+				9FA84808209080F0001E889A /* Controller */,
+				9FA84809209080F0001E889A /* Model */,
+				9FA8480A209080F0001E889A /* View */,
+			);
+			path = Mine;
+			sourceTree = "<group>";
+		};
+		9FA84808209080F0001E889A /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Controller;
+			sourceTree = "<group>";
+		};
+		9FA84809209080F0001E889A /* Model */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		9FA8480A209080F0001E889A /* View */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		9FA8480B209080F0001E889A /* Others */ = {
+			isa = PBXGroup;
+			children = (
+				9FA8481E20908146001E889A /* Theme */,
+				9FA8480C209080F0001E889A /* AppDelegate.swift */,
+				9FA8480D209080F0001E889A /* Const.swift */,
+			);
+			path = Others;
+			sourceTree = "<group>";
+		};
+		9FA8480E209080F0001E889A /* RedPackage */ = {
+			isa = PBXGroup;
+			children = (
+				9FA8480F209080F0001E889A /* Controller */,
+				9FA84810209080F0001E889A /* Model */,
+				9FA84811209080F0001E889A /* View */,
+			);
+			path = RedPackage;
+			sourceTree = "<group>";
+		};
+		9FA8480F209080F0001E889A /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				9FA84823209081DB001E889A /* RedPackageViewController2.swift */,
+			);
+			path = Controller;
+			sourceTree = "<group>";
+		};
+		9FA84810209080F0001E889A /* Model */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		9FA84811209080F0001E889A /* View */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		9FA84812209080F0001E889A /* Video */ = {
+			isa = PBXGroup;
+			children = (
+				9FA84813209080F0001E889A /* Controller */,
+				9FA84814209080F0001E889A /* Model */,
+				9FA84815209080F0001E889A /* View */,
+			);
+			path = Video;
+			sourceTree = "<group>";
+		};
+		9FA84813209080F0001E889A /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				9FA84821209081B4001E889A /* VideoViewController.swift */,
+			);
+			path = Controller;
+			sourceTree = "<group>";
+		};
+		9FA84814209080F0001E889A /* Model */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		9FA84815209080F0001E889A /* View */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		9FA84816209080F0001E889A /* Weitoutiao */ = {
+			isa = PBXGroup;
+			children = (
+				9FA84817209080F0001E889A /* Controller */,
+				9FA84818209080F0001E889A /* Model */,
+				9FA84819209080F0001E889A /* View */,
+			);
+			path = Weitoutiao;
+			sourceTree = "<group>";
+		};
+		9FA84817209080F0001E889A /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				9FA8482520908228001E889A /* WeitoutiaoViewController.swift */,
+			);
+			path = Controller;
+			sourceTree = "<group>";
+		};
+		9FA84818209080F0001E889A /* Model */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		9FA84819209080F0001E889A /* View */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		9FA8481D20908111001E889A /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				9FA8481F20908186001E889A /* HomeViewController.swift */,
+			);
+			path = Controller;
+			sourceTree = "<group>";
+		};
+		9FA8481E20908146001E889A /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Theme;
 			sourceTree = "<group>";
 		};
 		B425B77747D9B054821C0BDB /* Pods */ = {
@@ -321,7 +547,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9FA847C420906FFE001E889A /* LaunchScreen.storyboard in Resources */,
-				9FA847C120906FFE001E889A /* Assets.xcassets in Resources */,
+				9FA847C120906FFE001E889A /* activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets in Resources */,
 				9FA847BF20906FF1001E889A /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -396,10 +622,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9FA847F020907981001E889A /* AppDelegate.swift in Sources */,
-				9FA847F520907A6A001E889A /* MyTabBarController.swift in Sources */,
+				9FA8482020908186001E889A /* HomeViewController.swift in Sources */,
+				9FA8481B209080F0001E889A /* AppDelegate.swift in Sources */,
+				9FA8482620908228001E889A /* WeitoutiaoViewController.swift in Sources */,
+				9FA8482A209083D0001E889A /* MyNavigationController.swift in Sources */,
+				9FA84822209081B4001E889A /* VideoViewController.swift in Sources */,
+				9FA84824209081DB001E889A /* RedPackageViewController2.swift in Sources */,
+				9FA8482820908284001E889A /* HuoshanViewController.swift in Sources */,
+				9FA8481C209080F0001E889A /* Const.swift in Sources */,
 				9FA847BC20906FF1001E889A /* ViewController.swift in Sources */,
-				9FA847F120907981001E889A /* Const.swift in Sources */,
+				9FA8481A209080F0001E889A /* MyTabBarController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -574,6 +806,7 @@
 			baseConfigurationReference = 4E3BD9568FB08EFCC3A33BC3 /* Pods-MyTouTiao.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = B5PUA4ELPD;
 				INFOPLIST_FILE = MyTouTiao/Info.plist;
@@ -593,6 +826,7 @@
 			baseConfigurationReference = 4C272A5C54B1F1BB7322E86D /* Pods-MyTouTiao.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = B5PUA4ELPD;
 				INFOPLIST_FILE = MyTouTiao/Info.plist;

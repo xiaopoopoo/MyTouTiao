@@ -72,12 +72,12 @@ class MyTabBarController: UITabBarController {
     }
     /// 添加子控制器
     private func addChildViewControllers() {
-//        setChildViewController(HomeViewController(), title: "首页", imageName: "home")
-//        setChildViewController(VideoViewController(), title: "西瓜视频", imageName: "video")
-//        //        setChildViewController(RedPackageViewController(), title: "", imageName: "redpackage")
-//        setChildViewController(RedPackageViewController2(), title: "", imageName: "redpackage")
-//        setChildViewController(WeitoutiaoViewController(), title: "微头条", imageName: "weitoutiao")
-//        setChildViewController(HuoshanViewController(), title: "小视频", imageName: "huoshan")
+        setChildViewController(HomeViewController(), title: "首页", imageName: "home")
+        setChildViewController(VideoViewController(), title: "西瓜视频", imageName: "video")
+        //        setChildViewController(RedPackageViewController(), title: "", imageName: "redpackage")
+        setChildViewController(RedPackageViewController2(), title: "", imageName: "redpackage")
+        setChildViewController(WeitoutiaoViewController(), title: "微头条", imageName: "weitoutiao")
+        setChildViewController(HuoshanViewController(), title: "小视频", imageName: "huoshan")
         // tabBar 是 readonly 属性，不能直接修改，利用 KVC 把 readonly 属性的权限改过来
         //        setValue(MyTabBar(), forKey: "tabBar")
     }
@@ -91,7 +91,7 @@ class MyTabBarController: UITabBarController {
         }
         childController.title = title
         // 添加导航控制器为 TabBarController 的子控制器
-//        addChildViewController(MyNavigationController(rootViewController: childController))
+        addChildViewController(MyNavigationController(rootViewController: childController))
     }
     
     deinit {
