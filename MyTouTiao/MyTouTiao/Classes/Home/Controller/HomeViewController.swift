@@ -74,6 +74,13 @@ extension HomeViewController{
                 }
             
             })
+            
+            // 内容视图
+            self.pageContentView = SGPageContentView(frame: CGRect(x: 0, y: newsTitleHeight, width: screenWidth, height:screenHeight - newsTitleHeight), parentVC: self, childVCs: self.childViewControllers)
+//            self.pageContentView!.delegatePageContentView = self as! SGPageContentViewDelegate
+            self.view.addSubview(self.pageContentView!)
+            
+            
         }
     }
 }
