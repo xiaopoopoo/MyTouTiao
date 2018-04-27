@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		5150404BA9BA8534931E0B04 /* Pods_MyTouTiao.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 786D42D90117BD5422498525 /* Pods_MyTouTiao.framework */; };
+		9F89EC1C2092EBCA00BE420A /* NetworkToolProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F89EC1B2092EBCA00BE420A /* NetworkToolProtocol.swift */; };
+		9F89EC1E2092ECBB00BE420A /* HomeNewsTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F89EC1D2092ECBB00BE420A /* HomeNewsTitle.swift */; };
 		9FA847BC20906FF1001E889A /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847BB20906FF1001E889A /* ViewController.swift */; };
 		9FA847BF20906FF1001E889A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9FA847BD20906FF1001E889A /* Main.storyboard */; };
 		9FA847C120906FFE001E889A /* activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9FA847C020906FFE001E889A /* activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets */; };
@@ -23,6 +25,11 @@
 		9FA8482620908228001E889A /* WeitoutiaoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA8482520908228001E889A /* WeitoutiaoViewController.swift */; };
 		9FA8482820908284001E889A /* HuoshanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA8482720908284001E889A /* HuoshanViewController.swift */; };
 		9FA8482A209083D0001E889A /* MyNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA84829209083D0001E889A /* MyNavigationController.swift */; };
+		9FD2B7F2209325C1004D9213 /* VideoTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F1209325C1004D9213 /* VideoTableViewController.swift */; };
+		9FD2B7F4209325EB004D9213 /* HomeJokeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F3209325EB004D9213 /* HomeJokeViewController.swift */; };
+		9FD2B7F62093260E004D9213 /* HomeImageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F52093260E004D9213 /* HomeImageViewController.swift */; };
+		9FD2B7F820932626004D9213 /* TeMaiViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F720932626004D9213 /* TeMaiViewController.swift */; };
+		9FD2B7FA2093263E004D9213 /* HomeRecommendController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F92093263E004D9213 /* HomeRecommendController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -46,6 +53,8 @@
 		4C272A5C54B1F1BB7322E86D /* Pods-MyTouTiao.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MyTouTiao.release.xcconfig"; path = "Pods/Target Support Files/Pods-MyTouTiao/Pods-MyTouTiao.release.xcconfig"; sourceTree = "<group>"; };
 		4E3BD9568FB08EFCC3A33BC3 /* Pods-MyTouTiao.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MyTouTiao.debug.xcconfig"; path = "Pods/Target Support Files/Pods-MyTouTiao/Pods-MyTouTiao.debug.xcconfig"; sourceTree = "<group>"; };
 		786D42D90117BD5422498525 /* Pods_MyTouTiao.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MyTouTiao.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F89EC1B2092EBCA00BE420A /* NetworkToolProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkToolProtocol.swift; sourceTree = "<group>"; };
+		9F89EC1D2092ECBB00BE420A /* HomeNewsTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeNewsTitle.swift; sourceTree = "<group>"; };
 		9FA847B620906FF1001E889A /* MyTouTiao.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyTouTiao.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FA847BB20906FF1001E889A /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		9FA847BE20906FF1001E889A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -67,6 +76,11 @@
 		9FA8482520908228001E889A /* WeitoutiaoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeitoutiaoViewController.swift; sourceTree = "<group>"; };
 		9FA8482720908284001E889A /* HuoshanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HuoshanViewController.swift; sourceTree = "<group>"; };
 		9FA84829209083D0001E889A /* MyNavigationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyNavigationController.swift; sourceTree = "<group>"; };
+		9FD2B7F1209325C1004D9213 /* VideoTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoTableViewController.swift; sourceTree = "<group>"; };
+		9FD2B7F3209325EB004D9213 /* HomeJokeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeJokeViewController.swift; sourceTree = "<group>"; };
+		9FD2B7F52093260E004D9213 /* HomeImageViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeImageViewController.swift; sourceTree = "<group>"; };
+		9FD2B7F720932626004D9213 /* TeMaiViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeMaiViewController.swift; sourceTree = "<group>"; };
+		9FD2B7F92093263E004D9213 /* HomeRecommendController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRecommendController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -184,6 +198,7 @@
 		9FA847FA209080F0001E889A /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				9F89EC1D2092ECBB00BE420A /* HomeNewsTitle.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -265,6 +280,7 @@
 		9FA84805209080F0001E889A /* Tool */ = {
 			isa = PBXGroup;
 			children = (
+				9F89EC1B2092EBCA00BE420A /* NetworkToolProtocol.swift */,
 			);
 			path = Tool;
 			sourceTree = "<group>";
@@ -417,6 +433,11 @@
 			isa = PBXGroup;
 			children = (
 				9FA8481F20908186001E889A /* HomeViewController.swift */,
+				9FD2B7F1209325C1004D9213 /* VideoTableViewController.swift */,
+				9FD2B7F3209325EB004D9213 /* HomeJokeViewController.swift */,
+				9FD2B7F52093260E004D9213 /* HomeImageViewController.swift */,
+				9FD2B7F720932626004D9213 /* TeMaiViewController.swift */,
+				9FD2B7F92093263E004D9213 /* HomeRecommendController.swift */,
 			);
 			path = Controller;
 			sourceTree = "<group>";
@@ -644,14 +665,21 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9F89EC1C2092EBCA00BE420A /* NetworkToolProtocol.swift in Sources */,
 				9FA8482020908186001E889A /* HomeViewController.swift in Sources */,
+				9FD2B7F4209325EB004D9213 /* HomeJokeViewController.swift in Sources */,
+				9FD2B7F820932626004D9213 /* TeMaiViewController.swift in Sources */,
 				9FA8481B209080F0001E889A /* AppDelegate.swift in Sources */,
+				9FD2B7F62093260E004D9213 /* HomeImageViewController.swift in Sources */,
 				9FA8482620908228001E889A /* WeitoutiaoViewController.swift in Sources */,
 				9FA8482A209083D0001E889A /* MyNavigationController.swift in Sources */,
 				9FA84822209081B4001E889A /* VideoViewController.swift in Sources */,
+				9F89EC1E2092ECBB00BE420A /* HomeNewsTitle.swift in Sources */,
 				9FA84824209081DB001E889A /* RedPackageViewController2.swift in Sources */,
 				9FA8482820908284001E889A /* HuoshanViewController.swift in Sources */,
+				9FD2B7F2209325C1004D9213 /* VideoTableViewController.swift in Sources */,
 				9FA8481C209080F0001E889A /* Const.swift in Sources */,
+				9FD2B7FA2093263E004D9213 /* HomeRecommendController.swift in Sources */,
 				9FA847BC20906FF1001E889A /* ViewController.swift in Sources */,
 				9FA8481A209080F0001E889A /* MyTabBarController.swift in Sources */,
 			);
@@ -832,7 +860,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = B5PUA4ELPD;
 				INFOPLIST_FILE = MyTouTiao/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = www.MyTouTiao;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -849,7 +880,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = B5PUA4ELPD;
 				INFOPLIST_FILE = MyTouTiao/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = www.MyTouTiao;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -865,7 +899,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = B5PUA4ELPD;
 				INFOPLIST_FILE = MyTouTiaoTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = www.MyTouTiaoTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -882,7 +920,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = B5PUA4ELPD;
 				INFOPLIST_FILE = MyTouTiaoTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = www.MyTouTiaoTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -898,7 +940,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = B5PUA4ELPD;
 				INFOPLIST_FILE = MyTouTiaoUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = www.MyTouTiaoUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -914,7 +960,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = B5PUA4ELPD;
 				INFOPLIST_FILE = MyTouTiaoUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = www.MyTouTiaoUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
