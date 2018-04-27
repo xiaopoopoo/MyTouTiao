@@ -8,7 +8,7 @@
 
 import UIKit
 
-class VideoTableViewController: HomeViewController {
+class VideoTableViewController: HomeTableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()

@@ -8,7 +8,7 @@
 
 import UIKit
 
-class HomeRecommendController: HomeViewController {
+class HomeRecommendController: HomeTableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()

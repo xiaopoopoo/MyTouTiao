@@ -8,7 +8,7 @@
 
 import UIKit
 
-class TeMaiViewController: HomeViewController {
+class TeMaiViewController: HomeTableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()

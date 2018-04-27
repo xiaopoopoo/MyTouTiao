@@ -8,7 +8,7 @@
 
 import UIKit
 
-class HomeImageViewController: HomeViewController {
+class HomeImageViewController: HomeTableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()

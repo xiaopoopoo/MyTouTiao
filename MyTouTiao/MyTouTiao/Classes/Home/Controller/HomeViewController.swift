@@ -38,7 +38,7 @@ extension HomeViewController{
         view.theme_backgroundColor = "colors.cellBackgroundColor"
         NetworkTool.loadHomeNewsTitleData {
            _ = $0.compactMap({ (newsTitle) -> () in //遍列出第0个参数，datas的值，"_"是一个变量，当一个变量在函数体内不使用，可以用"_"代替
-                switch newsTitle.category {  //取出model中的品种，根据品种创建不同的继承于HomeViewController的子类控制器，放入到ChildViewController中
+                switch newsTitle.category {  //取出model中的品种，根据品种创建不同的继承于HomeTableViewController的子类控制器,该控制器继承自UITableViewControl，放入到ChildViewController中
                 case .video:            // 视频
                     let videoTableVC = VideoTableViewController()
                     videoTableVC.newsTitle = newsTitle
@@ -46,17 +46,17 @@ extension HomeViewController{
                     self.addChildViewController(videoTableVC)
                 case .essayJoke:        // 段子
                     let essayJokeVC = HomeJokeViewController()
-                    essayJokeVC.isJoke = true
+//                    essayJokeVC.isJoke = true
                     essayJokeVC.setupRefresh(with: .essayJoke)
                     self.addChildViewController(essayJokeVC)
                 case .imagePPMM:        // 街拍
                     let imagePPMMVC = HomeJokeViewController()
-                    imagePPMMVC.isJoke = false
+//                    imagePPMMVC.isJoke = false
                     imagePPMMVC.setupRefresh(with: .imagePPMM)
                     self.addChildViewController(imagePPMMVC)
                 case .imageFunny:        // 趣图
                     let imagePPMMVC = HomeJokeViewController()
-                    imagePPMMVC.isJoke = false
+//                    imagePPMMVC.isJoke = false
                     imagePPMMVC.setupRefresh(with: .imageFunny)
                     self.addChildViewController(imagePPMMVC)
                 case .photos:           // 图片,组图
@@ -65,7 +65,7 @@ extension HomeViewController{
                     self.addChildViewController(homeImageVC)
                 case .jinritemai:       // 特卖
                     let temaiVC = TeMaiViewController()
-                    temaiVC.url = "https://m.maila88.com/mailaIndex?mailaAppKey=GDW5NMaKQNz81jtW2Yuw2P"
+//                    temaiVC.url = "https://m.maila88.com/mailaIndex?mailaAppKey=GDW5NMaKQNz81jtW2Yuw2P"
                     self.addChildViewController(temaiVC)
                 default :
                     let homeTableVC = HomeRecommendController()

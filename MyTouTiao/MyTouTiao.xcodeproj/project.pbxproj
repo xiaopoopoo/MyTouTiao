@@ -30,6 +30,7 @@
 		9FD2B7F62093260E004D9213 /* HomeImageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F52093260E004D9213 /* HomeImageViewController.swift */; };
 		9FD2B7F820932626004D9213 /* TeMaiViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F720932626004D9213 /* TeMaiViewController.swift */; };
 		9FD2B7FA2093263E004D9213 /* HomeRecommendController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F92093263E004D9213 /* HomeRecommendController.swift */; };
+		9FD2B7FC209327D4004D9213 /* HomeTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7FB209327D4004D9213 /* HomeTableViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -81,6 +82,7 @@
 		9FD2B7F52093260E004D9213 /* HomeImageViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeImageViewController.swift; sourceTree = "<group>"; };
 		9FD2B7F720932626004D9213 /* TeMaiViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeMaiViewController.swift; sourceTree = "<group>"; };
 		9FD2B7F92093263E004D9213 /* HomeRecommendController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRecommendController.swift; sourceTree = "<group>"; };
+		9FD2B7FB209327D4004D9213 /* HomeTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTableViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -433,6 +435,7 @@
 			isa = PBXGroup;
 			children = (
 				9FA8481F20908186001E889A /* HomeViewController.swift */,
+				9FD2B7FB209327D4004D9213 /* HomeTableViewController.swift */,
 				9FD2B7F1209325C1004D9213 /* VideoTableViewController.swift */,
 				9FD2B7F3209325EB004D9213 /* HomeJokeViewController.swift */,
 				9FD2B7F52093260E004D9213 /* HomeImageViewController.swift */,
@@ -671,6 +674,7 @@
 				9FD2B7F820932626004D9213 /* TeMaiViewController.swift in Sources */,
 				9FA8481B209080F0001E889A /* AppDelegate.swift in Sources */,
 				9FD2B7F62093260E004D9213 /* HomeImageViewController.swift in Sources */,
+				9FD2B7FC209327D4004D9213 /* HomeTableViewController.swift in Sources */,
 				9FA8482620908228001E889A /* WeitoutiaoViewController.swift in Sources */,
 				9FA8482A209083D0001E889A /* MyNavigationController.swift in Sources */,
 				9FA84822209081B4001E889A /* VideoViewController.swift in Sources */,
