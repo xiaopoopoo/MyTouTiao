@@ -31,6 +31,9 @@
 		9FD2B7F820932626004D9213 /* TeMaiViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F720932626004D9213 /* TeMaiViewController.swift */; };
 		9FD2B7FA2093263E004D9213 /* HomeRecommendController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F92093263E004D9213 /* HomeRecommendController.swift */; };
 		9FD2B7FC209327D4004D9213 /* HomeTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7FB209327D4004D9213 /* HomeTableViewController.swift */; };
+		9FD2B7FF20941237004D9213 /* HomeCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7FD20941236004D9213 /* HomeCell.swift */; };
+		9FD2B802209412FC004D9213 /* UIKit+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B801209412FC004D9213 /* UIKit+Extension.swift */; };
+		9FD2B80420941706004D9213 /* HomeCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FD2B80320941706004D9213 /* HomeCell.xib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -83,6 +86,9 @@
 		9FD2B7F720932626004D9213 /* TeMaiViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeMaiViewController.swift; sourceTree = "<group>"; };
 		9FD2B7F92093263E004D9213 /* HomeRecommendController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRecommendController.swift; sourceTree = "<group>"; };
 		9FD2B7FB209327D4004D9213 /* HomeTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTableViewController.swift; sourceTree = "<group>"; };
+		9FD2B7FD20941236004D9213 /* HomeCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HomeCell.swift; sourceTree = "<group>"; };
+		9FD2B801209412FC004D9213 /* UIKit+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIKit+Extension.swift"; sourceTree = "<group>"; };
+		9FD2B80320941706004D9213 /* HomeCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = HomeCell.xib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -268,6 +274,7 @@
 		9FA84803209080F0001E889A /* Extension */ = {
 			isa = PBXGroup;
 			children = (
+				9FD2B801209412FC004D9213 /* UIKit+Extension.swift */,
 			);
 			path = Extension;
 			sourceTree = "<group>";
@@ -290,6 +297,8 @@
 		9FA84806209080F0001E889A /* View */ = {
 			isa = PBXGroup;
 			children = (
+				9FD2B80320941706004D9213 /* HomeCell.xib */,
+				9FD2B7FD20941236004D9213 /* HomeCell.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -572,6 +581,7 @@
 			files = (
 				9FA847C420906FFE001E889A /* LaunchScreen.storyboard in Resources */,
 				9FA847C120906FFE001E889A /* activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets in Resources */,
+				9FD2B80420941706004D9213 /* HomeCell.xib in Resources */,
 				9FA847BF20906FF1001E889A /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -670,6 +680,7 @@
 			files = (
 				9F89EC1C2092EBCA00BE420A /* NetworkToolProtocol.swift in Sources */,
 				9FA8482020908186001E889A /* HomeViewController.swift in Sources */,
+				9FD2B7FF20941237004D9213 /* HomeCell.swift in Sources */,
 				9FD2B7F4209325EB004D9213 /* HomeJokeViewController.swift in Sources */,
 				9FD2B7F820932626004D9213 /* TeMaiViewController.swift in Sources */,
 				9FA8481B209080F0001E889A /* AppDelegate.swift in Sources */,
@@ -681,6 +692,7 @@
 				9F89EC1E2092ECBB00BE420A /* HomeNewsTitle.swift in Sources */,
 				9FA84824209081DB001E889A /* RedPackageViewController2.swift in Sources */,
 				9FA8482820908284001E889A /* HuoshanViewController.swift in Sources */,
+				9FD2B802209412FC004D9213 /* UIKit+Extension.swift in Sources */,
 				9FD2B7F2209325C1004D9213 /* VideoTableViewController.swift in Sources */,
 				9FA8481C209080F0001E889A /* Const.swift in Sources */,
 				9FD2B7FA2093263E004D9213 /* HomeRecommendController.swift in Sources */,
