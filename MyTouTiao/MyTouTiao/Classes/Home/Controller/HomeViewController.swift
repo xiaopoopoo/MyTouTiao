@@ -68,7 +68,7 @@ extension HomeViewController{
 //                    temaiVC.url = "https://m.maila88.com/mailaIndex?mailaAppKey=GDW5NMaKQNz81jtW2Yuw2P"
                     self.addChildViewController(temaiVC)
                 default :
-                    let homeTableVC = HomeRecommendController()
+                    let homeTableVC = HomeRecommendController() //home页的多个子频道
                     homeTableVC.setupRefresh(with: newsTitle.category)
                     self.addChildViewController(homeTableVC)
                 }
@@ -77,10 +77,22 @@ extension HomeViewController{
             
             // 内容视图
             self.pageContentView = SGPageContentView(frame: CGRect(x: 0, y: newsTitleHeight, width: screenWidth, height:screenHeight - newsTitleHeight), parentVC: self, childVCs: self.childViewControllers)
-//            self.pageContentView!.delegatePageContentView = self as! SGPageContentViewDelegate
+            self.pageContentView!.delegatePageContentView = self
             self.view.addSubview(self.pageContentView!)
             
             
         }
+    }
+}
+// MARK: - SGPageTitleViewDelegate
+extension HomeViewController: SGPageTitleViewDelegate, SGPageContentViewDelegate {
+    /// 联动 pageContent 的方法
+    func pageTitleView(_ pageTitleView: SGPageTitleView!, selectedIndex: Int) {
+        self.pageContentView!.setPageContentViewCurrentIndex(selectedIndex)
+    }
+    
+    /// 联动 SGPageTitleView 的方法
+    func pageContentView(_ pageContentView: SGPageContentView!, progress: CGFloat, originalIndex: Int, targetIndex: Int) {
+        self.pageTitleView!.setPageTitleViewWithProgress(progress, originalIndex: originalIndex, targetIndex: targetIndex)
     }
 }
