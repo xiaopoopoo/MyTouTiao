@@ -22,7 +22,7 @@ extension NetworkToolProtocol {
 /// 首页顶部新闻标题的数据
 /// - parameter completionHandler: 返回标题数据
 /// - parameter newsTitles: 首页标题数组}
-    static func loadHomeNewsTitleData(completionHandler: @escaping (_ newsTitles: [HomeNewsTitle]) -> ()){
+    static func loadHomeNewsTitleData(completionHandler: @escaping (_ newsTitles: [HomeNewsTitle]) -> ()){//逃逸标记，防止block返回前代码已经执行完
         let url = BASE_URL + "/article/category/get_subscribed/v1/?"
         let params = ["device_id": device_id,
                       "iid": iid]

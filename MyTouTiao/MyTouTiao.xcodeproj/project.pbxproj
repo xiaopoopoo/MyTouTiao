@@ -34,6 +34,7 @@
 		9FD2B7FF20941237004D9213 /* HomeCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7FD20941236004D9213 /* HomeCell.swift */; };
 		9FD2B802209412FC004D9213 /* UIKit+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B801209412FC004D9213 /* UIKit+Extension.swift */; };
 		9FD2B80420941706004D9213 /* HomeCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FD2B80320941706004D9213 /* HomeCell.xib */; };
+		9FDFADEC20A1852300206406 /* SQLiteManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFADEB20A1852300206406 /* SQLiteManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -89,6 +90,7 @@
 		9FD2B7FD20941236004D9213 /* HomeCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HomeCell.swift; sourceTree = "<group>"; };
 		9FD2B801209412FC004D9213 /* UIKit+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIKit+Extension.swift"; sourceTree = "<group>"; };
 		9FD2B80320941706004D9213 /* HomeCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = HomeCell.xib; sourceTree = "<group>"; };
+		9FDFADEB20A1852300206406 /* SQLiteManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -261,6 +263,7 @@
 			isa = PBXGroup;
 			children = (
 				9F89EC1B2092EBCA00BE420A /* NetworkToolProtocol.swift */,
+				9FDFADEB20A1852300206406 /* SQLiteManager.swift */,
 			);
 			path = Tool;
 			sourceTree = "<group>";
@@ -664,6 +667,7 @@
 				9FD2B7F2209325C1004D9213 /* VideoTableViewController.swift in Sources */,
 				9FA8481C209080F0001E889A /* Const.swift in Sources */,
 				9FD2B7FA2093263E004D9213 /* HomeRecommendController.swift in Sources */,
+				9FDFADEC20A1852300206406 /* SQLiteManager.swift in Sources */,
 				9FA847BC20906FF1001E889A /* ViewController.swift in Sources */,
 				9FA8481A209080F0001E889A /* MyTabBarController.swift in Sources */,
 			);

@@ -37,6 +37,17 @@ extension HomeViewController{
     private func setupUI(){
         view.theme_backgroundColor = "colors.cellBackgroundColor"
         NetworkTool.loadHomeNewsTitleData {
+            // 向数据库中插入数据
+            NewsTitleTable().insert($0)
+            let configuration = SGPageTitleViewConfigure()
+            configuration.titleColor = .black
+            configuration.titleSelectedColor = .globalRedColor()
+            configuration.indicatorColor = .clear
+            // 标题名称的数组
+            self.pageTitleView = SGPageTitleView(frame: CGRect(x: 0, y: 0, width: screenWidth - newsTitleHeight, height: newsTitleHeight), delegate: self, titleNames: $0.compactMap({ $0.name }), configure: configuration)
+            self.pageTitleView!.backgroundColor = .clear
+            self.view.addSubview(self.pageTitleView!)
+            
            _ = $0.compactMap({ (newsTitle) -> () in //遍列出第0个参数，datas的值，"_"是一个变量，当一个变量在函数体内不使用，可以用"_"代替
                 switch newsTitle.category {  //取出model中的品种，根据品种创建不同的继承于HomeTableViewController的子类控制器,该控制器继承自UITableViewControl，放入到ChildViewController中
                 case .video:            // 视频
