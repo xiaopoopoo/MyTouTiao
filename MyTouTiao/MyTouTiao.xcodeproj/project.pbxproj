@@ -31,10 +31,16 @@
 		9FD2B7F820932626004D9213 /* TeMaiViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F720932626004D9213 /* TeMaiViewController.swift */; };
 		9FD2B7FA2093263E004D9213 /* HomeRecommendController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F92093263E004D9213 /* HomeRecommendController.swift */; };
 		9FD2B7FC209327D4004D9213 /* HomeTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7FB209327D4004D9213 /* HomeTableViewController.swift */; };
-		9FD2B7FF20941237004D9213 /* HomeCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7FD20941236004D9213 /* HomeCell.swift */; };
 		9FD2B802209412FC004D9213 /* UIKit+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B801209412FC004D9213 /* UIKit+Extension.swift */; };
-		9FD2B80420941706004D9213 /* HomeCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FD2B80320941706004D9213 /* HomeCell.xib */; };
 		9FDFADEC20A1852300206406 /* SQLiteManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFADEB20A1852300206406 /* SQLiteManager.swift */; };
+		9FDFADEE20A190C000206406 /* HomeUserCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFADED20A190C000206406 /* HomeUserCell.swift */; };
+		9FDFADF020A1989B00206406 /* TheyAlsoUseCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFADEF20A1989B00206406 /* TheyAlsoUseCell.swift */; };
+		9FDFADF520A1997300206406 /* HomeCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFADF120A1997200206406 /* HomeCell.swift */; };
+		9FDFADF620A1997300206406 /* TheyAlsoUseCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFADF220A1997300206406 /* TheyAlsoUseCell.xib */; };
+		9FDFADF720A1997300206406 /* HomeUserCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFADF320A1997300206406 /* HomeUserCell.xib */; };
+		9FDFADF820A1997300206406 /* HomeCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFADF420A1997300206406 /* HomeCell.xib */; };
+		9FDFADFC20A19F2900206406 /* NewsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFADFB20A19F2900206406 /* NewsModel.swift */; };
+		9FDFADFE20A1A87900206406 /* Foundation+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFADFD20A1A87800206406 /* Foundation+Extension.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -87,10 +93,16 @@
 		9FD2B7F720932626004D9213 /* TeMaiViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeMaiViewController.swift; sourceTree = "<group>"; };
 		9FD2B7F92093263E004D9213 /* HomeRecommendController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRecommendController.swift; sourceTree = "<group>"; };
 		9FD2B7FB209327D4004D9213 /* HomeTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTableViewController.swift; sourceTree = "<group>"; };
-		9FD2B7FD20941236004D9213 /* HomeCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HomeCell.swift; sourceTree = "<group>"; };
 		9FD2B801209412FC004D9213 /* UIKit+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIKit+Extension.swift"; sourceTree = "<group>"; };
-		9FD2B80320941706004D9213 /* HomeCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = HomeCell.xib; sourceTree = "<group>"; };
 		9FDFADEB20A1852300206406 /* SQLiteManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteManager.swift; sourceTree = "<group>"; };
+		9FDFADED20A190C000206406 /* HomeUserCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeUserCell.swift; sourceTree = "<group>"; };
+		9FDFADEF20A1989B00206406 /* TheyAlsoUseCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheyAlsoUseCell.swift; sourceTree = "<group>"; };
+		9FDFADF120A1997200206406 /* HomeCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HomeCell.swift; sourceTree = "<group>"; };
+		9FDFADF220A1997300206406 /* TheyAlsoUseCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = TheyAlsoUseCell.xib; sourceTree = "<group>"; };
+		9FDFADF320A1997300206406 /* HomeUserCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = HomeUserCell.xib; sourceTree = "<group>"; };
+		9FDFADF420A1997300206406 /* HomeCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = HomeCell.xib; sourceTree = "<group>"; };
+		9FDFADFB20A19F2900206406 /* NewsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewsModel.swift; sourceTree = "<group>"; };
+		9FDFADFD20A1A87800206406 /* Foundation+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Foundation+Extension.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -208,6 +220,7 @@
 			isa = PBXGroup;
 			children = (
 				9F89EC1D2092ECBB00BE420A /* HomeNewsTitle.swift */,
+				9FDFADFB20A19F2900206406 /* NewsModel.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -255,6 +268,7 @@
 			isa = PBXGroup;
 			children = (
 				9FD2B801209412FC004D9213 /* UIKit+Extension.swift */,
+				9FDFADFD20A1A87800206406 /* Foundation+Extension.swift */,
 			);
 			path = Extension;
 			sourceTree = "<group>";
@@ -271,8 +285,6 @@
 		9FA84806209080F0001E889A /* View */ = {
 			isa = PBXGroup;
 			children = (
-				9FD2B80320941706004D9213 /* HomeCell.xib */,
-				9FD2B7FD20941236004D9213 /* HomeCell.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -358,6 +370,12 @@
 		9FEF94C2209C2C74002F7C7F /* View */ = {
 			isa = PBXGroup;
 			children = (
+				9FDFADF120A1997200206406 /* HomeCell.swift */,
+				9FDFADF420A1997300206406 /* HomeCell.xib */,
+				9FDFADED20A190C000206406 /* HomeUserCell.swift */,
+				9FDFADF320A1997300206406 /* HomeUserCell.xib */,
+				9FDFADEF20A1989B00206406 /* TheyAlsoUseCell.swift */,
+				9FDFADF220A1997300206406 /* TheyAlsoUseCell.xib */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -552,7 +570,9 @@
 			files = (
 				9FA847C420906FFE001E889A /* LaunchScreen.storyboard in Resources */,
 				9FA847C120906FFE001E889A /* activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets in Resources */,
-				9FD2B80420941706004D9213 /* HomeCell.xib in Resources */,
+				9FDFADF620A1997300206406 /* TheyAlsoUseCell.xib in Resources */,
+				9FDFADF720A1997300206406 /* HomeUserCell.xib in Resources */,
+				9FDFADF820A1997300206406 /* HomeCell.xib in Resources */,
 				9FA847BF20906FF1001E889A /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -650,10 +670,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				9F89EC1C2092EBCA00BE420A /* NetworkToolProtocol.swift in Sources */,
+				9FDFADEE20A190C000206406 /* HomeUserCell.swift in Sources */,
 				9FA8482020908186001E889A /* HomeViewController.swift in Sources */,
-				9FD2B7FF20941237004D9213 /* HomeCell.swift in Sources */,
 				9FD2B7F4209325EB004D9213 /* HomeJokeViewController.swift in Sources */,
+				9FDFADFC20A19F2900206406 /* NewsModel.swift in Sources */,
+				9FDFADFE20A1A87900206406 /* Foundation+Extension.swift in Sources */,
 				9FD2B7F820932626004D9213 /* TeMaiViewController.swift in Sources */,
+				9FDFADF520A1997300206406 /* HomeCell.swift in Sources */,
+				9FDFADF020A1989B00206406 /* TheyAlsoUseCell.swift in Sources */,
 				9FA8481B209080F0001E889A /* AppDelegate.swift in Sources */,
 				9FD2B7F62093260E004D9213 /* HomeImageViewController.swift in Sources */,
 				9FD2B7FC209327D4004D9213 /* HomeTableViewController.swift in Sources */,

@@ -15,7 +15,7 @@ class HomeTableViewController: UITableViewController {
     /// 标题
     var newsTitle = HomeNewsTitle()
     /// 新闻数据
-//    var news = [NewsModel]()
+    var news = [NewsModel]()
     /// 刷新时间
     var maxBehotTime: TimeInterval = 0.0
     override func viewDidLoad() {
