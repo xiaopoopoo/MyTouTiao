@@ -41,6 +41,7 @@
 		9FDFADF820A1997300206406 /* HomeCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFADF420A1997300206406 /* HomeCell.xib */; };
 		9FDFADFC20A19F2900206406 /* NewsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFADFB20A19F2900206406 /* NewsModel.swift */; };
 		9FDFADFE20A1A87900206406 /* Foundation+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFADFD20A1A87800206406 /* Foundation+Extension.swift */; };
+		9FDFAE0020A2D6BE00206406 /* RefreshView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFADFF20A2D6BE00206406 /* RefreshView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -103,6 +104,7 @@
 		9FDFADF420A1997300206406 /* HomeCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = HomeCell.xib; sourceTree = "<group>"; };
 		9FDFADFB20A19F2900206406 /* NewsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewsModel.swift; sourceTree = "<group>"; };
 		9FDFADFD20A1A87800206406 /* Foundation+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Foundation+Extension.swift"; sourceTree = "<group>"; };
+		9FDFADFF20A2D6BE00206406 /* RefreshView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -285,6 +287,7 @@
 		9FA84806209080F0001E889A /* View */ = {
 			isa = PBXGroup;
 			children = (
+				9FDFADFF20A2D6BE00206406 /* RefreshView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -691,6 +694,7 @@
 				9FD2B7F2209325C1004D9213 /* VideoTableViewController.swift in Sources */,
 				9FA8481C209080F0001E889A /* Const.swift in Sources */,
 				9FD2B7FA2093263E004D9213 /* HomeRecommendController.swift in Sources */,
+				9FDFAE0020A2D6BE00206406 /* RefreshView.swift in Sources */,
 				9FDFADEC20A1852300206406 /* SQLiteManager.swift in Sources */,
 				9FA847BC20906FF1001E889A /* ViewController.swift in Sources */,
 				9FA8481A209080F0001E889A /* MyTabBarController.swift in Sources */,
