@@ -44,26 +44,26 @@ class HomeTableViewController: UITableViewController {
                 self!.tableView.reloadData()
             })
         }
-//        header?.isAutomaticallyChangeAlpha = true
-//        header?.lastUpdatedTimeLabel.isHidden = true
-//        tableView.mj_header = header
-//        tableView.mj_header.beginRefreshing()
-//        // 底部刷新控件
-//        tableView.mj_footer = RefreshAutoGifFooter(refreshingBlock: { [weak self] in
-//            // 获取视频的新闻列表数据，加载更多
-//            NetworkTool.loadMoreApiNewsFeeds(category: category, ttFrom: .loadMore, maxBehotTime: self!.maxBehotTime, listCount: self!.news.count, {
-//                if self!.tableView.mj_footer.isRefreshing { self!.tableView.mj_footer.endRefreshing() }
-//                self!.tableView.mj_footer.pullingPercent = 0.0
+        header?.isAutomaticallyChangeAlpha = true
+        header?.lastUpdatedTimeLabel.isHidden = true
+        tableView.mj_header = header
+        tableView.mj_header.beginRefreshing()
+        // 底部刷新控件
+        tableView.mj_footer = RefreshAutoGifFooter(refreshingBlock: { [weak self] in
+            // 获取视频的新闻列表数据，加载更多
+            NetworkTool.loadMoreApiNewsFeeds(category: category, ttFrom: .loadMore, maxBehotTime: self!.maxBehotTime, listCount: self!.news.count, {
+                if self!.tableView.mj_footer.isRefreshing { self!.tableView.mj_footer.endRefreshing() }
+                self!.tableView.mj_footer.pullingPercent = 0.0
 //                self!.player.removeFromSuperview()
-//                if $0.count == 0 {
-//                    SVProgressHUD.showInfo(withStatus: "没有更多数据啦！")
-//                    return
-//                }
-//                self!.news += $0
+                if $0.count == 0 {
+                    SVProgressHUD.showInfo(withStatus: "没有更多数据啦！")
+                    return
+                }
+                self!.news += $0
 //                self!.tableView.reloadData()
-//            })
-//        })
-//        tableView.mj_footer.isAutomaticallyChangeAlpha = true
+            })
+        })
+        tableView.mj_footer.isAutomaticallyChangeAlpha = true
     }
 
 }

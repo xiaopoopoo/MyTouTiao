@@ -75,7 +75,51 @@ struct MiddleImage: HandyJSON {
 struct SmallVideo: HandyJSON {
     
 }
+struct MediaInfo: HandyJSON {
+    var follow: Bool = false
+    var is_star_user: Bool = false
+    var recommend_reason: String = ""
+    var user_verified: Bool = false
+    var media_id: Int = 0
+    var verified_content: String = ""
+    var user_id: Int = 0
+    var recommend_type: Int = 0
+    var avatar_url: String = ""
+    var name: String = ""
+}
+struct NewsUserInfo: HandyJSON {
+    var follow: Bool = false
+    var name: String = ""
+    var user_verified: Bool = false
+    var verified_content: String = ""
+    var user_id: Int = 0
+    var id: Int = 0
+    var description: String = ""
+    var desc: String = ""
+    var avatar_url: String = ""
+    var follower_count: Int = 0
+    var followerCount: String { return follower_count.convertString() }
+    var user_decoration: String!
+    var subcribed: Int = 0
+    var fans_count: Int = 0
+    var fansCount: String { return fans_count.convertString() }
+    var special_column = [SpecialColumn]()
+    var user_auth_info: String!
+    var media_id: Int = 0
+    var screen_name = ""
+    var is_followed: Bool = false
+    var is_following: Bool = false // 是否正在关注
+    var is_blocking: Bool = false
+    var is_blocked: Bool = false
+    var is_friend: Bool = false
+    var medals = [String]() // hot_post (热门内容)
+    
+}
 struct NewsModel: HandyJSON{
+    var comment_count: Int = 0
+    var commentCount: String { return comment_count.convertString() }
+    var publish_time: TimeInterval = 0
+    var publishTime: String { return publish_time.convertString() }
     var raw_data = SmallVideo() //小视频数据
     var source: String = ""
     var has_video: Bool = false
@@ -85,6 +129,15 @@ struct NewsModel: HandyJSON{
     var video_duration: Int = 0
     var video_style: Int = 0
     var title: String = ""
+    var label: String = ""
+    var sub_title = ""
+    var label_style: NewsLabelStyle = .none  // 3 是广告,1是置顶
+    var hot: Bool = false  // 热
+    var is_stick: Bool = false
+    var middle_image = MiddleImage()
+    var image_list = [ImageList]()
+    var videoDuration: String { return video_duration.convertVideoDuration() }
+    var large_image_list = [LargeImage]()
     var titleH: CGFloat {
         if video_duration != 0 && video_style == 0 { // // 右侧有图
             return title.textHeight(fontSize: 17, width: screenWidth * 0.72 - 30)
@@ -99,13 +152,11 @@ struct NewsModel: HandyJSON{
         if video_duration != 0 && video_style == 2 {
             height += screenWidth * 0.5
         }
-        var label_style: NewsLabelStyle = .none
-        var sub_title = ""
+        
         if label_style == .ad && sub_title != "" {
             height += 40
         }
-        var middle_image = MiddleImage()
-        var image_list = [ImageList]()
+        
         if middle_image.url != "" && image_list.count == 0 { return 95 }
         else {
             if image_list.count != 0 {
@@ -116,4 +167,9 @@ struct NewsModel: HandyJSON{
         
         return height
     }
+    var media_info = MediaInfo()
+    var user_info = NewsUserInfo()
+    var media_name: String = ""
+    
+
 }

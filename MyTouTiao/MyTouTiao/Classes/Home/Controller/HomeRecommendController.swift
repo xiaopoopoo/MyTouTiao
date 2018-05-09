@@ -45,9 +45,13 @@ extension HomeRecommendController {
             cell.aNews = aNews
             return cell
         case .relatedConcern:   // 相关关注
-            let cell = tableView.ym_dequeueReusableCell(indexPath: indexPath) as TheyAlsoUseCell
-            cell.theyUse = aNews.raw_data
-            return cell
+//            let cell = tableView.ym_dequeueReusableCell(indexPath: indexPath) as TheyAlsoUseCell
+//            cell.theyUse = aNews.raw_data
+//            return cell
+            
+            let cell = tableView.ym_dequeueReusableCell(indexPath: indexPath) as HomeCell
+            cell.aNews = aNews
+             return cell
         case .none:
             let cell = tableView.ym_dequeueReusableCell(indexPath: indexPath) as HomeCell
             cell.aNews = aNews
