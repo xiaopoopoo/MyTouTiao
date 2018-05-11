@@ -4,7 +4,7 @@
 //
 //  Created by ZhongLiangBaoBeijingTechnologyCompanyLtd. on 2018/4/27.
 //  Copyright © 2018年 user. All rights reserved.
-//
+//  这个类主要覆写utableview的方法
 
 import UIKit
 

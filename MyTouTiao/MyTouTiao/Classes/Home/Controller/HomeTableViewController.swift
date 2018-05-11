@@ -4,7 +4,7 @@
 //
 //  Created by ZhongLiangBaoBeijingTechnologyCompanyLtd. on 2018/4/27.
 //  Copyright © 2018年 user. All rights reserved.
-//
+//  这个类的共性：播放器，控制器标题，新闻数据获取，刷新时间获取，带上拉下拉刷新，带网络请求接口
 
 import UIKit
 import SVProgressHUD
