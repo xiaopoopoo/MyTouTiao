@@ -50,7 +50,7 @@ class DongtaiCollectionView: UICollectionView, UICollectionViewDelegateFlowLayou
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return isDongtaiDetail ? Calculate.detailCollectionViewCellSize(thumbImages) : Calculate.collectionViewCellSize(thumbImages.count)
     }
-
+    
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if isWeitoutiao { didSelect?(indexPath.item); return }
         let previewBigImageVC = PreviewDongtaiBigImageController()
