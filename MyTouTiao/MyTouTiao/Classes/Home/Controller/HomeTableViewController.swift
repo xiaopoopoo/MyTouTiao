@@ -60,7 +60,7 @@ class HomeTableViewController: UITableViewController {
                     return
                 }
                 self!.news += $0
-//                self!.tableView.reloadData()
+                self!.tableView.reloadData()
             })
         })
         tableView.mj_footer.isAutomaticallyChangeAlpha = true
