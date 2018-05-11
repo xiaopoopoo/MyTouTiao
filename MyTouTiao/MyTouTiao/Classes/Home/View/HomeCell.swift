@@ -21,6 +21,7 @@ class HomeCell: UITableViewCell, RegisterCellFromNib {//实现了这个类名，
             if middleView.subviews.count != 0 { videoImageButton.removeFromSuperview() }
             bottomViewHeight.constant = 0
             downloadButton.setTitle("", for: .normal)
+            titleLabel.text = aNews.title
             if aNews.media_name != "" { nameLabel.text = aNews.media_name }
             else if aNews.media_info.media_id != 0 { nameLabel.text = aNews.media_info.name }
             else if aNews.user_info.user_id != 0 { nameLabel.text = aNews.user_info.name }
@@ -82,9 +83,9 @@ class HomeCell: UITableViewCell, RegisterCellFromNib {//实现了这个类名，
                         rightImageViewWidth.constant = screenWidth * 0.28
                     } else {
                         middleViewHeight.constant = image3Width
-//                        middleView.addSubview(collectionView)
-//                        collectionView.frame = CGRect(x: 0, y: 0, width: screenWidth - 30, height: image3Width)
-//                        collectionView.images = aNews.image_list
+                        middleView.addSubview(collectionView)
+                        collectionView.frame = CGRect(x: 0, y: 0, width: screenWidth - 30, height: image3Width)
+                        collectionView.images = aNews.image_list
                     }
                 }
             }
@@ -99,7 +100,7 @@ class HomeCell: UITableViewCell, RegisterCellFromNib {//实现了这个类名，
         rightTimeButton.setTitle("", for: .normal)
     }
     // 懒加载 collectionView
-//    private lazy var collectionView = HomeImageCollectionView.loadViewFromNib()
+    private lazy var collectionView = HomeImageCollectionView.loadViewFromNib()
     /// 标题顶部图
     @IBOutlet weak var topImageView: UIImageView!
     @IBOutlet weak var thumbImageViewHeight: NSLayoutConstraint!
@@ -135,13 +136,13 @@ class HomeCell: UITableViewCell, RegisterCellFromNib {//实现了这个类名，
     
     override func awakeFromNib() {
         super.awakeFromNib()
-//        theme_backgroundColor = "colors.cellBackgroundColor"
-//        titleLabel.theme_textColor = "colors.black"
-//        nameLabel.theme_textColor = "colors.grayColor150"
-//        commentCountLabel.theme_textColor = "colors.grayColor150"
-//        addTextpageButton.theme_setImage("images.add_textpage_17x12_", forState: .normal)
-//        rightTimeButton.theme_setImage("images.palyicon_video_textpage_6x8_", forState: .normal)
-//        downloadButton.theme_setImage("images.download_ad_feed_13x13_", forState: .normal)
+        theme_backgroundColor = "colors.cellBackgroundColor"
+        titleLabel.theme_textColor = "colors.black"
+        nameLabel.theme_textColor = "colors.grayColor150"
+        commentCountLabel.theme_textColor = "colors.grayColor150"
+        addTextpageButton.theme_setImage("images.add_textpage_17x12_", forState: .normal)
+        rightTimeButton.theme_setImage("images.palyicon_video_textpage_6x8_", forState: .normal)
+        downloadButton.theme_setImage("images.download_ad_feed_13x13_", forState: .normal)
     }
     
     /// 关闭按钮点击，不感兴趣

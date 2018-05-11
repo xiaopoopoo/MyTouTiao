@@ -44,6 +44,21 @@
 		9FDFAE0020A2D6BE00206406 /* RefreshView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFADFF20A2D6BE00206406 /* RefreshView.swift */; };
 		9FDFAE0220A2F78A00206406 /* Video.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE0120A2F78A00206406 /* Video.swift */; };
 		9FDFAE0820A2FF1A00206406 /* UserDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE0720A2FF1A00206406 /* UserDetail.swift */; };
+		9FDFAE0B20A5415F00206406 /* HomeImageCollectionView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE0920A5415E00206406 /* HomeImageCollectionView.xib */; };
+		9FDFAE0C20A5415F00206406 /* HomeImageCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE0A20A5415E00206406 /* HomeImageCollectionView.swift */; };
+		9FDFAE0F20A541E800206406 /* HomeImageCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE0D20A541E700206406 /* HomeImageCell.xib */; };
+		9FDFAE1020A541E800206406 /* HomeImageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE0E20A541E700206406 /* HomeImageCell.swift */; };
+		9FDFAE1320A5461700206406 /* night_theme.plist in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE1120A5461700206406 /* night_theme.plist */; };
+		9FDFAE1420A5461700206406 /* default_theme.plist in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE1220A5461700206406 /* default_theme.plist */; };
+		9FDFAE1720A5634A00206406 /* DongtaiCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE1520A5634900206406 /* DongtaiCollectionView.swift */; };
+		9FDFAE1820A5634A00206406 /* DongtaiCollectionView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE1620A5634900206406 /* DongtaiCollectionView.xib */; };
+		9FDFAE1B20A5646D00206406 /* DongtaiCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE1920A5646C00206406 /* DongtaiCollectionViewCell.xib */; };
+		9FDFAE1C20A5646D00206406 /* DongtaiCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE1A20A5646C00206406 /* DongtaiCollectionViewCell.swift */; };
+		9FDFAE1E20A57AB100206406 /* Calculate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE1D20A57AB100206406 /* Calculate.swift */; };
+		9FDFAE2320A57C3700206406 /* PreviewDongtaiBigImageController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE2120A57C3700206406 /* PreviewDongtaiBigImageController.xib */; };
+		9FDFAE2420A57C3700206406 /* PreviewDongtaiBigImageController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE2220A57C3700206406 /* PreviewDongtaiBigImageController.swift */; };
+		9FDFAE2620A57F1900206406 /* PreviewDongtaiBigImageLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE2520A57F1900206406 /* PreviewDongtaiBigImageLayout.swift */; };
+		9FDFAE2820A57F7E00206406 /* SVProgressHUD+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE2720A57F7E00206406 /* SVProgressHUD+Extension.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -109,6 +124,21 @@
 		9FDFADFF20A2D6BE00206406 /* RefreshView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshView.swift; sourceTree = "<group>"; };
 		9FDFAE0120A2F78A00206406 /* Video.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Video.swift; sourceTree = "<group>"; };
 		9FDFAE0720A2FF1A00206406 /* UserDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDetail.swift; sourceTree = "<group>"; };
+		9FDFAE0920A5415E00206406 /* HomeImageCollectionView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = HomeImageCollectionView.xib; sourceTree = "<group>"; };
+		9FDFAE0A20A5415E00206406 /* HomeImageCollectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HomeImageCollectionView.swift; sourceTree = "<group>"; };
+		9FDFAE0D20A541E700206406 /* HomeImageCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = HomeImageCell.xib; sourceTree = "<group>"; };
+		9FDFAE0E20A541E700206406 /* HomeImageCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HomeImageCell.swift; sourceTree = "<group>"; };
+		9FDFAE1120A5461700206406 /* night_theme.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = night_theme.plist; sourceTree = "<group>"; };
+		9FDFAE1220A5461700206406 /* default_theme.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = default_theme.plist; sourceTree = "<group>"; };
+		9FDFAE1520A5634900206406 /* DongtaiCollectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DongtaiCollectionView.swift; sourceTree = "<group>"; };
+		9FDFAE1620A5634900206406 /* DongtaiCollectionView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DongtaiCollectionView.xib; sourceTree = "<group>"; };
+		9FDFAE1920A5646C00206406 /* DongtaiCollectionViewCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DongtaiCollectionViewCell.xib; sourceTree = "<group>"; };
+		9FDFAE1A20A5646C00206406 /* DongtaiCollectionViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DongtaiCollectionViewCell.swift; sourceTree = "<group>"; };
+		9FDFAE1D20A57AB100206406 /* Calculate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Calculate.swift; sourceTree = "<group>"; };
+		9FDFAE2120A57C3700206406 /* PreviewDongtaiBigImageController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = PreviewDongtaiBigImageController.xib; sourceTree = "<group>"; };
+		9FDFAE2220A57C3700206406 /* PreviewDongtaiBigImageController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreviewDongtaiBigImageController.swift; sourceTree = "<group>"; };
+		9FDFAE2520A57F1900206406 /* PreviewDongtaiBigImageLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreviewDongtaiBigImageLayout.swift; sourceTree = "<group>"; };
+		9FDFAE2720A57F7E00206406 /* SVProgressHUD+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SVProgressHUD+Extension.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -274,6 +304,7 @@
 		9FA84803209080F0001E889A /* Extension */ = {
 			isa = PBXGroup;
 			children = (
+				9FDFAE2720A57F7E00206406 /* SVProgressHUD+Extension.swift */,
 				9FD2B801209412FC004D9213 /* UIKit+Extension.swift */,
 				9FDFADFD20A1A87800206406 /* Foundation+Extension.swift */,
 			);
@@ -283,6 +314,7 @@
 		9FA84805209080F0001E889A /* Tool */ = {
 			isa = PBXGroup;
 			children = (
+				9FDFAE1D20A57AB100206406 /* Calculate.swift */,
 				9F89EC1B2092EBCA00BE420A /* NetworkToolProtocol.swift */,
 				9FDFADEB20A1852300206406 /* SQLiteManager.swift */,
 			);
@@ -403,6 +435,13 @@
 		9FDFAE0620A2FEFA00206406 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				9FDFAE2520A57F1900206406 /* PreviewDongtaiBigImageLayout.swift */,
+				9FDFAE2220A57C3700206406 /* PreviewDongtaiBigImageController.swift */,
+				9FDFAE2120A57C3700206406 /* PreviewDongtaiBigImageController.xib */,
+				9FDFAE1A20A5646C00206406 /* DongtaiCollectionViewCell.swift */,
+				9FDFAE1920A5646C00206406 /* DongtaiCollectionViewCell.xib */,
+				9FDFAE1520A5634900206406 /* DongtaiCollectionView.swift */,
+				9FDFAE1620A5634900206406 /* DongtaiCollectionView.xib */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -410,7 +449,11 @@
 		9FEF94C2209C2C74002F7C7F /* View */ = {
 			isa = PBXGroup;
 			children = (
+				9FDFAE0E20A541E700206406 /* HomeImageCell.swift */,
+				9FDFAE0D20A541E700206406 /* HomeImageCell.xib */,
 				9FDFADF120A1997200206406 /* HomeCell.swift */,
+				9FDFAE0A20A5415E00206406 /* HomeImageCollectionView.swift */,
+				9FDFAE0920A5415E00206406 /* HomeImageCollectionView.xib */,
 				9FDFADF420A1997300206406 /* HomeCell.xib */,
 				9FDFADED20A190C000206406 /* HomeUserCell.swift */,
 				9FDFADF320A1997300206406 /* HomeUserCell.xib */,
@@ -444,6 +487,8 @@
 		9FEF94C8209C2D51002F7C7F /* Theme */ = {
 			isa = PBXGroup;
 			children = (
+				9FDFAE1220A5461700206406 /* default_theme.plist */,
+				9FDFAE1120A5461700206406 /* night_theme.plist */,
 			);
 			path = Theme;
 			sourceTree = "<group>";
@@ -613,8 +658,15 @@
 				9FA847C120906FFE001E889A /* activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets in Resources */,
 				9FDFADF620A1997300206406 /* TheyAlsoUseCell.xib in Resources */,
 				9FDFADF720A1997300206406 /* HomeUserCell.xib in Resources */,
+				9FDFAE1420A5461700206406 /* default_theme.plist in Resources */,
 				9FDFADF820A1997300206406 /* HomeCell.xib in Resources */,
+				9FDFAE0B20A5415F00206406 /* HomeImageCollectionView.xib in Resources */,
+				9FDFAE1B20A5646D00206406 /* DongtaiCollectionViewCell.xib in Resources */,
+				9FDFAE1820A5634A00206406 /* DongtaiCollectionView.xib in Resources */,
+				9FDFAE1320A5461700206406 /* night_theme.plist in Resources */,
+				9FDFAE0F20A541E800206406 /* HomeImageCell.xib in Resources */,
 				9FA847BF20906FF1001E889A /* Main.storyboard in Resources */,
+				9FDFAE2320A57C3700206406 /* PreviewDongtaiBigImageController.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -713,19 +765,24 @@
 				9F89EC1C2092EBCA00BE420A /* NetworkToolProtocol.swift in Sources */,
 				9FDFAE0820A2FF1A00206406 /* UserDetail.swift in Sources */,
 				9FDFADEE20A190C000206406 /* HomeUserCell.swift in Sources */,
+				9FDFAE2620A57F1900206406 /* PreviewDongtaiBigImageLayout.swift in Sources */,
 				9FA8482020908186001E889A /* HomeViewController.swift in Sources */,
 				9FD2B7F4209325EB004D9213 /* HomeJokeViewController.swift in Sources */,
 				9FDFAE0220A2F78A00206406 /* Video.swift in Sources */,
 				9FDFADFC20A19F2900206406 /* NewsModel.swift in Sources */,
+				9FDFAE1C20A5646D00206406 /* DongtaiCollectionViewCell.swift in Sources */,
 				9FDFADFE20A1A87900206406 /* Foundation+Extension.swift in Sources */,
 				9FD2B7F820932626004D9213 /* TeMaiViewController.swift in Sources */,
 				9FDFADF520A1997300206406 /* HomeCell.swift in Sources */,
 				9FDFADF020A1989B00206406 /* TheyAlsoUseCell.swift in Sources */,
 				9FA8481B209080F0001E889A /* AppDelegate.swift in Sources */,
 				9FD2B7F62093260E004D9213 /* HomeImageViewController.swift in Sources */,
+				9FDFAE2820A57F7E00206406 /* SVProgressHUD+Extension.swift in Sources */,
 				9FD2B7FC209327D4004D9213 /* HomeTableViewController.swift in Sources */,
 				9FA8482620908228001E889A /* WeitoutiaoViewController.swift in Sources */,
+				9FDFAE0C20A5415F00206406 /* HomeImageCollectionView.swift in Sources */,
 				9FA8482A209083D0001E889A /* MyNavigationController.swift in Sources */,
+				9FDFAE1E20A57AB100206406 /* Calculate.swift in Sources */,
 				9FA84822209081B4001E889A /* VideoViewController.swift in Sources */,
 				9F89EC1E2092ECBB00BE420A /* HomeNewsTitle.swift in Sources */,
 				9FA84824209081DB001E889A /* RedPackageViewController2.swift in Sources */,
@@ -733,8 +790,11 @@
 				9FD2B802209412FC004D9213 /* UIKit+Extension.swift in Sources */,
 				9FD2B7F2209325C1004D9213 /* VideoTableViewController.swift in Sources */,
 				9FA8481C209080F0001E889A /* Const.swift in Sources */,
+				9FDFAE1720A5634A00206406 /* DongtaiCollectionView.swift in Sources */,
 				9FD2B7FA2093263E004D9213 /* HomeRecommendController.swift in Sources */,
+				9FDFAE2420A57C3700206406 /* PreviewDongtaiBigImageController.swift in Sources */,
 				9FDFAE0020A2D6BE00206406 /* RefreshView.swift in Sources */,
+				9FDFAE1020A541E800206406 /* HomeImageCell.swift in Sources */,
 				9FDFADEC20A1852300206406 /* SQLiteManager.swift in Sources */,
 				9FA847BC20906FF1001E889A /* ViewController.swift in Sources */,
 				9FA8481A209080F0001E889A /* MyTabBarController.swift in Sources */,
