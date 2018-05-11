@@ -62,12 +62,12 @@ extension HomeRecommendController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         var aNews = news[indexPath.row]
         if indexPath.row == 0 { // 默认设置点击第一个 cell 跳转到图片详情界面
-//            let newsDetailImageVC = NewsDetailImageController.loadStoryboard()
-//            newsDetailImageVC.isSelectedFirstCell = true
-//            aNews.item_id = 6450240420034118157
-//            aNews.group_id = 6450237670911852814
-//            newsDetailImageVC.aNews = aNews
-//            present(newsDetailImageVC, animated: false, completion: nil)
+              let newsDetailImageVC = NewsDetailImageController.loadStoryboard()
+              newsDetailImageVC.isSelectedFirstCell = true
+              aNews.item_id = 6450240420034118157
+              aNews.group_id = 6450237670911852814
+              newsDetailImageVC.aNews = aNews
+              present(newsDetailImageVC, animated: false, completion: nil)
         } else if (aNews.source == "悟空问答") { // 悟空问答
 //            let wendaVC = WendaViewController()
 //            wendaVC.qid = aNews.item_id

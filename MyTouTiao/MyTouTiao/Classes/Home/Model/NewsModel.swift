@@ -116,6 +116,9 @@ struct NewsUserInfo: HandyJSON {
     
 }
 struct NewsModel: HandyJSON{
+    var article_url: String = ""
+    var item_id: Int = 0
+    var group_id: Int = 0
     var comment_count: Int = 0
     var commentCount: String { return comment_count.convertString() }
     var publish_time: TimeInterval = 0
@@ -172,4 +175,19 @@ struct NewsModel: HandyJSON{
     var media_name: String = ""
     
 
+}
+
+//首页每一个cell点击进入详情页
+struct NewsDetailImage: HandyJSON {
+    
+    var url: String = ""
+    
+    var width: CGFloat = 0
+    
+    var height: CGFloat = 0
+    
+    var rate: CGFloat = 1
+    
+    var url_list = [URLList]()
+    
 }

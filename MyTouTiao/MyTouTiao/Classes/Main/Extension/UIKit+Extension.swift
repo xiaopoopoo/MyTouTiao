@@ -183,3 +183,47 @@ extension UICollectionView {
         return dequeueReusableSupplementaryView(ofKind: UICollectionElementKindSectionHeader, withReuseIdentifier: T.identifier, for: indexPath) as! T
     }
 }
+
+//注册当首页cell点击后进入详情页，详情页的storyboard
+protocol StoryboardLoadable {}
+
+extension StoryboardLoadable where Self: UIViewController {
+    /// 提供 加载方法
+    static func loadStoryboard() -> Self {
+        return UIStoryboard(name: "\(self)", bundle: nil).instantiateViewController(withIdentifier: "\(self)") as! Self
+    }
+}
+
+
+//详情页的评论
+extension UITextView {
+    
+    /// 设置 UITextView 富文本内容
+    func setAttributedText(emoji: Emoji) {
+        // 如果输入是空表情
+        if emoji.isEmpty { return }
+        // 如果输入是删除表情
+        if emoji.isDelete { deleteBackward(); return }
+        
+        // 创建附件
+        let attachment = NSTextAttachment()
+        attachment.image = UIImage(named: emoji.png)
+        // 当前字体的大小
+        let currentFont = font!
+        // 附件的大小
+        attachment.bounds = CGRect(x: 0, y: -4, width: currentFont.lineHeight, height: currentFont.lineHeight)
+        // 根据附件，创建富文本
+        let attributedImageStr = NSAttributedString(attachment: attachment)
+        // 获取当前的光标的位置
+        let range = selectedRange
+        // 设置富文本
+        let mutableAttributedText = NSMutableAttributedString(attributedString: attributedText)
+        mutableAttributedText.replaceCharacters(in: range, with: attributedImageStr)
+        attributedText = mutableAttributedText
+        // 将字体的大小重置
+        font = currentFont
+        // 光标 + 1
+        selectedRange = NSRange(location: range.location + 1, length: 0)
+    }
+    
+}

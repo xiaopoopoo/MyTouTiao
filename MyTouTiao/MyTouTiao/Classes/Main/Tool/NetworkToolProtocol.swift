@@ -57,7 +57,7 @@ extension NetworkToolProtocol {
     
     
     
-    /// 获取首页、视频、小视频的新闻列表数据
+    /// 获取首页、视频、小视频的新闻列表数据上拉刷新
     /// - parameter category: 新闻类别
     /// - parameter ttFrom: 那个界面
     /// - parameter completionHandler: 返回新闻列表数据
@@ -88,7 +88,7 @@ extension NetworkToolProtocol {
         }
     }
     
-    /// 获取首页、视频、小视频的新闻列表数据,加载更多
+    /// 获取首页、视频、小视频的新闻列表数据,加载更多下拉刷新
     /// - parameter category: 新闻类别
     /// - parameter ttFrom: 那个界面
     /// - parameter listCount: 数据数量
@@ -119,8 +119,78 @@ extension NetworkToolProtocol {
         }
     }
     
+    /// 获取图片新闻详情数据，首页点击第一个cell获取详情页的数据
+    /// - parameter articleURL: 链接
+    /// - parameter completionHandler: 返回图片数组，标题数组
+    /// - parameter images: 图片数组
+    /// - parameter abstracts: 标题数组
+    static func loadNewsDetail(articleURL: String, completionHandler:@escaping (_ images: [NewsDetailImage], _ abstracts: [String])->()) {
+        // 测试数据
+        //        http://toutiao.com/item/6450211121520443918/
+        let url = "http://www.toutiao.com/a6450237670911852814/#p=1"
+        
+        Alamofire.request(url).responseString { (response) in
+            guard response.result.isSuccess else { return }
+            if let value = response.result.value {
+                if value.contains("BASE_DATA.galleryInfo =") {
+                    // 获取 图片链接数组
+                    let startIndex = value.range(of: ",\\\"sub_images\\\":")!.upperBound
+                    let endIndex = value.range(of: ",\\\"max_img_width\\\":")!.lowerBound
+                    let BASE_DATA = value[Range(uncheckedBounds: (lower: startIndex, upper: endIndex))]
+                    let substring = BASE_DATA.replacingOccurrences(of: "\\\\", with: "")
+                    let substring2 = substring.replacingOccurrences(of: "\\", with: "")
+                    let data = substring2.data(using: .utf8)! as Data
+                    let dicts = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) as! [Any]
+                    // 获取 子标题
+                    let titleStartIndex = value.range(of: "\\\"sub_abstracts\\\":")!.upperBound
+                    let titlEndIndex = value.range(of: ",\\\"sub_titles\\\"")!.lowerBound
+                    let sub_abstracts = value[Range(uncheckedBounds: (lower: titleStartIndex, upper: titlEndIndex))]
+                    let titleSubstring1 = sub_abstracts.replacingOccurrences(of: "\\\"", with: "\"")
+                    let titleSubstring2 = titleSubstring1.replacingOccurrences(of: "\\u", with: "u")
+                    let titleData = titleSubstring2.data(using: String.Encoding.utf8)! as Data
+                    completionHandler(dicts!.compactMap({ NewsDetailImage.deserialize(from: $0 as? [String: Any])! }), try! JSONSerialization.jsonObject(with: titleData, options: .mutableContainers) as! [String])
+                }
+            }
+        }
+    }
+    
+    //获取图片详情页评论的数据
+    /// 获取用户详情一般的详情的评论数据
+    /// item_type: postContent(200),postVideo(150),postVideoOrArticle(151)
+    /// - parameter forumId: 用户id
+    /// - parameter groupId: thread_id
+    /// - parameter offset: 偏移
+    /// - parameter completionHandler: 返回评论数据
+    /// - parameter comments: 评论数据
+    static func loadUserDetailNormalDongtaiComents(groupId: Int, offset: Int, count: Int, completionHandler: @escaping (_ comments: [DongtaiComment]) -> ()) {
+        
+        let url = BASE_URL + "/article/v2/tab_comments/"
+        let params = ["forum_id": "",
+                      "group_id": groupId,
+                      "count": count,
+                      "offset": offset,
+                      "device_id": device_id,
+                      "iid": iid] as [String : Any]
+        
+        Alamofire.request(url, method: .post, parameters: params).responseJSON { (response) in
+            // 网络错误的提示信息
+            guard response.result.isSuccess else { completionHandler([]); return }
+            if let value = response.result.value {
+                let json = JSON(value)
+                guard json["message"] == "success" else { completionHandler([]); return }
+                if let datas = json["data"].arrayObject {
+                    completionHandler(datas.compactMap({
+                        return DongtaiComment.deserialize(from: ($0 as! [String: Any])["comment"] as? Dictionary)
+                    }))
+                }
+            }
+        }
+    }
+    
     
 }
+
+
 
 
 struct NetworkTool: NetworkToolProtocol {}

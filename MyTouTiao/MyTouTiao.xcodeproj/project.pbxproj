@@ -60,6 +60,22 @@
 		9FDFAE2620A57F1900206406 /* PreviewDongtaiBigImageLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE2520A57F1900206406 /* PreviewDongtaiBigImageLayout.swift */; };
 		9FDFAE2820A57F7E00206406 /* SVProgressHUD+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE2720A57F7E00206406 /* SVProgressHUD+Extension.swift */; };
 		9FDFAE2A20A5929300206406 /* VideoPlayerCustomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE2920A5929300206406 /* VideoPlayerCustomView.swift */; };
+		9FDFAE2D20A596EC00206406 /* NewsDetailImageController.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE2B20A596EB00206406 /* NewsDetailImageController.storyboard */; };
+		9FDFAE2E20A596EC00206406 /* NewsDetailImageController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE2C20A596EB00206406 /* NewsDetailImageController.swift */; };
+		9FDFAE3120A5991500206406 /* NewsDetailImageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE2F20A5991400206406 /* NewsDetailImageCell.swift */; };
+		9FDFAE3220A5991500206406 /* NewsDetailImageCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE3020A5991500206406 /* NewsDetailImageCell.xib */; };
+		9FDFAE3520A59AE100206406 /* NewsDetailImageCommentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE3320A59AE000206406 /* NewsDetailImageCommentController.swift */; };
+		9FDFAE3620A59AE100206406 /* NewsDetailImageCommentController.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE3420A59AE100206406 /* NewsDetailImageCommentController.storyboard */; };
+		9FDFAE3820A59C8500206406 /* Emoji.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE3720A59C8400206406 /* Emoji.swift */; };
+		9FDFAE3A20A5A08800206406 /* MyCellModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE3920A5A08800206406 /* MyCellModel.swift */; };
+		9FDFAE3D20A5A16800206406 /* DongtaiCommentCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE3B20A5A16800206406 /* DongtaiCommentCell.swift */; };
+		9FDFAE3E20A5A16800206406 /* DongtaiCommentCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE3C20A5A16800206406 /* DongtaiCommentCell.xib */; };
+		9FDFAE4020A5A1A900206406 /* RichLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE3F20A5A1A900206406 /* RichLabel.swift */; };
+		9FDFAE4320A5A20D00206406 /* PostCommentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE4120A5A20C00206406 /* PostCommentView.swift */; };
+		9FDFAE4420A5A20D00206406 /* PostCommentView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE4220A5A20C00206406 /* PostCommentView.xib */; };
+		9FDFAE4620A5A25200206406 /* EmojiLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE4520A5A25200206406 /* EmojiLayout.swift */; };
+		9FDFAE4920A5A2AE00206406 /* EmojiCollectionCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE4720A5A2AE00206406 /* EmojiCollectionCell.xib */; };
+		9FDFAE4A20A5A2AE00206406 /* EmojiCollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE4820A5A2AE00206406 /* EmojiCollectionCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -141,6 +157,22 @@
 		9FDFAE2520A57F1900206406 /* PreviewDongtaiBigImageLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreviewDongtaiBigImageLayout.swift; sourceTree = "<group>"; };
 		9FDFAE2720A57F7E00206406 /* SVProgressHUD+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SVProgressHUD+Extension.swift"; sourceTree = "<group>"; };
 		9FDFAE2920A5929300206406 /* VideoPlayerCustomView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoPlayerCustomView.swift; sourceTree = "<group>"; };
+		9FDFAE2B20A596EB00206406 /* NewsDetailImageController.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = NewsDetailImageController.storyboard; sourceTree = "<group>"; };
+		9FDFAE2C20A596EB00206406 /* NewsDetailImageController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NewsDetailImageController.swift; sourceTree = "<group>"; };
+		9FDFAE2F20A5991400206406 /* NewsDetailImageCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NewsDetailImageCell.swift; sourceTree = "<group>"; };
+		9FDFAE3020A5991500206406 /* NewsDetailImageCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = NewsDetailImageCell.xib; sourceTree = "<group>"; };
+		9FDFAE3320A59AE000206406 /* NewsDetailImageCommentController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NewsDetailImageCommentController.swift; sourceTree = "<group>"; };
+		9FDFAE3420A59AE100206406 /* NewsDetailImageCommentController.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = NewsDetailImageCommentController.storyboard; sourceTree = "<group>"; };
+		9FDFAE3720A59C8400206406 /* Emoji.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Emoji.swift; sourceTree = "<group>"; };
+		9FDFAE3920A5A08800206406 /* MyCellModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MyCellModel.swift; sourceTree = "<group>"; };
+		9FDFAE3B20A5A16800206406 /* DongtaiCommentCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DongtaiCommentCell.swift; sourceTree = "<group>"; };
+		9FDFAE3C20A5A16800206406 /* DongtaiCommentCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DongtaiCommentCell.xib; sourceTree = "<group>"; };
+		9FDFAE3F20A5A1A900206406 /* RichLabel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RichLabel.swift; sourceTree = "<group>"; };
+		9FDFAE4120A5A20C00206406 /* PostCommentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PostCommentView.swift; sourceTree = "<group>"; };
+		9FDFAE4220A5A20C00206406 /* PostCommentView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = PostCommentView.xib; sourceTree = "<group>"; };
+		9FDFAE4520A5A25200206406 /* EmojiLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmojiLayout.swift; sourceTree = "<group>"; };
+		9FDFAE4720A5A2AE00206406 /* EmojiCollectionCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = EmojiCollectionCell.xib; sourceTree = "<group>"; };
+		9FDFAE4820A5A2AE00206406 /* EmojiCollectionCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmojiCollectionCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -316,6 +348,7 @@
 		9FA84805209080F0001E889A /* Tool */ = {
 			isa = PBXGroup;
 			children = (
+				9FDFAE3720A59C8400206406 /* Emoji.swift */,
 				9FDFAE1D20A57AB100206406 /* Calculate.swift */,
 				9F89EC1B2092EBCA00BE420A /* NetworkToolProtocol.swift */,
 				9FDFADEB20A1852300206406 /* SQLiteManager.swift */,
@@ -326,6 +359,7 @@
 		9FA84806209080F0001E889A /* View */ = {
 			isa = PBXGroup;
 			children = (
+				9FDFAE3F20A5A1A900206406 /* RichLabel.swift */,
 				9FDFADFF20A2D6BE00206406 /* RefreshView.swift */,
 			);
 			path = View;
@@ -398,7 +432,11 @@
 		9FA8481D20908111001E889A /* Controller */ = {
 			isa = PBXGroup;
 			children = (
+				9FDFAE3420A59AE100206406 /* NewsDetailImageCommentController.storyboard */,
+				9FDFAE3320A59AE000206406 /* NewsDetailImageCommentController.swift */,
 				9FA8481F20908186001E889A /* HomeViewController.swift */,
+				9FDFAE2B20A596EB00206406 /* NewsDetailImageController.storyboard */,
+				9FDFAE2C20A596EB00206406 /* NewsDetailImageController.swift */,
 				9FD2B7FB209327D4004D9213 /* HomeTableViewController.swift */,
 				9FD2B7F1209325C1004D9213 /* VideoTableViewController.swift */,
 				9FD2B7F3209325EB004D9213 /* HomeJokeViewController.swift */,
@@ -430,6 +468,7 @@
 			isa = PBXGroup;
 			children = (
 				9FDFAE0720A2FF1A00206406 /* UserDetail.swift */,
+				9FDFAE3920A5A08800206406 /* MyCellModel.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -437,6 +476,13 @@
 		9FDFAE0620A2FEFA00206406 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				9FDFAE4820A5A2AE00206406 /* EmojiCollectionCell.swift */,
+				9FDFAE4720A5A2AE00206406 /* EmojiCollectionCell.xib */,
+				9FDFAE4520A5A25200206406 /* EmojiLayout.swift */,
+				9FDFAE4120A5A20C00206406 /* PostCommentView.swift */,
+				9FDFAE4220A5A20C00206406 /* PostCommentView.xib */,
+				9FDFAE3B20A5A16800206406 /* DongtaiCommentCell.swift */,
+				9FDFAE3C20A5A16800206406 /* DongtaiCommentCell.xib */,
 				9FDFAE2520A57F1900206406 /* PreviewDongtaiBigImageLayout.swift */,
 				9FDFAE2220A57C3700206406 /* PreviewDongtaiBigImageController.swift */,
 				9FDFAE2120A57C3700206406 /* PreviewDongtaiBigImageController.xib */,
@@ -451,6 +497,8 @@
 		9FEF94C2209C2C74002F7C7F /* View */ = {
 			isa = PBXGroup;
 			children = (
+				9FDFAE2F20A5991400206406 /* NewsDetailImageCell.swift */,
+				9FDFAE3020A5991500206406 /* NewsDetailImageCell.xib */,
 				9FDFAE0E20A541E700206406 /* HomeImageCell.swift */,
 				9FDFAE0D20A541E700206406 /* HomeImageCell.xib */,
 				9FDFADF120A1997200206406 /* HomeCell.swift */,
@@ -661,12 +709,18 @@
 				9FA847C120906FFE001E889A /* activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets in Resources */,
 				9FDFADF620A1997300206406 /* TheyAlsoUseCell.xib in Resources */,
 				9FDFADF720A1997300206406 /* HomeUserCell.xib in Resources */,
+				9FDFAE2D20A596EC00206406 /* NewsDetailImageController.storyboard in Resources */,
+				9FDFAE3220A5991500206406 /* NewsDetailImageCell.xib in Resources */,
+				9FDFAE3E20A5A16800206406 /* DongtaiCommentCell.xib in Resources */,
+				9FDFAE4920A5A2AE00206406 /* EmojiCollectionCell.xib in Resources */,
 				9FDFAE1420A5461700206406 /* default_theme.plist in Resources */,
 				9FDFADF820A1997300206406 /* HomeCell.xib in Resources */,
 				9FDFAE0B20A5415F00206406 /* HomeImageCollectionView.xib in Resources */,
 				9FDFAE1B20A5646D00206406 /* DongtaiCollectionViewCell.xib in Resources */,
 				9FDFAE1820A5634A00206406 /* DongtaiCollectionView.xib in Resources */,
 				9FDFAE1320A5461700206406 /* night_theme.plist in Resources */,
+				9FDFAE3620A59AE100206406 /* NewsDetailImageCommentController.storyboard in Resources */,
+				9FDFAE4420A5A20D00206406 /* PostCommentView.xib in Resources */,
 				9FDFAE0F20A541E800206406 /* HomeImageCell.xib in Resources */,
 				9FA847BF20906FF1001E889A /* Main.storyboard in Resources */,
 				9FDFAE2320A57C3700206406 /* PreviewDongtaiBigImageController.xib in Resources */,
@@ -777,6 +831,9 @@
 				9FDFAE1C20A5646D00206406 /* DongtaiCollectionViewCell.swift in Sources */,
 				9FDFADFE20A1A87900206406 /* Foundation+Extension.swift in Sources */,
 				9FD2B7F820932626004D9213 /* TeMaiViewController.swift in Sources */,
+				9FDFAE4320A5A20D00206406 /* PostCommentView.swift in Sources */,
+				9FDFAE4020A5A1A900206406 /* RichLabel.swift in Sources */,
+				9FDFAE4620A5A25200206406 /* EmojiLayout.swift in Sources */,
 				9FDFADF520A1997300206406 /* HomeCell.swift in Sources */,
 				9FDFADF020A1989B00206406 /* TheyAlsoUseCell.swift in Sources */,
 				9FA8481B209080F0001E889A /* AppDelegate.swift in Sources */,
@@ -788,16 +845,23 @@
 				9FA8482A209083D0001E889A /* MyNavigationController.swift in Sources */,
 				9FDFAE1E20A57AB100206406 /* Calculate.swift in Sources */,
 				9FA84822209081B4001E889A /* VideoViewController.swift in Sources */,
+				9FDFAE2E20A596EC00206406 /* NewsDetailImageController.swift in Sources */,
 				9F89EC1E2092ECBB00BE420A /* HomeNewsTitle.swift in Sources */,
+				9FDFAE3A20A5A08800206406 /* MyCellModel.swift in Sources */,
+				9FDFAE3120A5991500206406 /* NewsDetailImageCell.swift in Sources */,
 				9FA84824209081DB001E889A /* RedPackageViewController2.swift in Sources */,
+				9FDFAE3D20A5A16800206406 /* DongtaiCommentCell.swift in Sources */,
+				9FDFAE4A20A5A2AE00206406 /* EmojiCollectionCell.swift in Sources */,
 				9FA8482820908284001E889A /* HuoshanViewController.swift in Sources */,
 				9FD2B802209412FC004D9213 /* UIKit+Extension.swift in Sources */,
+				9FDFAE3820A59C8500206406 /* Emoji.swift in Sources */,
 				9FD2B7F2209325C1004D9213 /* VideoTableViewController.swift in Sources */,
 				9FA8481C209080F0001E889A /* Const.swift in Sources */,
 				9FDFAE1720A5634A00206406 /* DongtaiCollectionView.swift in Sources */,
 				9FD2B7FA2093263E004D9213 /* HomeRecommendController.swift in Sources */,
 				9FDFAE2420A57C3700206406 /* PreviewDongtaiBigImageController.swift in Sources */,
 				9FDFAE0020A2D6BE00206406 /* RefreshView.swift in Sources */,
+				9FDFAE3520A59AE100206406 /* NewsDetailImageCommentController.swift in Sources */,
 				9FDFAE1020A541E800206406 /* HomeImageCell.swift in Sources */,
 				9FDFADEC20A1852300206406 /* SQLiteManager.swift in Sources */,
 				9FA847BC20906FF1001E889A /* ViewController.swift in Sources */,
