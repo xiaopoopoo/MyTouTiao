@@ -17,6 +17,13 @@ protocol NetworkToolProtocol {
     static func loadApiNewsFeeds(category: NewsTitleCategory, ttFrom: TTFrom, _ completionHandler: @escaping (_ maxBehotTime: TimeInterval, _ news: [NewsModel]) -> ())
     // MARK: 获取首页、视频、小视频的新闻列表数据,加载更多
     static func loadMoreApiNewsFeeds(category: NewsTitleCategory, ttFrom: TTFrom, maxBehotTime: TimeInterval, listCount: Int, _ completionHandler: @escaping (_ news: [NewsModel]) -> ())
+    
+    // MARK: 视频首页顶部导航栏搜索推荐标题内容
+    static func loadHomeSearchSuggestInfo(_ completionHandler: @escaping (_ searchSuggest: String) -> ())
+    
+    // MARK: 视频顶部新闻标题的数据
+    static func loadVideoApiCategoies(completionHandler: @escaping (_ newsTitles: [HomeNewsTitle]) -> ())
+
 }
 
 //扩展这个协议的方法
@@ -186,9 +193,52 @@ extension NetworkToolProtocol {
             }
         }
     }
+
+    /// 视频首页顶部导航栏搜索推荐标题内容
+    /// - parameter completionHandler: 返回搜索建议数据
+    /// - parameter searchSuggest: 首页搜索建议
+    static func loadHomeSearchSuggestInfo(_ completionHandler: @escaping (_ searchSuggest: String) -> ()) {
+        let url = BASE_URL + "/search/suggest/homepage_suggest/?"
+        let params = ["device_id": device_id,
+                      "iid": iid]
+        Alamofire.request(url, parameters: params).responseJSON { (response) in
+            // 网络错误的提示信息
+            guard response.result.isSuccess else { return }
+            if let value = response.result.value {
+                let json = JSON(value)
+                guard json["message"] == "success" else { return }
+                if let data = json["data"].dictionary {
+                    completionHandler(data["homepage_search_suggest"]!.string!)
+                }
+            }
+        }
+    }
     
+    /// 视频顶部新闻标题的数据
+    /// - parameter completionHandler: 返回标题数据
+    /// - parameter newsTitles: 视频标题数组
+    static func loadVideoApiCategoies(completionHandler: @escaping (_ newsTitles: [HomeNewsTitle]) -> ()) {
+        let url = BASE_URL + "/video_api/get_category/v1/?"
+        let params = ["device_id": device_id,
+                      "iid": iid]
+        Alamofire.request(url, parameters: params).responseJSON { (response) in
+            // 网络错误的提示信息
+            guard response.result.isSuccess else { return }
+            if let value = response.result.value {
+                let json = JSON(value)
+                guard json["message"] == "success" else { return }
+                if let datas = json["data"].arrayObject {
+                    var titles = [HomeNewsTitle]()
+                    titles.append(HomeNewsTitle.deserialize(from: "{\"category\": \"video\", \"name\": \"推荐\"}")!)
+                    titles += datas.compactMap({ HomeNewsTitle.deserialize(from: $0 as? Dictionary) })
+                    completionHandler(titles)
+                }
+            }
+        }
+    }
     
 }
+
 
 
 

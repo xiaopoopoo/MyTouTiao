@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		5150404BA9BA8534931E0B04 /* Pods_MyTouTiao.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 786D42D90117BD5422498525 /* Pods_MyTouTiao.framework */; };
+		9F57DDFF20A97E9200EC53BB /* HomeNavigationView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9F57DDFE20A97E9000EC53BB /* HomeNavigationView.xib */; };
 		9F89EC1C2092EBCA00BE420A /* NetworkToolProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F89EC1B2092EBCA00BE420A /* NetworkToolProtocol.swift */; };
 		9F89EC1E2092ECBB00BE420A /* HomeNewsTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F89EC1D2092ECBB00BE420A /* HomeNewsTitle.swift */; };
 		9FA847BC20906FF1001E889A /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847BB20906FF1001E889A /* ViewController.swift */; };
@@ -79,6 +80,7 @@
 		9FDFAE4F20A9359D00206406 /* emojis.plist in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE4C20A9359C00206406 /* emojis.plist */; };
 		9FDFAE5020A9359D00206406 /* emoji_sort.plist in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE4D20A9359C00206406 /* emoji_sort.plist */; };
 		9FDFAE5220A9768100206406 /* VideoTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE5120A9768000206406 /* VideoTableViewController.swift */; };
+		9FDFAE5420A977FD00206406 /* HomeNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE5320A977FD00206406 /* HomeNavigationView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -102,6 +104,7 @@
 		4C272A5C54B1F1BB7322E86D /* Pods-MyTouTiao.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MyTouTiao.release.xcconfig"; path = "Pods/Target Support Files/Pods-MyTouTiao/Pods-MyTouTiao.release.xcconfig"; sourceTree = "<group>"; };
 		4E3BD9568FB08EFCC3A33BC3 /* Pods-MyTouTiao.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MyTouTiao.debug.xcconfig"; path = "Pods/Target Support Files/Pods-MyTouTiao/Pods-MyTouTiao.debug.xcconfig"; sourceTree = "<group>"; };
 		786D42D90117BD5422498525 /* Pods_MyTouTiao.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MyTouTiao.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F57DDFE20A97E9000EC53BB /* HomeNavigationView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = HomeNavigationView.xib; sourceTree = "<group>"; };
 		9F89EC1B2092EBCA00BE420A /* NetworkToolProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkToolProtocol.swift; sourceTree = "<group>"; };
 		9F89EC1D2092ECBB00BE420A /* HomeNewsTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeNewsTitle.swift; sourceTree = "<group>"; };
 		9FA847B620906FF1001E889A /* MyTouTiao.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyTouTiao.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -179,6 +182,7 @@
 		9FDFAE4C20A9359C00206406 /* emojis.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = emojis.plist; sourceTree = "<group>"; };
 		9FDFAE4D20A9359C00206406 /* emoji_sort.plist */ = {isa = PBXFileReference; lastKnownFileType = file.bplist; path = emoji_sort.plist; sourceTree = "<group>"; };
 		9FDFAE5120A9768000206406 /* VideoTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoTableViewController.swift; sourceTree = "<group>"; };
+		9FDFAE5320A977FD00206406 /* HomeNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeNavigationView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -506,6 +510,7 @@
 		9FEF94C2209C2C74002F7C7F /* View */ = {
 			isa = PBXGroup;
 			children = (
+				9F57DDFE20A97E9000EC53BB /* HomeNavigationView.xib */,
 				9FDFAE2F20A5991400206406 /* NewsDetailImageCell.swift */,
 				9FDFAE3020A5991500206406 /* NewsDetailImageCell.xib */,
 				9FDFAE0E20A541E700206406 /* HomeImageCell.swift */,
@@ -518,6 +523,7 @@
 				9FDFADF320A1997300206406 /* HomeUserCell.xib */,
 				9FDFADEF20A1989B00206406 /* TheyAlsoUseCell.swift */,
 				9FDFADF220A1997300206406 /* TheyAlsoUseCell.xib */,
+				9FDFAE5320A977FD00206406 /* HomeNavigationView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -729,6 +735,7 @@
 				9FDFAE1B20A5646D00206406 /* DongtaiCollectionViewCell.xib in Resources */,
 				9FDFAE1820A5634A00206406 /* DongtaiCollectionView.xib in Resources */,
 				9FDFAE1320A5461700206406 /* night_theme.plist in Resources */,
+				9F57DDFF20A97E9200EC53BB /* HomeNavigationView.xib in Resources */,
 				9FDFAE3620A59AE100206406 /* NewsDetailImageCommentController.storyboard in Resources */,
 				9FDFAE4420A5A20D00206406 /* PostCommentView.xib in Resources */,
 				9FDFAE4E20A9359D00206406 /* emoji_mapping.plist in Resources */,
@@ -870,6 +877,7 @@
 				9FA8481C209080F0001E889A /* Const.swift in Sources */,
 				9FDFAE1720A5634A00206406 /* DongtaiCollectionView.swift in Sources */,
 				9FD2B7FA2093263E004D9213 /* HomeRecommendController.swift in Sources */,
+				9FDFAE5420A977FD00206406 /* HomeNavigationView.swift in Sources */,
 				9FDFAE2420A57C3700206406 /* PreviewDongtaiBigImageController.swift in Sources */,
 				9FDFAE0020A2D6BE00206406 /* RefreshView.swift in Sources */,
 				9FDFAE3520A59AE100206406 /* NewsDetailImageCommentController.swift in Sources */,
