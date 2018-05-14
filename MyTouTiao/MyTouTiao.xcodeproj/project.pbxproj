@@ -25,7 +25,6 @@
 		9FA8482620908228001E889A /* WeitoutiaoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA8482520908228001E889A /* WeitoutiaoViewController.swift */; };
 		9FA8482820908284001E889A /* HuoshanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA8482720908284001E889A /* HuoshanViewController.swift */; };
 		9FA8482A209083D0001E889A /* MyNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA84829209083D0001E889A /* MyNavigationController.swift */; };
-		9FD2B7F2209325C1004D9213 /* VideoTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F1209325C1004D9213 /* VideoTableViewController.swift */; };
 		9FD2B7F4209325EB004D9213 /* HomeJokeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F3209325EB004D9213 /* HomeJokeViewController.swift */; };
 		9FD2B7F62093260E004D9213 /* HomeImageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F52093260E004D9213 /* HomeImageViewController.swift */; };
 		9FD2B7F820932626004D9213 /* TeMaiViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD2B7F720932626004D9213 /* TeMaiViewController.swift */; };
@@ -76,6 +75,10 @@
 		9FDFAE4620A5A25200206406 /* EmojiLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE4520A5A25200206406 /* EmojiLayout.swift */; };
 		9FDFAE4920A5A2AE00206406 /* EmojiCollectionCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE4720A5A2AE00206406 /* EmojiCollectionCell.xib */; };
 		9FDFAE4A20A5A2AE00206406 /* EmojiCollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE4820A5A2AE00206406 /* EmojiCollectionCell.swift */; };
+		9FDFAE4E20A9359D00206406 /* emoji_mapping.plist in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE4B20A9359B00206406 /* emoji_mapping.plist */; };
+		9FDFAE4F20A9359D00206406 /* emojis.plist in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE4C20A9359C00206406 /* emojis.plist */; };
+		9FDFAE5020A9359D00206406 /* emoji_sort.plist in Resources */ = {isa = PBXBuildFile; fileRef = 9FDFAE4D20A9359C00206406 /* emoji_sort.plist */; };
+		9FDFAE5220A9768100206406 /* VideoTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDFAE5120A9768000206406 /* VideoTableViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -122,7 +125,6 @@
 		9FA8482520908228001E889A /* WeitoutiaoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeitoutiaoViewController.swift; sourceTree = "<group>"; };
 		9FA8482720908284001E889A /* HuoshanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HuoshanViewController.swift; sourceTree = "<group>"; };
 		9FA84829209083D0001E889A /* MyNavigationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyNavigationController.swift; sourceTree = "<group>"; };
-		9FD2B7F1209325C1004D9213 /* VideoTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoTableViewController.swift; sourceTree = "<group>"; };
 		9FD2B7F3209325EB004D9213 /* HomeJokeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeJokeViewController.swift; sourceTree = "<group>"; };
 		9FD2B7F52093260E004D9213 /* HomeImageViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeImageViewController.swift; sourceTree = "<group>"; };
 		9FD2B7F720932626004D9213 /* TeMaiViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeMaiViewController.swift; sourceTree = "<group>"; };
@@ -173,6 +175,10 @@
 		9FDFAE4520A5A25200206406 /* EmojiLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmojiLayout.swift; sourceTree = "<group>"; };
 		9FDFAE4720A5A2AE00206406 /* EmojiCollectionCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = EmojiCollectionCell.xib; sourceTree = "<group>"; };
 		9FDFAE4820A5A2AE00206406 /* EmojiCollectionCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmojiCollectionCell.swift; sourceTree = "<group>"; };
+		9FDFAE4B20A9359B00206406 /* emoji_mapping.plist */ = {isa = PBXFileReference; lastKnownFileType = file.bplist; path = emoji_mapping.plist; sourceTree = "<group>"; };
+		9FDFAE4C20A9359C00206406 /* emojis.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = emojis.plist; sourceTree = "<group>"; };
+		9FDFAE4D20A9359C00206406 /* emoji_sort.plist */ = {isa = PBXFileReference; lastKnownFileType = file.bplist; path = emoji_sort.plist; sourceTree = "<group>"; };
+		9FDFAE5120A9768000206406 /* VideoTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoTableViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -368,6 +374,9 @@
 		9FA8480B209080F0001E889A /* Others */ = {
 			isa = PBXGroup;
 			children = (
+				9FDFAE4B20A9359B00206406 /* emoji_mapping.plist */,
+				9FDFAE4D20A9359C00206406 /* emoji_sort.plist */,
+				9FDFAE4C20A9359C00206406 /* emojis.plist */,
 				9FEF94C8209C2D51002F7C7F /* Theme */,
 				9FA8480C209080F0001E889A /* AppDelegate.swift */,
 				9FA8480D209080F0001E889A /* Const.swift */,
@@ -406,6 +415,7 @@
 		9FA84813209080F0001E889A /* Controller */ = {
 			isa = PBXGroup;
 			children = (
+				9FDFAE5120A9768000206406 /* VideoTableViewController.swift */,
 				9FA84821209081B4001E889A /* VideoViewController.swift */,
 			);
 			path = Controller;
@@ -438,7 +448,6 @@
 				9FDFAE2B20A596EB00206406 /* NewsDetailImageController.storyboard */,
 				9FDFAE2C20A596EB00206406 /* NewsDetailImageController.swift */,
 				9FD2B7FB209327D4004D9213 /* HomeTableViewController.swift */,
-				9FD2B7F1209325C1004D9213 /* VideoTableViewController.swift */,
 				9FD2B7F3209325EB004D9213 /* HomeJokeViewController.swift */,
 				9FD2B7F52093260E004D9213 /* HomeImageViewController.swift */,
 				9FD2B7F720932626004D9213 /* TeMaiViewController.swift */,
@@ -708,6 +717,7 @@
 				9FA847C420906FFE001E889A /* LaunchScreen.storyboard in Resources */,
 				9FA847C120906FFE001E889A /* activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets in Resources */,
 				9FDFADF620A1997300206406 /* TheyAlsoUseCell.xib in Resources */,
+				9FDFAE5020A9359D00206406 /* emoji_sort.plist in Resources */,
 				9FDFADF720A1997300206406 /* HomeUserCell.xib in Resources */,
 				9FDFAE2D20A596EC00206406 /* NewsDetailImageController.storyboard in Resources */,
 				9FDFAE3220A5991500206406 /* NewsDetailImageCell.xib in Resources */,
@@ -721,7 +731,9 @@
 				9FDFAE1320A5461700206406 /* night_theme.plist in Resources */,
 				9FDFAE3620A59AE100206406 /* NewsDetailImageCommentController.storyboard in Resources */,
 				9FDFAE4420A5A20D00206406 /* PostCommentView.xib in Resources */,
+				9FDFAE4E20A9359D00206406 /* emoji_mapping.plist in Resources */,
 				9FDFAE0F20A541E800206406 /* HomeImageCell.xib in Resources */,
+				9FDFAE4F20A9359D00206406 /* emojis.plist in Resources */,
 				9FA847BF20906FF1001E889A /* Main.storyboard in Resources */,
 				9FDFAE2320A57C3700206406 /* PreviewDongtaiBigImageController.xib in Resources */,
 			);
@@ -855,7 +867,6 @@
 				9FA8482820908284001E889A /* HuoshanViewController.swift in Sources */,
 				9FD2B802209412FC004D9213 /* UIKit+Extension.swift in Sources */,
 				9FDFAE3820A59C8500206406 /* Emoji.swift in Sources */,
-				9FD2B7F2209325C1004D9213 /* VideoTableViewController.swift in Sources */,
 				9FA8481C209080F0001E889A /* Const.swift in Sources */,
 				9FDFAE1720A5634A00206406 /* DongtaiCollectionView.swift in Sources */,
 				9FD2B7FA2093263E004D9213 /* HomeRecommendController.swift in Sources */,
@@ -864,6 +875,7 @@
 				9FDFAE3520A59AE100206406 /* NewsDetailImageCommentController.swift in Sources */,
 				9FDFAE1020A541E800206406 /* HomeImageCell.swift in Sources */,
 				9FDFADEC20A1852300206406 /* SQLiteManager.swift in Sources */,
+				9FDFAE5220A9768100206406 /* VideoTableViewController.swift in Sources */,
 				9FA847BC20906FF1001E889A /* ViewController.swift in Sources */,
 				9FA8481A209080F0001E889A /* MyTabBarController.swift in Sources */,
 			);

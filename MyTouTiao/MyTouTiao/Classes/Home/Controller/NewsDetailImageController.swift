@@ -42,7 +42,7 @@ class NewsDetailImageController: UIViewController, StoryboardLoadable {
     /// 收藏按钮
     @IBOutlet weak var collectButton: UIButton!
     
-    var aNews = NewsModel()
+    var aNews = NewsModel()  //评论model创建
     
     override func viewDidLoad() {
         super.viewDidLoad()

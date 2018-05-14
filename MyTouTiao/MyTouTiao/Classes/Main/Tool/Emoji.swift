@@ -83,7 +83,7 @@ struct EmojiManager {
         // 判断分页是否有剩余
         let count = emojis.count % 21
         guard count != 0 else { return }
-        // 添加空白表情
+        // 添加空白表情,如果是删除
         for index in count..<21 {
             emojis.append(index == 20 ? Emoji(isDelete: true) : Emoji(isEmpty: true))
         }
