@@ -173,10 +173,101 @@ struct NewsModel: HandyJSON{
     var media_info = MediaInfo()
     var user_info = NewsUserInfo()
     var media_name: String = ""
+    var video_play_info = VideoPlayInfo()
+    var video_detail_info = VideoDetailInfo()
+    var ad_button = ADButton()
+    var ad_id = 0
+    var ad_label = ""
+    var type = "" // app
+    var app_name = ""
+    var appleid = ""
+    var description = ""
+    var descriptionH: CGFloat { return description.textHeight(fontSize: 13, width: screenWidth - 30) }
     
-
+    var download_url = ""
+    var card_type: CardType = .video
+    var is_article = false
+    var is_preview = false
+    var web_url = ""
+}
+/// 视频类型
+enum CardType: String, HandyJSONEnum {
+    case video = "video"             // 视频
+    case adVideo = "ad_video"        // 广告视频
+    case adTextlink = "ad_textlink"  // 广告链接
+}
+struct VideoURL: HandyJSON {
+    
+}
+struct ADButton: HandyJSON {
+    var description: String = ""
+    var download_url: String = ""
+    var id: Int = 0
+    var web_url: String = ""
+    var app_name: String = ""
+    var track_url: String = ""
+    var ui_type: Int = 0
+    var click_track_url: String = ""
+    var button_text: String = ""
+    var display_type: Int = 0
+    var hide_if_exists: Int = 0
+    var open_url: String = ""
+    var source: String = ""
+    var type: String = ""
+    var package: String = ""
+    var appleid: String = ""
+    var web_title: String = ""
+}
+struct DetailVideoLargeImage: HandyJSON {
+    var height: Int = 0
+    var url_list: [URLList]!
+    var url: NSString = ""
+    var urlString: String {
+        guard url.hasSuffix(".webp") else { return url as String }
+        return url.replacingCharacters(in: NSRange(location: url.length - 5, length: 5), with: ".png")
+    }
+    var width: Int = 0
+    var uri: String = ""
+    
+}
+struct VideoDetailInfo: HandyJSON {
+    var video_preloading_flag: Int = 0
+    var direct_play: Int = 0
+    var group_flags: Int = 0
+    var video_url = [VideoURL]()
+    var detail_video_large_image = DetailVideoLargeImage()
+    var video_third_monitor_url: String = ""
+    var video_watching_count: Int = 0
+    var videoWatchingCount: String { return video_watching_count.convertString() }
+    var video_id: String = ""
+    var video_watch_count: Int = 0
+    var videoWatchCount: String { return video_watch_count.convertString() }
+    var video_type: Int = 0
+    var show_pgc_subscribe: Int = 0
+}
+struct DnsInfo: HandyJSON {
+    
+}
+struct OriginalPlayURL: HandyJSON {
+    var main_url: String = ""
+    var backup_url: String = ""
 }
 
+struct VideoPlayInfo: HandyJSON {
+    var status: Int = 0
+    var dns_info = DnsInfo()
+    var enable_ssl: Bool = false
+    var poster_url: String = ""
+    var message: String = ""
+    var video_list = VideoList()
+    var original_play_url = OriginalPlayURL()
+    var video_duration: Int = 0
+    var videoDuration: String {
+        return video_duration.convertVideoDuration()
+    }
+    
+    var validate: String = ""
+}
 //首页每一个cell点击进入详情页
 struct NewsDetailImage: HandyJSON {
     

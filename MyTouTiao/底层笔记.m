@@ -1800,3 +1800,6 @@ func doSomething(item: UIBarButtonItem) {
     }
 
 说明：可以看到，类型为协议的person可以直接输出员工的职责，但是Any类型的person1则需要先判断它的类型，然后转化为对应的类型才能使用
+
+27.swift与oc混编
+在xcode创建oc文件，swift会自动添加一个bridage的文件，在这个文件中#import"oc.h",则这个类就可以用了
