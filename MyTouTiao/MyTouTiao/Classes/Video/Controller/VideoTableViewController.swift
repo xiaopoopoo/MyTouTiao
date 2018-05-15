@@ -171,18 +171,18 @@ extension VideoTableViewController: BMPlayerDelegate {
     }
 }
 // MARK: - VideoDetailViewControllerDelegate
-//extension VideoTableViewController: VideoDetailViewControllerDelegate {
-//    /// 详情控制器将要消失
-//    func VideoDetailViewControllerViewWillDisappear(_ realVideo: RealVideo, _ currentTime: TimeInterval, _ currentIndexPath: IndexPath) {
-//        let currentCell = tableView.cellForRow(at: currentIndexPath) as! VideoCell
-//        currentCell.bgImageButton.addSubview(player)
-//        player.snp.makeConstraints({ $0.edges.equalTo(currentCell.bgImageButton) })
-//        // 设置视频播放地址
-//        player.setVideo(resource: BMPlayerResource(url: URL(string: realVideo.video_list.video_1.mainURL)!))
-//        // 设置当前播放时间
-//        player.seek(currentTime)
-//        // 视频播放时隐藏 cell 的部分子视图
-//        currentCell.hideSubviews()
-//        self.priorCell = currentCell
-//    }
-//}
+extension VideoTableViewController: VideoDetailViewControllerDelegate {
+    /// 详情控制器将要消失
+    func VideoDetailViewControllerViewWillDisappear(_ realVideo: RealVideo, _ currentTime: TimeInterval, _ currentIndexPath: IndexPath) {
+        let currentCell = tableView.cellForRow(at: currentIndexPath) as! VideoCell
+        currentCell.bgImageButton.addSubview(player)
+        player.snp.makeConstraints({ $0.edges.equalTo(currentCell.bgImageButton) })
+        // 设置视频播放地址
+        player.setVideo(resource: BMPlayerResource(url: URL(string: realVideo.video_list.video_1.mainURL)!))
+        // 设置当前播放时间
+        player.seek(currentTime)
+        // 视频播放时隐藏 cell 的部分子视图
+        currentCell.hideSubviews()
+        self.priorCell = currentCell
+    }
+}

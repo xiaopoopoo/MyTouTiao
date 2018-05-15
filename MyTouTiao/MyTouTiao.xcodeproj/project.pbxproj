@@ -16,6 +16,7 @@
 		9FA8126520AAA51300E42EDA /* UserDetailViewController2.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9FA8126320AAA51300E42EDA /* UserDetailViewController2.xib */; };
 		9FA8126620AAA51300E42EDA /* UserDetailViewController2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA8126420AAA51300E42EDA /* UserDetailViewController2.swift */; };
 		9FA8126A20AAA96D00E42EDA /* NSData+CRC32.m in Sources */ = {isa = PBXBuildFile; fileRef = 9FA8126920AAA96D00E42EDA /* NSData+CRC32.m */; };
+		9FA8126C20AAC10C00E42EDA /* VideoDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA8126B20AAC10C00E42EDA /* VideoDetailViewController.swift */; };
 		9FA847BC20906FF1001E889A /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA847BB20906FF1001E889A /* ViewController.swift */; };
 		9FA847BF20906FF1001E889A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9FA847BD20906FF1001E889A /* Main.storyboard */; };
 		9FA847C120906FFE001E889A /* activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9FA847C020906FFE001E889A /* activity AppIcon.appiconset dongtai dongtai_detail_tabbar dropdown emoji home loading login mine navigation small_video tabbar user-detail video weitoutiao wukong.xcassets */; };
@@ -119,6 +120,7 @@
 		9FA8126720AAA96B00E42EDA /* MyTouTiao-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MyTouTiao-Bridging-Header.h"; sourceTree = "<group>"; };
 		9FA8126820AAA96C00E42EDA /* NSData+CRC32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSData+CRC32.h"; sourceTree = "<group>"; };
 		9FA8126920AAA96D00E42EDA /* NSData+CRC32.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSData+CRC32.m"; sourceTree = "<group>"; };
+		9FA8126B20AAC10C00E42EDA /* VideoDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDetailViewController.swift; sourceTree = "<group>"; };
 		9FA847B620906FF1001E889A /* MyTouTiao.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyTouTiao.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FA847BB20906FF1001E889A /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		9FA847BE20906FF1001E889A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -436,6 +438,7 @@
 			children = (
 				9FDFAE5120A9768000206406 /* VideoTableViewController.swift */,
 				9FA84821209081B4001E889A /* VideoViewController.swift */,
+				9FA8126B20AAC10C00E42EDA /* VideoDetailViewController.swift */,
 			);
 			path = Controller;
 			sourceTree = "<group>";
@@ -875,6 +878,7 @@
 				9FDFAE4320A5A20D00206406 /* PostCommentView.swift in Sources */,
 				9FDFAE4020A5A1A900206406 /* RichLabel.swift in Sources */,
 				9FDFAE4620A5A25200206406 /* EmojiLayout.swift in Sources */,
+				9FA8126C20AAC10C00E42EDA /* VideoDetailViewController.swift in Sources */,
 				9FDFADF520A1997300206406 /* HomeCell.swift in Sources */,
 				9FDFADF020A1989B00206406 /* TheyAlsoUseCell.swift in Sources */,
 				9FA8481B209080F0001E889A /* AppDelegate.swift in Sources */,
