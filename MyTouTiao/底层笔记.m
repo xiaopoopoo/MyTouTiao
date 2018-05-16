@@ -2080,4 +2080,27 @@ node_modules/
 .idea/
 my_notes.txt
 
-
+29.动画
+1.类
+CAAnimation  动画
+    CAPropertyAnimation  属性动画
+        CABasicAnimation  基础动画
+           （duration：动画持续时间  repeatcount:动画重复次数  repeatduration:在一定时间内执行动画，与次数无关）
+           
+            (begintime:指定动画开始时间一般当前时间加上多少秒 ）
+           
+           （timingfunction:动画速度变化（属性值：kCAMediaTimingFunctionLinear均速 kCAMediaTimingFunctionEaseIn加速到突然停止 kCAMediaTimingFunctionEaseOut加速再减慢 
+            kCAMediaTimingFunctionEaseInEaseOut开始和结束慢，中间快 kCAMediaTimingFunctionDefault：开始和结束慢，中间快，加速减速都稍微慢））
+            使用方法：pathAnim.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
+            
+           （fillmode：动画开始和结束动作：默认kcafillmoderemoved)
+            属性值：kCAFillModeForwards：
+            
+            (autoreverses:动画结束后是否再反向执行逆动画 fromvalue：改变属性的起始值  tovalue：改变必属性结束时的值 byvalue 改变属性相同起始值变量)
+           
+            CASpringAnimation  Spring动画
+            
+        CAKeyframeAnimation    关键贞动画
+    CATransition               过渡动画   
+    CAAnimationGroup           组动画
+    
