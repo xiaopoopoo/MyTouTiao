@@ -2104,3 +2104,187 @@ CAAnimation  动画
     CATransition               过渡动画   
     CAAnimationGroup           组动画
     
+
+30.block中的weak和strong
+只有当block直接或间接的被self持有时，才需要weak self。// 这种情况没必要
+[self fetchDataWithSucess:^{
+     [self doSomething];
+}];
+
+//这种情况就有必要
+__weak CurrentViewController* blockSelf = self；
+self.onTapEvent = ^{
+    [blockSelf doSomething];
+}
+关于Block的copy
+@property (nonatomic, copy) void (^getCardInfo)(NSDictionary *cardInfo); 
+copy后才会放到堆上。指针指向block的时候才不会释放掉;  
+brush.getCardInfo=^(NSDictionary *info){  
+    [self test];  
+};  
+
+关于strongself
+以 AFNetworking 中 AFNetworkReachabilityManager.m 的一段代码举例：
+
+__weak __typeof(self)weakSelf = self;
+AFNetworkReachabilityStatusBlock callback = ^(AFNetworkReachabilityStatus status) {
+    __strong __typeof(weakSelf)strongSelf = weakSelf;
+    //下面代码如果不加strongSelf容易释放掉
+    strongSelf.networkReachabilityStatus = status;
+    if (strongSelf.networkReachabilityStatusBlock) {
+        strongSelf.networkReachabilityStatusBlock(status);
+    }
+
+};
+有没有这样一个需求场景，block 会产生循环引用，但是业务又需要你不能使用 weak self? 如果有，请举一个例子并且解释这种情况下如何解决循环引用问题。
+如果没有 strongSelf 的那行代码，那么后面的每一行代码执行时，self 都可能被释放掉了，这样很可能造成逻辑异常
+
+ YTKNetwork 库中，我们的每一个网络请求 API 会持有回调的 block，回调的 block 会持有 self，而如果 self 也持有网络请求 API 的话，我们就构造了一个循环引用。虽然我们构造出了循环引用，但是因为在网络请求结束时，网络请求 API 会主动释放对 block 的持有，因此，整个循环链条被解开，循环引用就被打破了，所以不会有内存泄漏问题。代码其实很简单，如下所示：
+
+- (void)clearCompletionBlock {
+    // nil out to break the retain cycle.
+    self.successCompletionBlock = nil;
+    self.failureCompletionBlock = nil;
+}
+总结来说，解决循环引用问题主要有两个办法：
+
+第一个办法是「事前避免」，我们在会产生循环引用的地方使用 weak 弱引用，以避免产生循环引用。 
+第二个办法是「事后补救」，我们明确知道会存在循环引用，但是我们在合理的位置主动断开环中的一个引用，使得对象得以回收。 
+
+31.runloop
+作用：
+1.保持程序运行
+2.处理app的各种事件（比如触摸，定时器等等）
+3.节省CPU资源，提高性能。
+
+两个API：
+Foundatio NSRunLoop
+Core Foundation CFRunLoopRef
+
+.RunLoop与线程：
+1.每条线程都有唯一的与之对应的RunLoop对象 ，底层用字典保存 
+2.主线程runloop已经创建好了，子线程runloop需要手动创建 CFRunLoopGetCurrent(); [NSRunLoop currentRunLoop];创建用的懒加载
+3.线程结束runloop销毁
+
+获取RunLoop对象
+
+Foundation
+[NSRunLoop currentRunLoop]; // 获得当前线程的RunLoop对象
+[NSRunLoop mainRunLoop]; // 获得主线程的RunLoop对象
+
+Core Foundation
+CFRunLoopGetCurrent(); // 获得当前线程的RunLoop对象
+CFRunLoopGetMain(); // 获得主线程的RunLoop对象
+
+在Core Foundation中有RunLoop的五个类
+    CFRunLoopRef
+    CFRunLoopModeRef
+    CFRunLoopSourceRef
+    CFRunLoopTimerRef
+    CFRunLoopObserverRef
+    
+一个runloop运行同一时间只能运行一种模式，但可以选择5种不同类型的模式，每个模式下都包括 CFRunLoopSourceRef，CFRunLoopTimerRef
+CFRunLoopObserverRef，不同模式下的源和观察者互不干涉，runloop要运行，必需包含 CFRunLoopSourceRef，CFRunLoopTimerRef中的一个
+如果需要切换 Mode，只能退出 Loop，再重新指定一个 Mode 进入
+
+CFRunLoopModeRef
+    kCFRunLoopDefaultMode //App的默认Mode，通常主线程是在这个Mode下运行
+    UITrackingRunLoopMode //界面跟踪 Mode，用于 ScrollView 追踪触摸滑动，保证界面滑动时不受其他 Mode 影响
+    UIInitializationRunLoopMode // 在刚启动 App 时第进入的第一个 Mode，启动完成后就不再使用
+    GSEventReceiveRunLoopMode // 接受系统事件的内部 Mode，通常用不到
+    kCFRunLoopCommonModes //这是一个占位用的Mode，不是一种真正的Mode，相当于即是 kCFRunLoopDefaultMode也是UITrackingRunLoopMode
+    
+CFRunLoopSourseRef是事件源，分为两种
+sourse0：非基于port的 （port相当于是系统），不属于用户自己写的方法
+sourse1：基于port 系统提供的
+
+CFRunLoopObserverRef
+CFRunLoopObserver是观察者，可以监听runLoop的状态改变
+监听的状态如下：
+typedef CF_OPTIONS(CFOptionFlags, CFRunLoopActivity) { 
+kCFRunLoopEntry = (1UL << 0), //即将进入Runloop
+kCFRunLoopBeforeTimers = (1UL << 1), //即将处理NSTimer 
+kCFRunLoopBeforeSources = (1UL << 2), //即将处理Sources 
+kCFRunLoopBeforeWaiting = (1UL << 5), //即将进入休眠 
+kCFRunLoopAfterWaiting = (1UL << 6), //刚从休眠中唤醒 
+kCFRunLoopExit = (1UL << 7), //即将退出runloop 
+kCFRunLoopAllActivities = 0x0FFFFFFFU //所有状态改变};
+
+实验1:
+int main(int argc, char * argv[]) {
+    @autoreleasepool {
+        return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));//永远不返回，因为有runloop
+    }
+}
+
+实验2:尝试打印RunLoop对象
+
+打印出很多runloop相关内容
+
+- (IBAction)ButtonDidClick:(id)sender {
+    NSLog(@"ButtonDidClick");
+    NSLog(@"----%@", [NSRunLoop currentRunLoop]);
+}
+
+实验3:NSTimer的使用
+- (IBAction)ButtonDidClick:(id)sender {
+    [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(timerTest) userInfo:nil repeats:YES];
+    这个方法默认把nstimer加入到了一个kCFRunLoopDefaultMode模式中，当手没动scrollview的时候，runloop切换到 UITrackingRunLoopMode模式
+    导致NSTimer不执行
+    解决方法：
+    [[NSRunLoop currentRunLoop] addTimer:timer forMode:kCFRunLoopCommonModes];//同时加到默认和跟踪模式下
+}
+
+- (void)timerTest
+{
+    NSLog(@"timerTest----");
+}
+
+
+实验4：NSTimer未运行，这种创建的timer没有在作何模式下，需加到一种模式下
+- (IBAction)ButtonDidClick:(id)sender {
+    NSTimer *timer = [NSTimer timerWithTimeInterval:1.0 target:self selector:@selector(timerTest) userInfo:nil repeats:YES];
+   [[NSRunLoop currentRunLoop] addTimer:timer forMode:kCFRunLoopCommonModes];//同时加到默认和跟踪模式下
+}
+
+- (void)timerTest
+{
+    NSLog(@"timerTest----");
+}
+
+实验5：关CFRunLoopObserverRef的实验
+首先回顾CFRunLoopObserverRef，是RunLoop的监听者，监听的状态如下：
+typedef CF_OPTIONS(CFOptionFlags, CFRunLoopActivity) { 
+kCFRunLoopEntry = (1UL << 0), //即将进入Runloop
+kCFRunLoopBeforeTimers = (1UL << 1), //即将处理NSTimer 
+kCFRunLoopBeforeSources = (1UL << 2), //即将处理Sources 
+kCFRunLoopBeforeWaiting = (1UL << 5), //即将进入休眠 
+kCFRunLoopAfterWaiting = (1UL << 6), //刚从休眠中唤醒 
+kCFRunLoopExit = (1UL << 7), //即将退出runloop 
+kCFRunLoopAllActivities = 0x0FFFFFFFU //所有状态改变};
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    [self createObserver];
+}
+
+
+- (void)createObserver
+{
+    CFRunLoopObserverRef observer = CFRunLoopObserverCreateWithHandler(CFAllocatorGetDefault(), kCFRunLoopAllActivities, YES, 0, ^(CFRunLoopObserverRef observer, CFRunLoopActivity activity) {
+        NSLog(@"--------%zd", activity);
+    });
+    
+    CFRunLoopAddObserver(CFRunLoopGetCurrent(), observer, kCFRunLoopDefaultMode);  // 添加监听者，关键！
+    CFRelease(observer); // 释放
+}
+
+运行可以看到打印的数字对应枚举
+
+runloop事件与观察者
+每次运行runloop ，线程都会把未处理的消息通知观察者
+1、通知观察者runloop 已经启动
+2、通知观察者任何即将要开始的定时器
+3、通知观察者任何即将启动的其它源
+4、启动准备好源
+5、如果有源处理唤醒后收到的消息，然后再加到第2步
