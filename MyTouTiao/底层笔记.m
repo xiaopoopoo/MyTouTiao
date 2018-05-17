@@ -2288,3 +2288,191 @@ runloop事件与观察者
 3、通知观察者任何即将启动的其它源
 4、启动准备好源
 5、如果有源处理唤醒后收到的消息，然后再加到第2步
+
+32、instancetype和id
+instancetype用来在编译期确定实例的类型，而使用id，运行时检查类型.
+id可以作为方法的参数  instancetype只适用于初始化方法和便利构造器的返回值类型
+
+33、copy mutablecopy 
+copy遇到NSMutableArray，深拷贝 拷贝出来的是NSMutableArray可变
+copy遇到NSArray 浅拷贝 拷贝出来的是NSArray不可变
+MutalbeCopy遇到NSMutableArray 深拷贝，拷贝出来的是NSMutableArray可变 
+MutalbeCopy遇到NSArray  深拷贝 拷贝出来的是NSMutableArray可变 
+MutalbeCopy的东西都是深拷贝，且都是可变数组
+copy一个可变的数组，深拷贝，不可变
+copy一个不可变数组  浅拷贝，不可变
+
+对象的拷贝需要重写协议，才能深拷贝，其中又分可变和不可变
+
+   typedef NS_ENUM(NSInteger, CYLSex) {
+       CYLSexMan,
+       CYLSexWoman
+   };
+
+   @interface CYLUser : NSObject<NSCopying>
+
+   @property (nonatomic, readonly, copy) NSString *name;
+   @property (nonatomic, readonly, assign) NSUInteger age;
+   @property (nonatomic, readonly, assign) CYLSex sex;
+
+   - (instancetype)initWithName:(NSString *)name age:(NSUInteger)age sex:(CYLSex)sex;
+   + (instancetype)userWithName:(NSString *)name age:(NSUInteger)age sex:(CYLSex)sex;
+
+   @end
+   
+   - (id)copyWithZone:(NSZone *)zone {
+	CYLUser *copy = [[[self class] allocWithZone:zone] 
+		             initWithName:_name
+ 							      age:_age
+						          sex:_sex];
+	return copy;
+}
+
+有些复杂的对象，如对象包含一个数组，那需把数组也拷贝过去
+
+/ .h文件
+// http://weibo.com/luohanchenyilong/
+// https://github.com/ChenYilong
+// 以第一题《风格纠错题》里的代码为例
+
+typedef NS_ENUM(NSInteger, CYLSex) {
+    CYLSexMan,
+    CYLSexWoman
+};
+
+@interface CYLUser : NSObject<NSCopying>
+
+@property (nonatomic, readonly, copy) NSString *name;
+@property (nonatomic, readonly, assign) NSUInteger age;
+@property (nonatomic, readonly, assign) CYLSex sex;
+
+- (instancetype)initWithName:(NSString *)name age:(NSUInteger)age sex:(CYLSex)sex;
++ (instancetype)userWithName:(NSString *)name age:(NSUInteger)age sex:(CYLSex)sex;
+- (void)addFriend:(CYLUser *)user;
+- (void)removeFriend:(CYLUser *)user;
+
+@end
+
+@implementation CYLUser {
+   NSMutableSet *_friends;
+}
+
+- (void)setName:(NSString *)name {
+   _name = [name copy];
+}
+
+- (instancetype)initWithName:(NSString *)name
+                        age:(NSUInteger)age
+                        sex:(CYLSex)sex {
+   if(self = [super init]) {
+       _name = [name copy];
+       _age = age;
+       _sex = sex;
+       _friends = [[NSMutableSet alloc] init];
+   }
+   return self;
+}
+
+- (void)addFriend:(CYLUser *)user {
+   [_friends addObject:user];
+}
+
+- (void)removeFriend:(CYLUser *)user {
+   [_friends removeObject:user];
+}
+
+- (id)copyWithZone:(NSZone *)zone {
+   CYLUser *copy = [[[self class] allocWithZone:zone]
+                    initWithName:_name
+                    age:_age
+                    sex:_sex];
+   copy->_friends = [_friends mutableCopy];
+   return copy;
+}
+
+- (id)deepCopy {
+   CYLUser *copy = [[[self class] alloc]
+                    initWithName:_name
+                    age:_age
+                    sex:_sex];
+   copy->_friends = [[NSMutableSet alloc] initWithSet:_friends
+                                            copyItems:YES];
+   return copy;
+}
+
+@end
+
+34、runtime
+我为了搞清属性是怎么实现的,曾经反编译过相关的代码,他大致生成了五个东西
+
+OBJC_IVAR_$类名$属性名称 ：该属性的“偏移量” (offset)，这个偏移量是“硬编码” (hardcode)，表示该变量距离存放对象的内存区域的起始地址有多远。
+setter 与 getter 方法对应的实现函数
+ivar_list ：成员变量列表
+method_list ：方法列表
+prop_list ：属性列表
+也就是说我们每次在增加一个属性,系统都会在 ivar_list 中添加一个成员变量的描述,在 method_list 中增加 setter 与 getter 方法的描述,
+在属性列表中增加一个属性的描述,然后计算该属性在对象中的偏移量,然后给出 setter 与 getter 方法对应的实现,在 setter 方法中从偏移量的位置
+开始赋值,在 getter 方法中从偏移量开始取值,为了能够读取正确字节数,系统对象偏移量的指针类型进行了类型强转.
+objc_setAssociatedObject
+objc_getAssociatedObject
+
+runtime 如何实现 weak 变量的自动置nil？
+weak 对象会放入一个 hash 表中，用 weak 指向的对象内存地址作为 key，当此对象的引用计数为0的时候会 dealloc，假如 weak 指向的对象内存地址是a，那么就会以a为键，
+ 在这个 weak 表中搜索，找到所有以a为键的 weak 对象，从而设置为 nil。
+objc_storeWeak(&a, b)函数理解为：objc_storeWeak(value, key) key变nil，将value置nil
+
+
+35、 @synthesize和@dynamic分别有什么作用？
+@syntheszie var = _var;生成指向var的get，set方法，如果没写编译器会自动生成get,set
+@dynamic 告诉编译器：需要用户实现get,set，如果不写，编译器不会生成get,set
+
+不会autosynthesis（自动合成属性）？
+同时重写了 setter 和 getter 时
+重写了只读属性的 getter 时
+使用了 @dynamic 时
+在 @protocol 中定义的所有属性
+在 category 中定义的所有属性
+重载的属性
+
+当你在子类中重载了父类中的属性，你必须 使用 @synthesize 来手动合成ivar。
+//
+// .m文件
+// http://weibo.com/luohanchenyilong/ (微博@iOS程序犭袁)
+// https://github.com/ChenYilong
+// 打开第14行和第17行中任意一行，就可编译成功
+
+@import Foundation;
+
+@interface CYLObject : NSObject
+@property (nonatomic, copy) NSString *title;
+@end
+
+@implementation CYLObject {
+   //    NSString *_title;
+}
+
+//@synthesize title = _title;
+
+- (instancetype)init
+{
+   self = [super init];
+   if (self) {
+       _title = @"微博@iOS程序犭袁";
+   }
+   return self;
+}
+
+- (NSString *)title {
+   return _title;
+}
+
+- (void)setTitle:(NSString *)title {
+   _title = [title copy];
+}
+
+@end
+
+12、如果属性不指定作何关键字描述，那对应的默认属性关键字为
+基本数据类型：atomic,readwrite,assign
+Objective-C 对象：atomic,readwrite,strong
+
