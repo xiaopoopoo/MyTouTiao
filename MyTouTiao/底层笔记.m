@@ -2472,7 +2472,154 @@ objc_storeWeak(&a, b)函数理解为：objc_storeWeak(value, key) key变nil，�
 
 @end
 
-12、如果属性不指定作何关键字描述，那对应的默认属性关键字为
+36、如果属性不指定作何关键字描述，那对应的默认属性关键字为
 基本数据类型：atomic,readwrite,assign
 Objective-C 对象：atomic,readwrite,strong
 
+37、objc中向一个nil对象发送消息将会发生什么？
+如果向一个nil对象发送消息，如果该方法返回的为基本数值类型，那返回的是一值是0,
+如果返回值为结构体，那结构体各字段的值是0，如果不是上述的类型，那返回为未定义
+通过objc_msgSend(receiver, selector)发送
+struct objc_class {
+  Class isa OBJC_ISA_AVAILABILITY; //isa指针指向Meta Class，因为Objc的类的本身也是一个Object，所以指向的是这个类类型，及对象
+  #if !__OBJC2__
+  Class super_class OBJC2_UNAVAILABLE; // 父类
+  const char *name OBJC2_UNAVAILABLE; // 类名
+  long version OBJC2_UNAVAILABLE; // 类的版本信息，默认为0
+  long info OBJC2_UNAVAILABLE; // 类信息，供运行期使用的一些位标识
+  long instance_size OBJC2_UNAVAILABLE; // 该类的实例变量大小
+  struct objc_ivar_list *ivars OBJC2_UNAVAILABLE; // 该类的成员变量链表
+  struct objc_method_list **methodLists OBJC2_UNAVAILABLE; // 方法定义的链表
+  struct objc_cache *cache OBJC2_UNAVAILABLE; // 方法缓存，对象接到一个消息会根据isa指针查找消息对象，这时会在method Lists中遍历，如果cache了，常用的方法调用时就能够提高调用的效率。
+  struct objc_protocol_list *protocols OBJC2_UNAVAILABLE; // 协议链表
+  #endif
+  } OBJC2_UNAVAILABLE;
+  objc在向一个对象发送消息时，runtime库会根据对象的isa指针找到该对象实际所属的类，
+  然后在该类中的方法列表以及其父类方法列表中寻找方法运行，
+ 发送消息的时候，objc_msgSend方法不会返回值，所谓的返回内容都是具体调用时执行的。 
+ 那么，回到本题，如果向一个nil对象发送消息，首先在寻找对象的isa指针时就是0地址返回了，所以不会出现任何错误
+ 
+ 38、通过clang编译后查看源码，查看[obj foo]和objc_msgSend()函数之间有什么关系
+ #import "CYLTest.h"
+
+int main(int argc, char * argv[]) {
+    @autoreleasepool {
+        CYLTest *test = [[CYLTest alloc] init];
+        [test performSelector:(@selector(iOSinit))];
+        return 0;
+    }
+}
+clang -rewrite-objc main.m
+生成一个main.cpp文件，大概有4万多行代码
+我们可以看到大概是这样的：
+((void ()(id, SEL))(void )objc_msgSend)((id)obj, sel_registerName("foo"));
+[obj foo];在objc编译时，会被转意为：objc_msgSend(obj, @selector(foo));。
+
+
+39、什么时候会报unrecognized selector的异常
+可查看github上demo  _objc_msgForward_demo
+//
+//  Monkey.m
+//  _objc_msgForward_demo
+//
+//  Created by luguobin on 15/9/21.
+//  Copyright © 2015年 XS. All rights reserved.
+//
+
+#import "Monkey.h"
+#import "ForwardingTarget.h"
+#import <objc/runtime.h>
+
+@interface Monkey()
+@property (nonatomic, strong) ForwardingTarget *target;
+@end
+
+@implementation Monkey
+
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        _target = [ForwardingTarget new];
+        [self performSelector:@selector(sel:) withObject:@"yeyu"];
+    }
+    
+    return self;
+}
+
+
+id dynamicMethodIMP(id self, SEL _cmd, NSString *str)
+{
+    NSLog(@"%s:动态添加的方法",__FUNCTION__);
+    NSLog(@"%@", str);
+    return @"1";
+}
+
+
+//对象查找selector时，先查找cachelist，如果没有则查找methodlist，如果还没有就查找父类的methodlist
+//进入该方法，该方法为本类对象添加一个未找到的方法sel，然后重新调用新添加的这个sel方法
++ (BOOL)resolveInstanceMethod:(SEL)sel __OSX_AVAILABLE_STARTING(__MAC_10_5, __IPHONE_2_0) {
+    
+    class_addMethod(self.class, sel, (IMP)dynamicMethodIMP, "@@:");
+    BOOL result = [super resolveInstanceMethod:sel];
+    result = YES;
+    return result; // 1
+}
+
+//如果resolveInstanceMethod没作任何处理，会进入这个方法，把消息重启后转发给其它对象ForwardingTarget，
+//ForwardingTarget对象调用它自身的sel方法
+- (id)forwardingTargetForSelector:(SEL)aSelector __OSX_AVAILABLE_STARTING(__MAC_10_5, __IPHONE_2_0) {
+    id result = [super forwardingTargetForSelector:aSelector];
+    result = self.target;
+    return result; // 2
+}
+//如果forwardingTargetForSelector方法未处理，则进入这个方法，这个方法返回一个对象，其中包括
+//sel方法的参数及返回值，如果返回的这个对象是nil，那发送消息Runtime则会向doesNotRecognizeSelector发消息，然后程序挂掉，如果不是nil，返回了这个sel函数的签名，那会调用forwardInvocation:方法，该方法再转发给自身对象的invocationTest进行处理
+//
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector
+{
+    id result = [super methodSignatureForSelector:aSelector];
+    NSMethodSignature *sig = [NSMethodSignature signatureWithObjCTypes:"v@:"];
+    result = sig;
+    return result; // 3
+}
+
+
+- (void)forwardInvocation:(NSInvocation *)anInvocation
+{
+    //    [super forwardInvocation:anInvocation];
+    anInvocation.selector = @selector(invocationTest);
+    [self.target forwardInvocation:anInvocation];
+}
+
+- (void)doesNotRecognizeSelector:(SEL)aSelector {
+    [super doesNotRecognizeSelector:aSelector];
+}
+
+@end
+
+40、一个objc对象如何进行内存布局？
+每一个对象内部都有一个isa指针,指向他的类，这个类即对象
+它有 对象方法列表（对象能够接收的消息列表，保存在它所对应的类对象中）成员变量的列表,属性列表,
+还有一个superclass的指针，指向他的父类对象     
+一个objc对象的isa的指针指向什么？有什么作用？
+指向他的类对象,从而可以找到对象上的方法                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+
+41. 下面的代码输出什么？
+
+   @implementation Son : Father
+   - (id)init
+   {
+       self = [super init];
+       if (self) {
+           NSLog(@"%@", NSStringFromClass([self class]));
+           NSLog(@"%@", NSStringFromClass([super class]));
+       }
+       return self;
+   }
+   @end
+   都输出 Son
+NSStringFromClass([self class]) = Son
+NSStringFromClass([super class]) = Son
+上面的例子不管调用[self class]还是[super class]，接受消息的对象都是当前 Son ＊xxx 这个对象。
+当使用 self 调用方法时，会从当前类的方法列表中开始找，如果没有，就从父类中再找；而当使用 super 时，则从父类的方法列表中开始找。然后调用父类的这个方法。
