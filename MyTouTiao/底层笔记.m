@@ -2623,3 +2623,67 @@ NSStringFromClass([self class]) = Son
 NSStringFromClass([super class]) = Son
 上面的例子不管调用[self class]还是[super class]，接受消息的对象都是当前 Son ＊xxx 这个对象。
 当使用 self 调用方法时，会从当前类的方法列表中开始找，如果没有，就从父类中再找；而当使用 super 时，则从父类的方法列表中开始找。然后调用父类的这个方法。
+
+42、iOS 如何创建一个线程，要求可以一直工作，不会执行一次就结束。常驻线程
+方法1：开启一个线程，让线程调用的方法加入一个自动释方池，自动释放池中写一个死循环，循环加锁，则永远线程常驻其中，因为没有线程没有执行完
+@synthesize name;  
+- (void)viewDidLoad  
+{  
+    [super viewDidLoad];  
+    // Do any additional setup after loading the view, typically from a nib.  
+    NSThread *thread = [[NSThread alloc]initWithTarget:self selector:@selector(threadFunc) object:nil];  
+    [thread start];  
+}  
+static bool over = NO;  
+- (void)threadFunc  
+{  
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc]init];  
+    while (YES) {  
+        @synchronized(name){  
+            name = @"Frank";  
+            [NSThread sleepForTimeInterval:2];  
+            if ([NSThread isMultiThreaded]) {  
+                NSLog(@"%@ isMultiThreaded",name);  
+            }  
+            if (over) {  
+                break;  
+            }  
+        }  
+    }  
+    [pool release];  
+}  
+方法2：开启一个线程，这个子线程调的方法需手成开启一个runloop，这样runloop一直循环就可以实现常驻线程
+   [self performSelector:@selector(time) onThread:self.thred withObject:nil waitUntilDone:NO];
+-(void)run{
+    NSLog(@"thred ===============%@",[NSThread currentThread]);
+    [[NSRunLoop currentRunLoop]addPort:[NSPort port] forMode:NSDefaultRunLoopMode];
+    [[NSRunLoop currentRunLoop]run];
+}
+
+43、afn2.0 为什么需要常驻线程
+1为什么要添加一个不退出的线程
+2为什么只添加了一个线程
+AFN把网络请求的发起和收到结果解析放在了子线程中，但子线程一般都是执行完退出，但afn收到网络请求是延时的，也许线程退出了才收到
+请求，为了保证线程不退出，所以写了一个常驻线程
+如果频繁的开启多个线程启用多个runloop会占用内存，内存泄漏，所以只开启了一个常驻线程，其实这里的一个常驻线程是指把每个AFHTTPRequestOperation
+请求加到NSOperationQueue，这个队列会根据cpu的核数来开启具体的几条线程
+
+44、AFNetworking3.0后为什么不再需要常驻线程？
+AFNetworking3.0不再使用NSURLConnection，因NSURLConnection需要一条线程负责等待代理方法回调并处理数据，所以使用了
+NSURLSession
+self.operationQueue = [[NSOperationQueue alloc] init];
+self.operationQueue.maxConcurrentOperationCount = 1;
+self.session = [NSURLSession sessionWithConfiguration:self.sessionConfiguration delegate:self delegateQueue:self.operationQueue];
+从上面的代码可以看出，NSURLSession发起的请求，不再需要在当前线程进行代理方法的回调！可以指定回调的delegateQueue，这样我们就不用为了等待代理回调方法而苦苦保活线程了。
+指定的用于接收回调的Queue的maxConcurrentOperationCount设为了1，这里目的是想要让并发的请求串行的进行回调。
+为什么要串行回调？
+//线程的安全性
+- (AFURLSessionManagerTaskDelegate *)delegateForTask:(NSURLSessionTask *)task {
+    NSParameterAssert(task);
+    AFURLSessionManagerTaskDelegate *delegate = nil;
+    [self.lock lock];
+    //给所要访问的资源加锁，防止造成数据混乱
+    delegate = self.mutableTaskDelegatesKeyedByTaskIdentifier[@(task.taskIdentifier)];
+    [self.lock unlock];
+    return delegate;
+}
