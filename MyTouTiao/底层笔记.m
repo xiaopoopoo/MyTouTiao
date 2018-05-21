@@ -1,4 +1,5 @@
-
+夏天的风_song
+链接：https://www.jianshu.com/p/7ca9048afa5b
     1.库和宏的一点点
     <SystemConfiguration/SystemConfiguration.h>    网络配置的库  属于coresever 如联网
     <Availability.h> 判断系统版本
@@ -2687,3 +2688,933 @@ self.session = [NSURLSession sessionWithConfiguration:self.sessionConfiguration 
     [self.lock unlock];
     return delegate;
 }
+
+NSURLConnection
+
+NSURLSession 的优势
+
+NSURLSession 支持 http2.0 协议  主要是因为它改变了客户端与服务器之间交换数据的方式，
+HTTP 2.0 增加了新的二进制分帧数据层改进传输性能，实现低延迟和高吞吐量
+
+在处理下载任务的时候可以直接把数据下载到磁盘
+
+支持后台下载|上传
+
+同一个 session 发送多个请求，只需要建立一次连接（复用了TCP）
+
+提供了全局的 session 并且可以统一配置，使用更加方便
+
+下载的时候是多线程异步处理，效率更高
+
+45、gcd的信号量semaphore
+信号量为0则阻塞线程，大于0则不会阻塞，通过改变信号量的值，来控制是否阻塞线程，从而达到线程同步。
+
+GCD的时候如何让线程同步，目前我能想到的就三种
+1.dispatch_group
+dispatch_group_t相关属性介绍
+dispatch_group_async(group, queue, block);把一个block任务添另到队列中，并交给组管理
+dispatch_group_enter(group)下面的任务由group组管理，group组的任务数+1
+dispatch_group_leave(group);任务离开这个组
+dispatch_group_create();创建一个组
+dispatch_group_wait(group1, DISPATCH_TIME_FOREVER);永远等待组下，这个代码下面的语句永远不会执行
+dispatch_group_notify(group1, queue1,block);监听组中的所有任务，当所有任务完成才会执行此方法
+
+
+常见用法的区别
+
+组合方式1使用到了下面的方法：
+dispatch_group_async(group, queue, block);
+dispatch_group_notify(group1, queue1, block);
+
+同步任务：异步任务执行-1，异步任务执行-2会随机打印，因为dispatch_group_async,切记没有dispatch_group_sync这个方法
+  dispatch_queue_t queue1 = dispatch_queue_create("dispatchGroupMethod1.queue1", DISPATCH_QUEUE_CONCURRENT);
+    dispatch_group_t group1 = dispatch_group_create();
+    
+    dispatch_group_async(group1, queue1, ^{
+        dispatch_sync(queue1, ^{
+            for (NSInteger i =0; i<3; i++) {
+                sleep(1);
+                NSLog(@"%@-同步任务执行-:%ld",@"任务1",(long)i);
+
+            }
+        });
+    });
+
+    
+    dispatch_group_async(group1, queue1, ^{
+        dispatch_sync(queue1, ^{
+            for (NSInteger i =0; i<3; i++) {
+                sleep(1);
+                NSLog(@"%@-同步任务执行-:%ld",@"任务2",(long)i);
+                
+            }
+        });
+    });
+    
+ //   等待上面的任务全部完成后，会往下继续执行 （会阻塞当前线程,因为是dispatch_syn同步没有开启线程的能力，所以会一直阻塞当前线程，直到任务完成执行下面代码）
+//    dispatch_group_wait(group1, DISPATCH_TIME_FOREVER);
+//    NSLog(@"dispatch_group_wait语句等待上面同步任务执行完成才执行");
+
+    //等待上面的任务全部完成后，会收到通知执行block中的代码 （不会阻塞线程）
+    dispatch_group_notify(group1, queue1, ^{
+        NSLog(@"Method1-全部任务执行完成会执行这句话");
+    });
+    
+
+异步任务： 异步任务执行-1，异步任务执行-2会随机打印，因为dispatch_group_async,切记没有dispatch_group_sync这个方法
+ dispatch_queue_t queue1 = dispatch_queue_create("dispatchGroupMethod1.queue1", DISPATCH_QUEUE_CONCURRENT);
+    dispatch_group_t group1 = dispatch_group_create();
+    
+    dispatch_group_async(group1, queue1, ^{
+        dispatch_async(queue1, ^{
+            for (NSInteger i =0; i<3; i++) {
+                sleep(1);
+                NSLog(@"%@-异步任务执行-:%ld",@"任务1",(long)i);
+
+            }
+        });
+    });
+    
+    
+    dispatch_group_async(group1, queue1, ^{
+        dispatch_async(queue1, ^{
+            for (NSInteger i =0; i<3; i++) {
+                sleep(1);
+                NSLog(@"%@-异步任务执行-:%ld",@"任务2",(long)i);
+                
+            }
+        });
+    });
+    
+//    //等待上面的任务全部完成后，会往下继续执行 （会阻塞当前线程）在异步任务下这个wait不起作用了，因为这dispatch_async有开启新线程的能力
+//，dispatch_group_wait只能阻塞当前线程
+//    dispatch_group_wait(group1, DISPATCH_TIME_FOREVER);
+    
+    //等待上面的任务全部完成后，会收到通知执行block中的代码 （不会阻塞线程）  在异步任务下这句话不起作用了，会先执行 NSLog(@"Method1-全部任务执行完成");
+    //再打印异步任务执行1或异步任务执行2
+    dispatch_group_notify(group1, queue1, ^{
+        NSLog(@"Method1-全部任务执行完成");
+    });
+
+组合方式2
+
+dispatch_group_enter(group);
+
+dispatch_group_leave(group);
+
+dispatch_group_notify(group1, queue1,block);
+
+在这种组合下，根据任务是同步、异步又分为两种，这两种组合的执行代码与运行结果如下：
+
+同步：
+dispatch_queue_t queue2 = dispatch_queue_create("dispatchGroupMethod2.queue2", DISPATCH_QUEUE_CONCURRENT);
+    dispatch_group_t group2 = dispatch_group_create();
+    
+
+    dispatch_group_enter(group2);//把下面任务加入到这个组中，并在任务结束后离开这个组，所以任务按1，2，3这样执行，不会像dispatch_group_async，任务随机执行
+    dispatch_sync(queue2, ^{
+        for (NSInteger i =0; i<3; i++) {
+            sleep(1);
+            NSLog(@"%@-同步任务执行-:%ld",@"任务1",(long)i);
+            
+        }
+        dispatch_group_leave(group2);//这个任务执行完会离开group2，group2任务数减1，如果group2中还有任务数没执行完，永远不会执行dispatch_group_notify这个方法
+    });
+    
+
+    
+    dispatch_group_enter(group2);//把下面任务加入到这个组中，并在任务结束后离开这个组，所以任务按1，2，3这样执行，不会像dispatch_group_async，任务随机执行
+    dispatch_sync(queue2, ^{
+        for (NSInteger i =0; i<3; i++) {
+            sleep(1);
+            NSLog(@"%@-同步任务执行-:%ld",@"任务2",(long)i);
+            
+        }
+        dispatch_group_leave(group2);
+    });
+    
+//    //等待上面的任务全部完成后，会往下继续执行 （会阻塞当前线程）
+//    dispatch_group_wait(group2, DISPATCH_TIME_FOREVER);
+    
+    //等待上面的任务全部完成后，会收到通知执行block中的代码 （不会阻塞线程）
+    dispatch_group_notify(group2, queue2, ^{
+        NSLog(@"Method2-全部任务执行完成");
+    });
+
+2018-05-21 13:08:28.580944+0800 222[23502:1828298] 任务1-同步任务执行-:0
+2018-05-21 13:08:29.586230+0800 222[23502:1828298] 任务1-同步任务执行-:1
+2018-05-21 13:08:30.588698+0800 222[23502:1828298] 任务1-同步任务执行-:2
+2018-05-21 13:08:31.592323+0800 222[23502:1828298] 任务2-同步任务执行-:0
+2018-05-21 13:08:32.594173+0800 222[23502:1828298] 任务2-同步任务执行-:1
+2018-05-21 13:08:33.599511+0800 222[23502:1828298] 任务2-同步任务执行-:2
+2018-05-21 13:08:33.599634+0800 222[23502:1828345] Method2-全部任务执行完成
+
+ 
+异步：
+ dispatch_queue_t queue2 = dispatch_queue_create("dispatchGroupMethod2.queue2", DISPATCH_QUEUE_CONCURRENT);
+        dispatch_group_t group2 = dispatch_group_create();
+        
+        
+        dispatch_group_enter(group2);
+        dispatch_async(queue2, ^{
+            for (NSInteger i =0; i<3; i++) {
+                sleep(1);
+                NSLog(@"%@-异步任务执行-:%ld",@"任务1",(long)i);
+                
+            }
+            dispatch_group_leave(group2);
+        });
+        
+        
+        
+        dispatch_group_enter(group2);
+        dispatch_async(queue2, ^{//任务随机执行，因为是异步，可能是任务2执行两次，再执行任务1一次，这里打印出交替执行，是因为有sleep(1)的作用，因为线程是交替切换的
+            for (NSInteger i =0; i<3; i++) {
+                sleep(1);
+                NSLog(@"%@-异步任务执行-:%ld",@"任务2",(long)i);
+                
+            }
+            dispatch_group_leave(group2);
+        });
+        
+        //    //等待上面的任务全部完成后，会往下继续执行 （会阻塞当前线程）
+        //    dispatch_group_wait(group2, DISPATCH_TIME_FOREVER);
+        
+        //等待上面的任务全部完成后，会收到通知执行block中的代码 （不会阻塞线程）
+        dispatch_group_notify(group2, queue2, ^{
+            NSLog(@"Method2-全部任务执行完成");
+        });
+        
+2018-05-21 13:14:42.957358+0800 222[23897:1837205] 任务2-异步任务执行-:0
+2018-05-21 13:14:42.957360+0800 222[23897:1837207] 任务1-异步任务执行-:0
+2018-05-21 13:14:43.960226+0800 222[23897:1837205] 任务2-异步任务执行-:1
+2018-05-21 13:14:43.960280+0800 222[23897:1837207] 任务1-异步任务执行-:1
+2018-05-21 13:14:44.964497+0800 222[23897:1837205] 任务2-异步任务执行-:2
+2018-05-21 13:14:44.964497+0800 222[23897:1837207] 任务1-异步任务执行-:2
+2018-05-21 13:14:49.979265+0800 222[23897:1837207] Method2-全部任务执行完成
+
+2.dispatch_barrier
+ dispatch_barrier_async代码块，会阻塞当前线程，直到这个代码块执行完成，但是这个必须是在私自创建的串行或并行队列上，如果加入到全局队列上不会阻塞
+ 会数据错乱
+ 
+ //创建了一个私有的并发队列，因为是私有的，把以下面代码是按顺序执行
+ let currentQueue:dispatch_queue_t = dispatch_queue_create("com.eric", DISPATCH_QUEUE_CONCURRENT);
+    
+    var num = 10
+    dispatch_barrier_async(currentQueue) {
+        sleep(1)
+        num = 11
+        print(num)
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        num = 12
+        print(num)
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        num = 13
+        print(num)
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        num = 14
+        print(num)
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        print("5")
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        print("6")
+        print(NSThread.currentThread())
+    }
+    print("结束")
+    
+    //创建了一个全局并发队列，不是私有的，这个时候执行会数据错乱
+    let currentQueue:dispatch_queue_t = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)
+    var num = 10
+    dispatch_barrier_async(currentQueue) {
+        sleep(1)
+        num = 11
+        print(num)
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        num = 12
+        print(num)
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        num = 13
+        print(num)
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        num = 14
+        print(num)
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        print("5")
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        print("6")
+        print(NSThread.currentThread())
+    }
+    print("结束")
+
+执行结果:
+<pre>结束
+14
+14
+14
+5
+6
+
+创建了一个私有的串行队列，因为是私有的，按顺序执行
+let currentQueue:dispatch_queue_t = dispatch_queue_create("com.eric", DISPATCH_QUEUE_SERIAL);
+    //let currentQueue:dispatch_queue_t = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)
+    var num = 10
+    dispatch_barrier_async(currentQueue) {
+        sleep(5)
+        num = 11
+        print(num)
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        num = 12
+        print(num)
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        num = 13
+        print(num)
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        num = 14
+        print(num)
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        print("5")
+        print(NSThread.currentThread())
+    }
+    dispatch_barrier_async(currentQueue) {
+        print("6")
+        print(NSThread.currentThread())
+    }
+    print("结束")
+
+
+
+
+
+
+
+
+
+3.dispatch_semaphore
+
+dispatch_semaphore_create 创建一个semaphore
+dispatch_semaphore_signal 发送一个信号 +1
+dispatch_semaphore_wait 等待信号 为0时阻塞
+
+demo1:
+实现线程的同步，同一时间只有一个线程访问
+思路：创建一个值为1的信号量，每个线程任务在执行前会信号量减1，此时为0,执行完成后信号量加1，则其它线程又可以执行
+/传递的参数是信号量最初值,下面例子的信号量最初值是1
+ dispatch_semaphore_t signal = dispatch_semaphore_create(1);
+
+    dispatch_time_t overTime = dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC);
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+
+       // 当信号量是0的时候,dispatch_semaphore_wait(signal, overTime);这句代码会一直等待直到overTime超时.
+//这里信号量是1 所以不会在这里发生等待.
+        dispatch_semaphore_wait(signal, overTime);
+        NSLog(@"需要线程同步的操作1 开始");
+        sleep(2);
+        NSLog(@"需要线程同步的操作1 结束");
+       long signalValue = dispatch_semaphore_signal(signal);//这句代码会使信号值 增加1 
+//并且会唤醒一个线程去开始继续工作,如果唤醒成功,那么返回一个非零的数,如果没有唤醒,那么返回 0
+        
+        NSLog(@"%ld",signalValue);
+    });
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        sleep(1);
+        dispatch_semaphore_wait(signal, overTime);
+        NSLog(@"需要线程同步的操作2");
+        dispatch_semaphore_signal(signal);
+        long signalValue = dispatch_semaphore_signal(signal);
+        
+        NSLog(@"%ld",signalValue);
+    });
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        sleep(1);
+        dispatch_semaphore_wait(signal, overTime);
+        NSLog(@"需要线程同步的操作3");
+        dispatch_semaphore_signal(signal);
+        long signalValue = dispatch_semaphore_signal(signal);
+        
+        NSLog(@"%ld",signalValue);
+    });
+
+demo2:
+利用 dispatch_semaphore_t signal 组织一个并发数是10 的一个多线程工作队列.这个demo测试不正确，并不是创建了并发数为10的线程队列
+    dispatch_group_t group = dispatch_group_create();创建一个组线程
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(10);
+    dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    for (int i = 0; i < 100; i++)
+    {
+        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);//每次wait都减1，减到0则阻塞
+       //注意这里信号量从10开始递减,并不会阻塞循环.循环10次,递减到0的时候,开始阻塞.不再循环第11次
+        NSLog(@"-------");
+        dispatch_group_async(group, queue, ^{//所有线程任务放入这个组中
+            NSLog(@"%i",i);
+            sleep(1);
+            dispatch_semaphore_signal(semaphore);//当值为0时，这里执行后会加1，然后循环第11次，但第11次遇到wait，会
+        });//创建一个新线程,并在线程结束后,发送信号量,通知阻塞的循环继续创建新线程.
+    }
+dispatch_group_wait(group, DISPATCH_TIME_FOREVER);//只有所有任务block执行完，才能执行往下的代码
+
+
+demo3:利用 dispatch_semaphore_t signal 组织一个生产消费模式
+什么是生产者消费者模式？一个死循环里面一直等待消费，别一个线程生产一个产品，信号量加1，消费者在死循环里面收到信号进行消费
+
+实现方案：创建一个信号量为0的信号，创建一个异步线程任务，内部while(1)循环，用一个信号等待，再创建一个异步线程，while(1) dispatch_semaphore_signal(sem);信号加1
+
+__block int product = 0;
+    dispatch_semaphore_t sem = dispatch_semaphore_create(0);
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{ //消费者队列
+        
+        while (1) {
+            if(!dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, DISPATCH_TIME_FOREVER))){
+////非 0的时候,就是成功的timeout了,这里判断就是没有timeout   成功的时候是 0
+                
+                NSLog(@"消费%d产品",product);
+                product--;
+            };
+        }
+    });
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{ //生产者队列   
+        while (1) {
+
+                sleep(1); //wait for a while
+                product++;
+                NSLog(@"生产%d产品",product);
+                dispatch_semaphore_signal(sem);
+        }
+        
+    });
+    
+46.iOS网络请求缓存
+URLCache类
+func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+        
+        print("URLCache's disk capacity is \(URLCache.shared.diskCapacity) bytes")
+        print("URLCache's disk usage capacity is \(URLCache.shared.currentDiskUsage) bytes")
+        print("URLCache's memory capacity is \(URLCache.shared.memoryCapacity) bytes")
+        print("URLCache's memory usage capacity is \(URLCache.shared.currentMemoryUsage) bytes")
+        return true
+    }
+URLCache's disk capacity is 10000000 bytes
+URLCache's disk usage capacity is 86016 bytes
+URLCache's memory capacity is 512000 bytes
+URLCache's memory usage capacity is 0 bytes
+系统默认在内存上分配约512KB的空间，在磁盘上分配约10M的空间。
+
+配置缓存空间。项目中如果你觉得系统默认分配的缓存空间不够的时候我们可以手动去配置URLCache的缓存空间,以及数据缓存的位置。
+func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+        
+        URLCache.shared.diskCapacity = 1024 * 1024 * 5
+        URLCache.shared.memoryCapacity = 1024 * 1024 * 30
+        print("URLCache's disk capacity is \(URLCache.shared.diskCapacity) bytes")
+        print("URLCache's disk usage capacity is \(URLCache.shared.currentDiskUsage) bytes")
+        print("URLCache's memory capacity is \(URLCache.shared.memoryCapacity) bytes")
+        print("URLCache's memory usage capacity is \(URLCache.shared.currentMemoryUsage) bytes")
+        print("\(URLCache.shared)")
+        return true
+    }
+    
+缓存策略
+HTTP定义了与服务器交互不同的方法，最基本的四种分别是：GET,POST,PUT,DELETE对应的分别是：查,改,增,删
+URLCache只会对你的GET进行缓存
+在caching in http中，服务器返回的头中会有这个字段：cache-control:max-age 
+cache-control代表缓存的策略 max-age过期时间
+public
+private(default)
+no-cache
+max-age
+must-revalidate
+
+当ios请求网络后，如果设置了网络缓存，会在caches目录下创建几个数据库文件，
+用数据库打开会有几张表，字段中request_key是返回url加参数的内容，即使cache-control没开启缓存，
+数据库也会存数据，只是不使用这个数据
+
+3.自定义缓存
+let imgUrl = URL.init(string: "http://img15.3lian.com/2015/f2/50/d/71.jpg")
+        var request = URLRequest.init(url: imgUrl!)
+        request.cachePolicy = URLRequest.CachePolicy.reloadIgnoringLocalCacheData
+        let respose = URLCache.shared.cachedResponse(for: request);
+自己如何保存缓存
+管理缓存：
+URLCache.shared.removeAllCachedResponses()
+URLCache.shared.removeCachedResponse(for: URLRequest)
+URLCache.shared.removeCachedResponse(for: URLSessionDataTask)
+URLCache.shared.storeCachedResponse(CachedURLResponse, for: URLRequest)
+URLCache.shared.storeCachedResponse(CachedURLResponse, for: URLSessionDataTask)
+
+如何更新缓存 Last-Modifie And ETag
+第一次请求，服务器返回状态码200并返回当前url数据最后修改时间Last-Modified
+Last-Modified: Fri, 12 May 2006 18:53:33 GMT
+第二次请求，上次的修改时间已经在本地，这个时候把上次修改时间发送给服务器If-Modified-Since
+格式类似这样：
+If-Modified-Since: Fri, 12 May 2006 18:53:33 GMT
+
+如果服务器资源未变化，返回304，内容为空，直接urlcache中获取
+if ETagFromServer != ETagOnClient || LastModifiedFromServer != LastModifiedOnClient，如果和上次时间不相等
+
+   GetDataFromServer
+else
+
+   GetDataFromURLCache
+   
+或Etag："50b1c1d4f775c61:df3" If-None-Match: W/"50b1c1d4f775c61:df3"hash值来判断
+如果相等返回在304，服务器未修改，如果服务器被修改了，etag会发生相应的改变
+
+
+47、SDWebImage原理和缓存机制
+独立的异步图像下载
+<SDWebImageOperation>)downloadImageWithURL:(NSURL *)url options:(SDWebImageOptions)options progress:(SDWebImageDownloaderProgressBlock)progressBlock completed:(SDWebImageCompletionWithFinishedBlock)completedBlock; 来建立一个SDWebImageDownLoader 的实例。这样就可以有下载进度的回调和下载完成的回调，可以在回调完成进度条相关的操作和显示图片相关的操作。
+实现了异步下载，并能显示下载进度
+
+独立的异步图像缓存
+SDImageCache类提供一个管理缓存的单例类。
+SDImageCache *imageCache = [SDImageCache sharedImageCache]
+先查找内存，如果内存不存在该图片，再查找硬盘；查找硬盘时，以URL的MD5值作为key
+查找图片：
+UIImage *cacheImage = [imageCache imageFromKey:myCacheKey];
+
+缓存图片：
+[ imageCache storeImage:myImage forKey:myCacheKey];
+只缓存在内存中，不缓存在硬盘中
+storeImage:forKey:toDisk:no;
+
+主要用到的对象：
+1.UIImageView(WebCache)，分类 入口封装，读取图片后回调
+2.SDWebImagemanager 在图片未下载完成前的处理，记录是正在读取图片，或从缓存中读取图片SDImageCache，或从网络中请求图片SDWebImageDownloader
+并实现管理
+3.SDImageCache,根据URL作为key，对图片进行存储和读取（存在内存（以URL作为key）和存在硬盘两种（以URL的MD5值作为key））。实现图片和内存清理工作。
+
+SDWebImage加载图片的流程
+1.入口 setImageWithURL:placeholderImage:options:会先把 placeholderImage显示，然后 SDWebImageManager根据 URL 开始处理图片。
+2.进入SDWebImageManager 类中downloadWithURL:delegate:options:userInfo:，交给
+SDImageCache从缓存查找图片是否已经下载
+queryDiskCacheForKey:delegate:userInfo:.//SDWebImageManager中从SDImageCache查看图片是否已经下载，
+3.如果内存中已经有图片缓存，SDImageCacheDelegate回调 imageCache:didFindImage:forKey:userInfo:到
+SDWebImageManager。SDWebImageManager的SDWebImageManagerDelegate再次回调到前端显示，如第4步
+4.SDWebImageManagerDelegate 回调
+webImageManager:didFinishWithImage: 到 UIImageView+WebCache,等前端展示图片。
+5.如果内存缓存中没有，生成 ｀NSOperation ｀添加到队列，开始从硬盘查找图片是否已经缓存。在硬盘中查找使用了队列
+6.根据 URL的MD5值Key在硬盘缓存目录下尝试读取图片文件。这一步是在 NSOperation 进行的操作，所以回主线程进行结果回调 notifyDelegate:。
+7.如果上一操作从硬盘读取到了图片，将图片添加到内存缓存中（如果空闲内存过小， 会先清空内存缓存）。
+SDImageCacheDelegate'回调 imageCache:didFindImage:forKey:userInfo:`。进而回调展示图片。进行了图片显示
+8.如果从硬盘内存中都读不到图片，需要下载图片， 回调 imageCache:didNotFindImageForKey:userInfo:。
+9.共享或重新生成一个下载器 SDWebImageDownloader开始下载图片。
+10.图片下载由 NSURLConnection来做，实现相关 delegate
+来判断图片下载中、下载完成和下载失败。
+11.connection:didReceiveData: 中利用 ImageIO做了按图片下载进度加载效果。
+12.connectionDidFinishLoading: 数据下载完成后交给 SDWebImageDecoder做图片解码处理。
+13.图片解码处理在一个 NSOperationQueue完成，不会拖慢主线程 UI.如果有需要 对下载的图片进行二次处理，最好也在这里完成，效率会好
+14.在主线程 notifyDelegateOnMainThreadWithInfo:
+宣告解码完成 imageDecoder:didFinishDecodingImage:userInfo: 回调给 SDWebImageDownloader`。
+15.imageDownloader:didFinishWithImage:回调给 SDWebImageManager告知图片 下载完成。
+16. SDWebImageManager通知所有的 downloadDelegates下载完成，回调给需要的地方展示图片。
+17.将图片保存到 SDImageCache中，内存缓存和硬盘缓存同时保存。写文件到硬盘 也在以单独 NSOperation 完成，避免拖慢主线程。
+18.SDImageCache 在初始化的时候会注册一些消息通知，
+在内存警告或退到后台的时 候清理内存图片缓存，应用结束的时候清理过期图片。
+
+48、iOS，K线图
+一、什么是K线图
+
+1、K线图的定义：
+
+K线（Candlestick chart）又称“阴阳烛”，是反映价格走势的一种图线，其特色在于一个线段内记录了多项讯息，相当易读易懂且实用有效，广泛用于股票、期货、贵金属、数字货币等行情的技术分析，称为K线分析
+
+2、K线图相关的专业术语
+
+K线可分“阳线”、“阴线”和“中立线”三种
+
+阳线代表收盘价大于开盘价
+
+阴线代表开盘价大于收盘价
+
+中立线则代表开盘价等于收盘价。
+
+3、K线图的表示
+
+最早阳线以红色表示，阴线则以黑色表示，但由于彩色印刷成本高，所以后来阳线常改以白色空心方块表示。在亚洲国家（或大中华经济圈），多半配合传统习惯，阳线以红色表示，阴线以绿色表示，即是红升绿跌。至于中立线的颜色则不一而足，难以卒论，但以异于其他两线为原则。在欧美，习惯则正好相反，阴线以红色表示，阳线以绿色表示。香港跟欧美相同，采用绿升红跌。
+
+二、怎么画K线图
+
+首先我们找到该日或某一周期的最高和最低价，垂直地连成一条直线；然后再找出当日或某一周期的开市和收市价，把这二个价位连接成一条狭长的长方柱体。假如当日或某一周期的收市价较开市价为高（即低开高收），我们便以红色来表示，或是在柱体上留白，这种柱体就称之为"阳线"。如果当日或某一周期的收市价较开市价为低（即高开低收），我们则以绿色表示，又或是在柱上涂黑色，这柱体就是"阴线"了。
+
+分时图是大盘和个股的实时（即时）分时走向图，其在实战研判中的地位极其重要，是即时把握多空力量转化即市场变化直接的根本所在。
+
+K线图分类：
+
+分时K线图，分时K线图实际上就是一个折线图
+
+标准K线图，一般画成阴阳烛的样式
+
+1、折线图画法
+
+计算坐标
+
+先计算出单位数值所占的Y轴的高度：diviceHeight =  SizeHeight／（MaxNumber－MinNumber）
+
+计算出当前Y轴的坐标：总高度减去当前值所占的高度currentY = Height -   (nowNumber *diviceHeight);
+
+开始画图
+
+重写drawRect方法
+
+- (void)drawRect:(CGRect)rect {
+
+if (self.pointsArray) {
+
+//画连接线
+
+CGContextRef context = UIGraphicsGetCurrentContext();//获取绘图上下文
+
+CGContextSetLineWidth(context, _lineWidth);//设置线宽
+
+CGContextSetShouldAntialias(context, YES);//设置反锯齿边缘
+
+UIColor *color = _lineColor?_lineColor:_defaultColor;
+
+CGContextSetStrokeColorWithColor(context, [color CGColor]);//设置线的颜色
+
+//定义多个点，画多点连线
+
+for (id item in self.pointsArray) {
+
+CGPoint currentPoint = CGPointFromString(item);
+
+if ((int)currentPoint.y<=(int)self.frame.size.height && currentPoint.y>=0) {
+
+if ([self.pointsArray indexOfObject:item]==0) {
+
+CGContextMoveToPoint(context, currentPoint.x, currentPoint.y);//这个是起始点
+
+continue;
+
+}
+
+CGContextAddLineToPoint(context, currentPoint.x, currentPoint.y);
+
+CGContextStrokePath(context); //开始画线
+
+if ([self.pointsArray indexOfObject:item]
+
+CGContextMoveToPoint(context, currentPoint.x, currentPoint.y);
+
+}
+
+}
+
+}
+
+}
+
+}
+
+2、阴阳烛图，该图需要4个坐标点，开盘，关盘，最大值，最小值
+
+计算坐标
+
+坐标计算方法同折线图
+
+画图
+
+首先，要确定线的颜色，收盘值－开盘值>0红线，收盘值－开盘值<0绿线，开盘值-收盘值=0白线；
+
+第二，在最高值和次高值之间画一条线（线宽是阴线的宽度）
+
+第三，在开盘值和收盘值之间画一条宽线（烛线宽，画线时不绘制端点）
+
+第四，特殊情况，开盘值、收盘值、最高值和最低值都相等的，绘制的是横线，线宽是1，线长是烛线宽，绘制起始点是（oldX-（烛线宽／2），oldY），结束（oldX-（烛线宽／2），oldY）
+
+#pragma mark画一根K线
+
+-(void)drawKWithContext:(CGContextRef)context height:(CGPoint)heightPoint Low:(CGPoint)lowPoint open:(CGPoint)openPoint close:(CGPoint)closePoint width:(CGFloat)width{
+
+CGContextSetShouldAntialias(context, NO);
+
+//首先判断是绿的还是红的，根据开盘价和收盘价的坐标来计算
+
+BOOL isKong = NO;
+
+UIColor *color = [UIColor colorWithHexString:@"#FF0000"withAlpha:1];//设置默认红色
+
+//如果开盘价坐标在收盘价坐标上方则为绿色即空
+
+if (openPoint.y
+
+isKong = YES;
+
+color = [UIColor colorWithHexString:@"#00FFFF"withAlpha:1];//设置为绿色
+
+}
+
+//设置颜色
+
+CGContextSetStrokeColorWithColor(context, [color CGColor]);
+
+//首先画一个垂直的线包含上影线和下影线
+
+//定义两个点画两点连线
+
+CGContextSetLineWidth(context, KLineWidth);
+
+const CGPoint points[] = {heightPoint,lowPoint};
+
+CGContextStrokeLineSegments(context, points, 2);//绘制线段（默认不绘制端点）
+
+//再画中间的实体
+
+CGFloat halfWidth = 0;
+
+//纠正实体的中心点为当前坐标
+
+openPoint = CGPointMake(openPoint.x-halfWidth, openPoint.y);
+
+closePoint = CGPointMake(closePoint.x-halfWidth, closePoint.y);
+
+//开始画实体
+
+CGContextSetLineWidth(context, width); //改变线的宽度
+
+const CGPoint point[] = {openPoint,closePoint};
+
+CGContextStrokeLineSegments(context, point, 2);//绘制线段（默认不绘制端点）
+
+//CGContextSetLineCap(context, kCGLineCapSquare) ;//设置线段的端点形状，方形
+
+//开盘价格和收盘价格一样，画一条横线
+
+if ((openPoint.y-closePoint.y<=1) && (closePoint.y-openPoint.y<=1) ) {
+
+//这里设置开盘价和收盘价一样时候的颜色CGContextSetStrokeColorWithColor(context, [color CGColor]);
+
+CGPoint pointLeft = CGPointMake(openPoint.x-KCandleWidth/2, openPoint.y);
+
+CGPoint pointRight = CGPointMake(openPoint.x+KCandleWidth/2, openPoint.y);
+
+CGContextSetLineWidth(context, 1); //改变线的宽度
+
+const CGPoint point[] = {pointLeft,pointRight};
+
+CGContextStrokeLineSegments(context, point, 2);//绘制线段（默认不绘制端点）
+
+}
+
+}
+
+最后，上代码K线图demo
+
+作者：夏天的风_song
+链接：https://www.jianshu.com/p/7ca9048afa5b
+來源：简书
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+
+49、iOS 事件响应机制 https://blog.csdn.net/yongyinmg/article/details/19616527
+1、为什么触摸事件是由Application产生，然后分发，而不是直接触摸谁，谁响应？
+2、事件冲突是怎么产生的，能否复现？
+3、通过Application的层级可以找到当前在终端显示的view，那么自己可否也通过代码实现？
+
+问题1
+因为UIApplication 是当前app的最底层，默认的第一响应者， 所以由UIApplication进行事件分发。
+UIView,UIViewController继承自UIResponder，会沿着事件响应条向上传递，即是指向它的父容器传递,即nextResponder
+
+问题2
+同一手势，如点击事件，在父uiview和子uiview中都有实现，就会出现冲突
+
+问题3
+-(UIViewController *)getCurrentViewController{
+  UIViewController *vc = [UIApplication sharedApplication].keyWindow.rootViewController;//拿到根vc
+  if([vc isKindOfClass:[UINavigationController class]]){
+      UINavigationController *nav = (UINavigationController *)vc;
+      if(nav.viewControllers count>1){
+         return [nav.viewControllers lastObject];
+      }else{
+          return (id)nav;
+      }
+   }else if([vc isKindOfClass:[UITabBarController class]]){
+        UITabBarController *tabVC = (UITabBarController *)vc;//tabbarControl
+        UIViewController *selectVC = tabVC.viewControllers[tabVC.selectedIndex];//tabbarcontrol通过selectedindex得到UINavigationControll
+        UINavigationController *nav = (UINavigationController *)selectVC;
+        if([nav.viewControllers count]>1){//UINavigationController管理控制器，栈的方式，里面包含多个控制器
+          return [nav.viewControllers lastObject];
+        }else{
+          return (id)nav;
+      }
+   }else{
+          return (id)vc;
+      }
+}
+
+UITouch对象 手指相关联 包括的属性触摸的位置、时间、阶段， 当手指离开屏幕时，系统会销毁相应的UITouch对象
+
+属性：
+@property(nonatomic,readonly,retain) UIWindow  *window; 获取触摸产生时所处的窗口
+@property(nonatomic,readonly,retain) UIView  *view; 获取触摸产生时所处的视图
+@property(nonatomic,readonly) NSUInteger tapCount; 获取短时间内点按屏幕的次数，可以根据tapCount判断单击、双击或更多的点击
+@property(nonatomic,readonly) NSTimeInterval timestamp; 获取触摸事件产生或变化时的时间，单位是秒
+@property(nonatomic,readonly) UITouchPhase  phase; 获取当前触摸事件所处的状态,是刚开始还是结束还是取消
+UITouchPhase 枚举：
+UITouchPhaseBegan 开始触摸
+UITouchPhaseMoved 移动
+UITouchPhaseStationary 停留
+UITouchPhaseEnded 触摸结束
+UITouchPhaseCancelled 触摸中断
+@property(nonatomic,readonly) UITouchType type;触摸类型
+UITouchType 枚举：
+UITouchTypeDirect 垂直的触摸类型
+UITouchTypeIndirect 非垂直的触摸类型
+UITouchTypeStylus 水平的触摸类型
+@property(nonatomic,readonly) CGFloat majorRadius; 获取手指与屏幕的接触半径
+@property(nonatomic,readonly) CGFloat majorRadiusTolerance;  获取手指与屏幕的接触半径的误差
+@property(nullable,nonatomic,readonly,copy)   NSArray <UIGestureRecognizer *> *gestureRecognizers;  获取触摸手势
+@property(nonatomic,readonly) CGFloat force;  获取触摸压力值，一般的压力感应值为1.0
+@property(nonatomic,readonly) CGFloat maximumPossibleForce;  获取最大触摸压力值
+
+方法：
+返回以点击的这个uiview为00坐标触摸的位置，传view为nil时，返回的是触摸点在UIWindow的位置
+- (CGPoint)locationInView:(nullable UIView *)view;
+
+返回前一个触摸点的位置
+- (CGPoint)previousLocationInView:(nullable UIView *)view;
+
+当前触摸对象的坐标
+- (CGPoint)preciseLocationInView:(nullable UIView *)view;
+
+event  是触摸，加速，远程，还是按压事件
+@property(nonatomic,readonly) UIEventType type; 获取事件类型
+UIEventType枚举：
+UIEventTypeTouches 触摸事件
+UIEventTypeMotion 加速事件
+UIEventTypeRemoteControl 远程控制事件
+UIEventTypePresses 按压事件
+
+获取远程控制事件
+@property(nonatomic,readonly) UIEventSubtype  subtype;
+UIEventSubtype 枚举：
+// 不包含任何子事件类型
+UIEventSubtypeNone                              = 0,
+// 摇晃事件（从iOS3.0开始支持此事件）
+UIEventSubtypeMotionShake                       = 1,
+//远程控制子事件类型（从iOS4.0开始支持远程控制事件）
+//播放事件【操作：停止状态下，按耳机线控中间按钮一下】
+UIEventSubtypeRemoteControlPlay                 = 100,
+//暂停事件
+UIEventSubtypeRemoteControlPause                = 101,
+//停止事件
+UIEventSubtypeRemoteControlStop                 = 102,
+//播放或暂停切换【操作：播放或暂停状态下，按耳机线控中间按钮一下】
+UIEventSubtypeRemoteControlTogglePlayPause      = 103,
+//下一曲【操作：按耳机线控中间按钮两下】
+UIEventSubtypeRemoteControlNextTrack            = 104,
+//上一曲【操作：按耳机线控中间按钮三下】
+UIEventSubtypeRemoteControlPreviousTrack        = 105,
+//快退开始【操作：按耳机线控中间按钮三下不要松开】
+UIEventSubtypeRemoteControlBeginSeekingBackward = 106,
+//快退停止【操作：按耳机线控中间按钮三下到了快退的位置松开】
+UIEventSubtypeRemoteControlEndSeekingBackward   = 107,
+//快进开始【操作：按耳机线控中间按钮两下不要松开】
+UIEventSubtypeRemoteControlBeginSeekingForward  = 108,
+//快进停止【操作：按耳机线控中间按钮两下到了快进的位置松开】
+UIEventSubtypeRemoteControlEndSeekingForward    = 109,
+
+@property(nonatomic,readonly) NSTimeInterval  timestamp; 获取触摸产生或变化的时间戳
+
+方法： 
+- (nullable NSSet <UITouch *> *)allTouches; 获取触摸点的集合，可以判断多点触摸事件
+- (nullable NSSet <UITouch *> *)touchesForWindow:(UIWindow *)window; 获取指定窗口里的触摸点
+- (nullable NSSet <UITouch *> *)touchesForView:(UIView *)view;获取指定视图里的触摸点
+- (nullable NSSet <UITouch *> *)touchesForGestureRecognizer:(UIGestureRecognizer *)gesture;获取手势对象
+
+
+
+具体说明Responder Chain(ios事件传递)
+
+UIResponder是所有responder对象的基类，包括触摸事件(Touch Event)，、运动事件(Motion Event加速计事件)和远程控制事件(Remote-Control Events摇控器控制)的编程接口
+
+处理触摸事件(Touch Event)
+– touchesBegan:withEvent: 触摸开始事件
+– touchesMoved:withEvent: 触摸移动事件
+– touchesEnded:withEvent: 触摸终止事件
+– touchesCancelled:withEvent: 触摸跟踪取消事件
+- (void)touchesEstimatedPropertiesUpdated:(NSSet * _Nonnull)touches 3D触摸事件
+
+
+加速计事件
+
+- (void)motionBegan:(UIEventSubtype)motion withEvent:(nullable UIEvent *)event; 开始加速
+- (void)motionEnded:(UIEventSubtype)motion withEvent:(nullable UIEvent *)event; 结束加速
+- (void)motionCancelled:(UIEventSubtype)motion withEvent:(nullable UIEvent *)event; 加速中断
+
+远程控制事件
+- (void)remoteControlReceivedWithEvent:(nullable UIEvent *)event;
+
+
+触摸事件 总是由屏幕顶部向它的父容器传递
+ UIViewController,UIView，和所有继承自UIView的UIKit类(包括UIWindow,继承自UIView)都直接或间接的继承自UIResponder,
+ 它们都是responder object对象，都实现了上述4个方法。UIResponder中的默认实现是什么都不做，但子类会沿着responder chain继续向上
+ 传递到下一个responder,即nextResponder。即向父类传递，需要调用[super touchesBegan:touches withEvent:event];
+ 如果子类没有实现touch	方法，事件也会向它的父容器传递
+ 
+ 传递规则
+ UIView的nextResponder属性，如果有管理此view的UIViewController对象，则为此UIViewController对象；否则nextResponder即为其superview。
+UIViewController的nextResponder属性为其管理view的superview.
+UIWindow的nextResponder属性为UIApplication对象。
+UIApplication的nextResponder属性为nil。
+
+如何间接的得到一个uiview的控制器
+@implementation UIView (ParentController)
+-(UIViewController*)parentController{
+    UIResponder *responder = [self nextResponder];
+    while (responder) {
+	if ([responder isKindOfClass:[UIViewController class]]) {
+		return (UIViewController*)responder;
+	}
+	responder = [responder nextResponder];
+    }
+    return nil;
+}
+@end
+
+
+Gesture Recognizers 势识别器对象
+包括点击、双指缩放、拖拽、滑动、旋转以及长按
+每一个Gesture Recognizer关联一个View，但是一个View可以关联多个Gesture Recognizer，
+First Responder就是UIApplication,
+
+第一响应者 (The First Responder)
+　　什么是第一响应者？简单的讲，第一响应者是一个UIWindow对象接收到一个事件后，第一个来响应的该事件的对象。
+注意：这个第一响应者与触摸检测到的第一个响应的UIView并不是一个概念。第一响应者一般情况下用于处理非触摸事件
+（手机摇晃、耳机线控的远程空间）或非本窗口的触摸事件（键盘触摸事件），通俗点讲其实就是管别人闲事的响应者。在IOS中，当然管闲事并不是所有控件都愿意的，
+这么说好像并不是很好理解，或着是站在编程人员的角度来看待这个问题，程序员负责告诉系统哪个对象可以成为第一响应者(canBecomeFirstResponder)，
+如果方法canBecomeFirstResponder返回YES，这个响应者对象才有资格称为第一响应者。有资格并不代表一定可以成为第一响应者，
+还要becomeFirstResponder正式成为第一响应者。同时也有对应的canResignFirstResponder和resignFirstResponder是否可以解除第一响应者。
+
+值得注意的是，一个UIWindow对象在某一时刻只能有一个响应者对象可以成为第一响应者。我们可以通过isFirstResponder来判断某一个对象是否为第一响应者。
+
+UIApplication-UIWindow 处理非触摸的一些闲事
