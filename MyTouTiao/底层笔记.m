@@ -1884,6 +1884,7 @@ Already up-to-date.
 因为暂时没有其他人提交，所有没有任何变动
 
 5.分支
+https://www.jianshu.com/p/7dddf0e9f1ef iOS里的Git版本管理方法 圣迪
 当你在做一个新功能的时候，最好是在一个独立的区域上开发，通常称之为分支。分支之间相互独立，并且拥有自己的历史记录。这样做的原因是：
 
 稳定版本的代码不会被破坏
@@ -4419,3 +4420,419 @@ demo:
 2018-05-24 14:03:49.454159+0800 222[2681:5314261] 锁不可用的操作
 2018-05-24 14:03:50.451897+0800 222[2681:5314260] 需要线程同步的操作1 结束
 2018-05-24 14:03:50.451998+0800 222[2681:5314261] 没有超时，获得锁
+
+
+NSConditionLock 条件锁
+@interface NSConditionLock : NSObject <NSLocking> {
+@private
+    void *_priv;
+}
+
+- (instancetype)initWithCondition:(NSInteger)condition NS_DESIGNATED_INITIALIZER;
+
+@property (readonly) NSInteger condition;
+- (void)lockWhenCondition:(NSInteger)condition;
+- (BOOL)tryLock;
+- (BOOL)tryLockWhenCondition:(NSInteger)condition;
+- (void)unlockWithCondition:(NSInteger)condition;
+- (BOOL)lockBeforeDate:(NSDate *)limit;
+- (BOOL)lockWhenCondition:(NSInteger)condition beforeDate:(NSDate *)limit;
+
+@property (nullable, copy) NSString *name NS_AVAILABLE(10_5, 2_0);
+
+@end
+NSConditionLock 和 NSLock 类似，都遵循 NSLocking 协议，方法都类似，只是多了一个 condition 属性，
+每个操作都多了一个关于 condition 属性的方法，例如 tryLock，tryLockWhenCondition:，NSConditionLock 可以称为条件锁，
+只有 condition 参数与初始化时候的 condition 相等，lock 才能正确进行加锁操作。
+unlockWithCondition: 并不是当 Condition 符合条件时才解锁，而是解锁之后，修改 Condition 的值，这个结论可以从下面的例子中得出。
+//主线程中
+    NSConditionLock *lock = [[NSConditionLock alloc] initWithCondition:0];
+    
+    //线程1
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        [lock lockWhenCondition:1];//锁值为1时加锁
+        NSLog(@"线程1");
+        sleep(2);
+        [lock unlock];
+    });
+    
+    //线程2
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        sleep(1);//以保证让线程2的代码后执行
+        if ([lock tryLockWhenCondition:0]) {//锁值为0时加锁
+            NSLog(@"线程2");
+            [lock unlockWithCondition:2];//解锁后设置锁值为2
+            NSLog(@"线程2解锁成功");
+        } else {
+            NSLog(@"线程2尝试加锁失败");
+        }
+    });
+    
+    //线程3
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        sleep(2);//以保证让线程2的代码后执行
+        if ([lock tryLockWhenCondition:2]) {//锁值为2时加锁
+            NSLog(@"线程3");
+            [lock unlock];//解锁
+            NSLog(@"线程3解锁成功");
+        } else {
+            NSLog(@"线程3尝试加锁失败");
+        }
+    });
+    
+    //线程4
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        sleep(3);//以保证让线程2的代码后执行
+        if ([lock tryLockWhenCondition:2]) {//锁值为2时加锁
+            NSLog(@"线程4");
+            [lock unlockWithCondition:1];  //解锁后设置锁值为2  
+            NSLog(@"线程4解锁成功");
+        } else {
+            NSLog(@"线程4尝试加锁失败");
+        }
+    });
+    
+2016-08-19 13:51:15.353 ThreadLockControlDemo[1614:110697] 线程2
+2016-08-19 13:51:15.354 ThreadLockControlDemo[1614:110697] 线程2解锁成功
+2016-08-19 13:51:16.353 ThreadLockControlDemo[1614:110689] 线程3
+2016-08-19 13:51:16.353 ThreadLockControlDemo[1614:110689] 线程3解锁成功
+2016-08-19 13:51:17.354 ThreadLockControlDemo[1614:110884] 线程4
+2016-08-19 13:51:17.355 ThreadLockControlDemo[1614:110884] 线程4解锁成功
+2016-08-19 13:51:17.355 ThreadLockControlDemo[1614:110884] 线程1
+
+递归锁
+
+demo1:会闪退  普通锁在同一个线程不能多次加锁
+        //普通线程锁
+        NSLock *lock = [[NSLock alloc] init];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            static void (^block)(int);
+            block = ^(int value) {
+                //加锁
+                [lock lock];
+                if (value > 0) {
+                    NSLog(@"%d",value);
+                    sleep(2);
+                    //递归调用
+                    block(--value);
+                }
+                //解锁
+                [lock unlock];
+            };
+            //调用代码块
+            block(10);
+        });
+        
+demo2：递归锁 它允许同一线程多次加锁，而不会造成死锁
+
+//递归锁
+NSRecursiveLock *lock = [[NSRecursiveLock alloc] init];
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+static void (^block)(int);
+block = ^(int value) {
+//加锁
+[lock lock];
+if (value > 0) {
+NSLog(@"%d",value);
+sleep(2);
+//递归调用
+block(--value);
+}
+//解锁
+[lock unlock];
+};
+//调用代码块
+block(10);
+});
+
+
+NSCondition  
+
+@interface NSCondition : NSObject <NSLocking> {
+@private
+    void *_priv;
+}
+
+- (void)wait;
+- (BOOL)waitUntilDate:(NSDate *)limit;
+- (void)signal;
+- (void)broadcast;
+
+@property (nullable, copy) NSString *name NS_AVAILABLE(10_5, 2_0);
+
+@end
+对象实际上作为一个锁和一个线程检查器,和NSLock很像，只是多了一个[lock wait];，这个会阻塞当前的线程，- (BOOL)waitUntilDate:(NSDate *)limit;
+设置3秒阻塞，阻塞3秒结束后继续执行。signal 再次发送一个信号，则阻塞的那个条件while继续会执行一次
+    while (!array.count) {
+        [lock wait];
+     }
+NSCondition *lock = [[NSCondition alloc] init];
+    NSMutableArray *array = [[NSMutableArray alloc] init];
+    //线程1
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        [lock lock];
+        while (!array.count) {
+            [lock wait];
+        }
+        [array removeAllObjects];
+        NSLog(@"array removeAllObjects");
+        [lock unlock];
+    });
+    
+    //线程2
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        sleep(1);//以保证让线程2的代码后执行
+        [lock lock];
+        [array addObject:@1];
+        NSLog(@"array addObject:@1");
+        [lock signal];
+        [lock unlock];
+    });
+
+OSSpinLock
+
+
+是一种自旋锁，也只有加锁，解锁，尝试加锁三个方法
+NSLock 请求加锁失败的话，会先轮询，但一秒过后便会使线程进入 waiting 状态，等待唤醒
+OSSpinLock 会一直轮询，等待时会消耗大量 CPU 资源，不适用于较长时间的任务。
+
+typedef int32_t OSSpinLock;
+
+bool    OSSpinLockTry( volatile OSSpinLock *__lock );
+
+void    OSSpinLockLock( volatile OSSpinLock *__lock );
+
+void    OSSpinLockUnlock( volatile OSSpinLock *__lock );
+
+#import <libkern/OSSpinLockDeprecated.h>
+__block OSSpinLock theLock = OS_SPINLOCK_INIT;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        OSSpinLockLock(&theLock);
+        NSLog(@"线程1");
+        sleep(10);
+        OSSpinLockUnlock(&theLock);
+        NSLog(@"线程1解锁成功");
+    });
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        sleep(1);
+        OSSpinLockLock(&theLock);
+        NSLog(@"线程2");
+        OSSpinLockUnlock(&theLock);
+    });
+
+2016-08-19 20:25:13.526 ThreadLockControlDemo[2856:316247] 线程1
+2016-08-19 20:25:23.528 ThreadLockControlDemo[2856:316247] 线程1解锁成功
+2016-08-19 20:25:23.529 ThreadLockControlDemo[2856:316260] 线程2
+
+pthread_mutex
+ C 语言下多线程锁的方式 
+ C语言下的NSLock实现
+ static pthread_mutex_t theLock;
+
+- (void)example5 {
+    pthread_mutex_init(&theLock, NULL);
+    
+    pthread_t thread;
+    pthread_create(&thread, NULL, threadMethord1, NULL);
+    
+    pthread_t thread2;
+    pthread_create(&thread2, NULL, threadMethord2, NULL);
+}
+
+void *threadMethord1() {
+    pthread_mutex_lock(&theLock);
+    printf("线程1\n");
+    sleep(2);
+    pthread_mutex_unlock(&theLock);
+    printf("线程1解锁成功\n");
+    return 0;
+}
+
+void *threadMethord2() {
+    sleep(1);
+    pthread_mutex_lock(&theLock);
+    printf("线程2\n");
+    pthread_mutex_unlock(&theLock);
+    return 0;
+}
+
+线程1
+线程1解锁成功
+线程2
+
+int pthread_mutex_init(pthread_mutex_t * __restrict, const pthread_mutexattr_t * __restrict);
+这个初始化锁能生成几种不同的类型，共4种类型
+PTHREAD_MUTEX_NORMAL 缺省类型，也就是普通锁。当一个线程加锁以后，其余请求锁的线程将形成一个等待队列，并在解锁后先进先出原则获得锁。
+
+PTHREAD_MUTEX_ERRORCHECK 检错锁，如果同一个线程请求同一个锁，则返回 EDEADLK，否则与普通锁类型动作相同。这样就保证当不允许多次加锁时不会出现嵌套情况下的死锁。
+
+PTHREAD_MUTEX_RECURSIVE 递归锁，允许同一个线程对同一个锁成功获得多次，并通过多次 unlock 解锁。
+
+PTHREAD_MUTEX_DEFAULT 适应锁，动作最简单的锁类型，仅等待解锁后重新竞争，没有等待队列。
+
+代码就设置锁为递归锁。实现和 NSRecursiveLock 类似的效果。
+- (void)example5 {
+    pthread_mutex_init(&theLock, NULL);
+    
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(&theLock, &attr);
+    pthread_mutexattr_destroy(&attr);
+    
+    pthread_t thread;
+    pthread_create(&thread, NULL, threadMethord, 5);
+
+}
+
+void *threadMethord(int value) {
+    pthread_mutex_lock(&theLock);
+    
+    if (value > 0) {
+        printf("Value:%i\n", value);
+        sleep(1);
+        threadMethord(value - 1);
+    }
+    pthread_mutex_unlock(&theLock);
+    return 0;
+}
+
+Value:5
+Value:4
+Value:3
+Value:2
+Value:1
+回到 pthread_mutex，锁初始化完毕，就要上锁解锁了
+pthread_mutex_lock(&theLock);
+pthread_mutex_unlock(&theLock);
+和 NSLock 的 lock unlock 用法一致，但还注意到有一个 pthread_mutex_trylock 方法，pthread_mutex_trylock 和 tryLock 的区别在于，tryLock 返回的是 YES 和 NO，pthread_mutex_trylock 加锁成功返回的是 0，失败返回的是错误提示码。
+
+
+54、简单粗暴系列之HTTPS原理
+一、开篇
+  简单粗暴，本文来聊聊HTTPS。
+  啥是HTTPS? 说白了就是HTTP Over SSL。HTTP呢，就是我们平时上网时，浏览器和服务器之间传输数据的一项协议。普通情况下，浏览器发送的请求会经过若干个网络中间节点，最后到达服务器；然后服务器又将请求的数据经过若干个网络中间节点发送回给浏览器，这时候浏览器就能够显示我们想要看到的页面。
+  这个过程中，其实并没有存在什么太大的问题。问题出在，如果我们需要在网页上输入一些敏感信息，如我们的银行卡账号和密码，发送给服务器，就会在中间节点中存在泄漏的风险。HTTPS就是为了保障传输过程中的安全目的而生的。HTTPS保证了数据仅仅只在发送方和目的方双方可见，而对中间任一一个节点都不可见。这是怎么实现的？我们来慢慢看。
+
+二、故事
+我们首先来看一个故事：
+1）流程
+  有两个大师，他们需要经常交流研究心得，因此需要频繁地进行相互信件往来。在信件往来的过程中，我们假设发送方是大师A，而目的方是大师B。A想告诉B一些研究的最新成果，于是将相关的研究成果写成了一封信，从邮局邮寄给B。这封信通过邮局的若干个快递员，最终到达了B的手里。这样就形成了一个最典型的数据传输过程。
+
+2）加密、解密、密钥、加密算法
+  现在，大师A觉得，我写的这封信，要是哪个快递员打开看过了，我的最新研究成果不就泄漏了吗？要是这个快递员拿去卖钱我半辈子努力不就白费了？于是乎大师A就想了个办法，在书写的过程中，每个字符都加4。如字符A就写成E，字符B就写成F，以此类推。大师B收到了信件后，再把每个字符都减去4，这样就可以正确得到大师A想传递的研究成果的内容。而最重要的是，即使快递员在中间拆开信件，如果不知道4这个数字，是无法正确的到信件内容的。
+  我们将大师A每个字符加4的过程，叫做“加密”；大师B每个字符减4的过程，叫做“解密”；而数字4，就是我们常说的密钥。而这种加密算法，名为凯撒算法。
+
+3）证书
+  就这样，平安地度过了一段时间，直到突然有一天大师B收到一封来自于大师A的信，但是大师B使用之前的方式怎么也明白不了大师A说的是什么。于是电话询问大师A关于这封信的内容。结果大师A说，这不是我写的啊。这才发现，大师B收到的是一封伪造大师A的来信。为防止以上事情再次发生，大师A与大师B商量说，以后每封信上，我都会签上自己特有的签名，并带上相关内容的HASH值。
+  HASH值用来校验这封信是否有被篡改过，而签名类似于指纹，用来标示这封信是否真实来自于指纹上所指向的人。一般来说，签名的内容中会包含这封信的发件方地址等信息。大师B收到信件后第一时间通过内容的HASH值来校验信件的内容长度；通过签名来校验发件方地址和指纹信息是否匹配。只有全部匹配才继续用之前的密钥进行解密操作。
+  这些标明了大师A身份信息等信息的签名，就是我们常说的证书。
+  经过以上的故事，我们大致明白了密钥、加密解密、算法等必要的知识了。而HTTPS的过程其实和这个类似，只不过多了一些数学的描述。
+
+三、HTTPS工作原理
+  HTTPS工作在客户端和服务器端之间。以上故事中，客户端可以看作为大师A，服务器端可以看作为大师B。客户端和服务器本身都会自带一些加密的算法，用于双方协商加密的选择项。
+1、客户端首先会将自己支持的加密算法，打个包告诉服务器端。
+2、服务器端从客户端发来的加密算法中，选出一组加密算法和HASH算法（注，HASH也属于加密），并将自己的身份信息以证书的形式发回给客户端。而证书中包含了网站的地址，加密用的公钥，以及证书的颁发机构等；
+  这里有提到公钥的概念是故事中没有的。我们常见的加密算法一般是一些对称的算法，如凯撒加密；对称算法即加密用的密钥和解密用的密钥是一个。如故事中的密钥是4。还有一种加密解密算法称之为非对称算法。这种算法加密用的密钥（公钥）和解密用的密钥（私钥）是两个不同的密钥；通过公钥加密的内容一定要使用私钥才能够解密。
+  这里，服务器就将自己用来加密用的公钥一同发还给客户端，而私钥则服务器保存着，用户解密客户端加密过后的内容。
+
+3、客户端收到了服务器发来的数据包后，会做这么几件事情：
+ 1）验证一下证书是否合法。一般来说，证书是用来标示一个站点是否合法的标志。如果说该证书由权威的第三方颁发和签名的，则说明证书合法。
+ 2）如果证书合法，或者客户端接受和信任了不合法的证书，则客户端就会随机产生一串序列号，使用服务器发来的公钥进行加密。这时候，一条返回的消息就基本就绪。
+ 3）最后使用服务器挑选的HASH算法，将刚才的消息使用刚才的随机数进行加密，生成相应的消息校验值，与刚才的消息一同发还给服务器。
+
+4、服务器接受到客户端发来的消息后，会做这么几件事情：
+ 1）使用私钥解密上面第2）中公钥加密的消息，得到客户端产生的随机序列号。
+ 2）使用该随机序列号，对该消息进行加密，验证的到的校验值是否与客户端发来的一致。如果一致则说明消息未被篡改，可以信任。
+ 3）最后，使用该随机序列号，加上之前第2步中选择的加密算法，加密一段握手消息，发还给客户端。同时HASH值也带上。
+
+5、客户端收到服务器端的消息后，接着做这么几件事情：
+ 1）计算HASH值是否与发回的消息一致
+ 2）检查消息是否为握手消息
+
+6、握手结束后，客户端和服务器端使用握手阶段产生的随机数以及挑选出来的算法进行对称加解密的传输。
+  为什么不直接全程使用非对称加密算法进行数据传输？这个问题的答案是因为非对称算法的效率对比起对称算法来说，要低得多得多；因此往往只用在HTTPS的握手阶段。
+  以下是我们一些经常使用的加密算法，是不是有熟悉的味道？
+   非对称加密算法：RSA, DSA/DSS
+   对称加密算法： AES, 3DES
+   HASH算法：MD5, SHA1, SHA256
+
+这就是HTTPS的基本原理，如果没有简单粗暴，请告诉我，以帮助我持续改进；如果真的简单粗暴，请告诉有需要的人，大家共同进步。
+
+hash检验，如md5 等签名算法
+
+55、理解面向 HTTP API 的 REST 和 RPC
+rest CRUD (create, read, update, delete)  操作 GET,POST,PUT,DELETE,OPTIONS
+
+rpc post get
+RPC 会这样做：
+POST /SendUserMessage HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+{"userId": 501, "message": "Hello!"}
+
+REST 方法中，做同样的事情会这样：
+POST /users/501/messages HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+{"message": "Hello!"}
+
+使用 REST API，你已经拥有 GET /trips 和 POST /trips，然后很多人会尝试使用有点像下面这些动作的节点：
+
+POST /trips/123/start
+
+POST /trips/123/finish
+
+POST /trips/123/cancel
+
+URL区别：RPC 方法 POST /startTrip 或者像 REST 的 POST /trips/123/start 节
+
+
+55、Swift中enum、struct、class三者异同
+
+关于枚举、结构体的介绍这里仅仅是冰山一角，他们还有更加丰富的功能需要读者在阅读完本文后深入学习。了解这些基础内容，可以帮助我们在Swift开发中更熟练的使用他们。这里根据官方文档介绍结合自己的理解简单的做一下总结：
+
+枚举、结构体、类的共同点：  
+1，定义属性和方法；
+2，下标语法访问值；
+3，初始化器；
+4，支持扩展增加功能；
+5，可以遵循协议；
+
+类特有的功能：
+1，继承；
+2，允许类型转换；
+3，析构方法释放资源；
+4，引用计数；
+
+枚举用来作一些常数，多选项的常数  值类型
+结构体不能继承，可以把一些部份功能交给结构体 值类型，默认有初始化列表方法，自定义初始化方法后原init方法失效
+类，可继承，引用类型，有引用计数，有析构方法
+
+类是引用类型
+引用类型(reference types，通常是类)被复制的时候其实复制的是一份引用，两份引用指向同一个对象。所以在修改一个实例的数据时副本的数据也被修改了(s1、s2)。
+
+枚举，结构体是值类型
+值类型(value types)的每一个实例都有一份属于自己的数据，在复制时修改一个实例的数据并不影响副本的数据(p1、p2)。值类型和引用类型是这三兄弟最本质的区别。
+
+我该如何选择
+关于在新建一个类型时如何选择到底是使用值类型还是引用类型的问题其实在理解了两者之间的区别后是非常简单的，在这苹果官方已经做出了非常明确的指示（以下内容引自苹果官方文档）：
+
+当你使用Cocoa框架的时候，很多API都要通过NSObject的子类使用，所以这>时候必须要用到引用类型class。在其他情况下，有下面几个准则：
+
+什么时候该用值类型：
+要用==运算符来比较实例的数据时
+你希望那个实例的拷贝能保持独立的状态时
+数据会被多个线程使用时
+什么时候该用引用类型（class）：
+要用==运算符来比较实例身份的时候
+你希望有创建一个共享的、可变对象的时候
+文章最后
+
+以上就是本人前段时间学习心得，示例代码在Swift3.0语法下都是编译通过的，知识点比较少，部分描述引自官方的文档。如果文中有任何纰漏或错误欢迎在评论区留言指出，本人将在第一时间修改过来；喜欢我的文章，可以关注我以此促进交流学习； 如果觉得此文戳中了你的G点请随手点赞；转载请注明出处，谢谢支持。
+
+作者：老板娘来盘一血
+链接：https://www.jianshu.com/p/78a6a4941516
+來源：简书
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
