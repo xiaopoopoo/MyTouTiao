@@ -4836,3 +4836,179 @@ URL区别：RPC 方法 POST /startTrip 或者像 REST 的 POST /trips/123/start 
 链接：https://www.jianshu.com/p/78a6a4941516
 來源：简书
 著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+
+
+56、block与代理的对比，双方的优缺点及在什么样的环境下，优先使用哪一种更为合适？
+两者都是一种回调方式，block更轻型，一般类似于两个方法用block比较好，比如网络类
+，如果就成功，失败，用block，如果成功，失败，进度，https验证，delegate比较好
+block高内聚，能够直接访问上下文，block容易引起循环引用，
+代理通常被 weak 引用，不会出现内存泄漏的问题；
+代理需要建协议，实现接口，把它的方法分离开来
+
+通知
+
+： 一对一  一对多  传值
+
+四个步骤: 
+ 1.发送通知
+2.创建监听者
+3.接收通知
+4.移除监听者
+ 使用场景:
+1- 很多控制器都需要知道一个事件，应该用通知；
+2 - 相隔多层的两个控制器之间跳转
+
+
+代理
+
+“一对一”，对同一个协议，一个代理对象只能设置一个代理delegate
+
+
+六个步骤:
+1.声明一个协议,定义代理方法
+2. 遵循协议
+3.设置一个代理对象
+4.调用代理方法
+5.给代理赋值
+6.实现代理方法
+
+注意事项:
+
+1,单例对象不能用代理；
+2,代理执行协议方法时要使用 respondsToSelector检查其代理是否符合协议(检查对象能否响应指定的消息),以避免代理在回调时因为没有实现方法而造成程序崩溃 
+
+使用场景:
+
+公共接口，方法较多也选择用delegate进行解耦 
+iOS最常用tableViewDelegate，textViewDelegate 
+iOS有很多例子比如常用的网络库AFNetwork，ASIHTTP库，UIAlertView类。
+
+
+block
+
+什么是Block：
+
+Block是iOS4.0+ 和Mac OS X 10.6+ 引进的对C语言的扩展，用来实现匿名函数的特性。
+Blocks语法块代码以闭包得形式将各种内容进行传递，可以是代码，可以是数组无所不能。
+
+闭包就是能够读取其它函数内部变量的函数。就是在一段请求连续代码中可以看到调用参数（如发送请求）和响应结果。所以采用Block技术能够抽象出很多共用函数，提高了代码的可读性，可维护性，封装性。
+
+
+
+使用场景：
+一：动画
+二：数据请求回调
+三：枚举回调
+四：多线程gcd
+...
+
+ 异步和简单的回调用block更好 
+BLOCK最典型的是大所周知的AFNETWORK第三方库。
+
+注意事项:
+
+block需要注意防止循环引用：
+    ARC下这样防止：
+__weak typeof(self) weakSelf = self;
+  [yourBlock:^(NSArray *repeatedArray, NSArray *incompleteArray) {
+       [weakSelf doSomething];
+    }];
+
+     非ARC
+__block typeof(self) weakSelf = self;
+  [yourBlock:^(NSArray *repeatedArray, NSArray *incompleteArray) {
+       [weakSelf doSomething];
+    }];
+
+delegate 和 block对比
+ 
+    效率：Delegate比NSNOtification高； 
+ 1,   Delegate和Block一般都是一对一的通信； 
+
+ 2,   Delegate需要定义协议方法，代理对象实现协议方法，并且需要建立代理关系才可以实现通信； 
+      Block：Block更加简洁，不需要定义繁琐的协议方法，但通信事件比较多的话，建议使用Delegate； 
+
+3,  delegate运行成本低。block成本很高的。
+block出栈需要将使用的数据从栈内存拷贝到堆内存，当然对象的话就是加计数，使用完或者block置nil后才消除；delegate只是保存了一个对象指针，直接回调，没有额外消耗。相对C的函数指针，只多做了一个查表动作 .
+
+4，代理更注重过程信息的传输：比如发起一个网络请求，可能想要知道此时请求是否已经开始、是否收到了数据、数据是否已经接受完成、数据接收失败
+    block注重结果的传输：比如对于一个事件，只想知道成功或者失败，并不需要知道进行了多少或者额外的一些信息
+
+
+5 Blocks 更清晰。比如 一个 viewController 中有多个弹窗事件，Delegate 就得对每个事件进行判断识别来源。而 Blocks 就可以在创建事件的时候区分开来了。这也是为什么现在苹果 API 中越来越多地使用 Blocks 而不是 Delegate。
+
+      
+
+57、KVC 与 KVO 是 Objective C 的关键概念
+KVC，即是指 NSKeyValueCoding，一个非正式的 Protocol，提供一种机制来间接访问对象的属性。KVO 就是基于 KVC 实现的关键技术之一。
+KVC 有两个方法：一个是设置 key 的值，另一个是获取 key 的值 ，key 可以从一个对象中获取值，而 key path 可以将多个 key 用点号 "." 分割连接起来，
+[p valueForKey:@"name"];
+[p setValue:newName forKey:@"name"];
+[p valueForKeyPath:@"spouse.name"]; //获取到spouse是一个对象，再获取到这个对象的name
+
+Key-Value Observing (KVO)
+它能够观察一个对象的 KVC key path 值的变化。举个例子，用代码观察一个 person 对象的 address 变化，以下是实现的三个方法：
+[self addObserver:self forKeyPath:@"address" options:0 context:KVO_CONTEXT_ADDRESS_CHANGED];//实现观察地address属性
+observeValueForKeyPath:ofObject:change:context: 在被观察的 key path 的值变化时调用。
+dealloc 停止观察
+
+static NSString *const KVO_CONTEXT_ADDRESS_CHANGED = @"KVO_CONTEXT_ADDRESS_CHANGED"
+
+@implementation PersonWatcher
+
+-(void) watchPersonForChangeOfAddress:(Person *)p
+{
+
+    // this begins the observing
+    [p addObserver:self
+        forKeyPath:@"address"
+           options:0
+           context:KVO_CONTEXT_ADDRESS_CHANGED];
+
+    // keep a record of all the people being observed,
+    // because we need to stop observing them in dealloc
+    [m_observedPeople addObject:p];
+}
+
+// whenever an observed key path changes, this method will be called
+- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary *)change
+                       context:(void *)context
+
+{
+    // use the context to make sure this is a change in the address,
+    // because we may also be observing other things
+    if(context == KVO_CONTEXT_ADDRESS_CHANGED) {
+        NSString *name = [object valueForKey:@"name"];
+        NSString *address = [object valueForKey:@"address"];
+        NSLog(@"%@ has a new address: %@", name, address);
+    }
+}
+
+-(void) dealloc;
+{
+
+    // must stop observing everything before this object is
+    // deallocated, otherwise it will cause crashes
+    for(Person *p in m_observedPeople){
+        [p removeObserver:self forKeyPath:@"address"];
+    }
+
+    [m_observedPeople release];
+    m_observedPeople = nil;
+
+    [super dealloc];
+
+}
+
+-(id) init;
+{
+    if(self = [super init]){
+        m_observedPeople = [NSMutableArray new];
+    }
+
+    return self;
+}
+
+@end
