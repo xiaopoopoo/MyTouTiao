@@ -5012,3 +5012,136 @@ static NSString *const KVO_CONTEXT_ADDRESS_CHANGED = @"KVO_CONTEXT_ADDRESS_CHANG
 }
 
 @end
+
+58、xmpp ,mqtt
+
+xmpp 任何XMPP用户都可以向其他任何XMPP用户传递消息。
+多个XMPP服务器也可以通过一个专门的&ldquo;服务器-服务器&rdquo;协议相互通信，提供了创建分散型社交网络和协作框架的可能性
+即qq和微信可以通信
+OpenFire作为服务器
+XMPPFramework(三方框架)
+发送的内容为xml，里面包括一定的内容文本，如果是音频，发送时先上传，成功后获取到url再发给对方
+接收方，根据标志位，知道是音频，先下载再播放
+如果仅是推送数据，用mqtt更好，xmpp传输xml格式是硬伤，数据量增大
+
+mqtt在1999年，IBM发明 用到的库mqttkit
+使用发布/订阅消息模式，提供一对多的消息发布，订阅就能收到服务器发的消息
+使用 TCP/IP 提供网络连接
+有三种消息发布服务质量：
+“至多一次”，消息发布完全依赖底层 TCP/IP 网络。会发生消息丢失或重复。只发送一次
+“至少一次”，确保消息到达，但消息重复可能会发生。
+“只有一次”，确保消息到达一次。这一级别可用于如下情况，在计费系统中，消息重复或丢失会导致不正确的结果。
+小型传输，开销很小（固定长度的头部是 2 字节），协议交换最小化，以降低网络流量；
+
+59、推送
+一种是本地推送，一种就是远程推送
+本地推送（Local Notification)
+1.客户端注册本地通知 
+2.客户端接收通知
+3.客户端处理通知中的数据
+
+APNS之前，有这么几点需要了解：
+
+1：APNS是免费的。只要有开发者账号便可以申请APNS证书。
+
+2：APNS又是不可靠的，苹果对信息推送的可靠性不做任何保证。
+
+3：APNS对消息的大小是有限制的，总容量不能超过256字节。
+
+：用户第一次安装应用并第一次启动时，会弹出对话框提示应用需要开通推送，是否允许，如果允许，应用会得到一个硬件token。
+
+有三点需要注意：
+
+第一，此token唯一与设备相关，同一设备上不同应用获取的token是一样的；
+
+第二，当应用被卸载，然后重新安装时，确认对话框不会再出现，自动继承前一次安装的设置信息；
+
+第三，推送设置可以在设置-通知中进行更改。可以选择开启消息框、声音以及badge number中的一种或多种。
+
+把apns证书，token交给服务器，服务器通过代码向apns发消息，apns接到消息再转发给手机
+3：应用将受到的token发送到服务端，也就是APNS消息的源头。
+
+4：应用服务器通过token及证书向苹果的消息服务器发送消息。
+
+5：苹果将接收到的消息发送到对应设备上的对应应用。
+
+6：如果应用未处于Active状态（未启动或backgroud），默认设置下，屏幕顶部会弹出消息框，同时有声音提示，点击改消息框会进入应用，如不点击则应用图标上会有badge number出现。
+
+
+
+60、mvvm reactivecocoa
+
+
+61、数据库
+CoreData (一) 增删改查 https://github.com/wslcmk?tab=repositories
+Core Data是iOS5之后才出现的一个框架，本质上是对SQLite的一个封装，
+它提供了对象-关系映射(ORM)的功能，即能够将OC对象转化成数据，保存在SQLite数据库文件中，
+也能够将保存在数据库中的数据还原成OC对象，通过CoreData管理应用程序的数据模型，可以极大程度减少需要编写的代码数量！
+
+首先创建一个.xcdatamodel的模型文件，在这个模型文件中添加实体（Entities）
+并添加属性name、age、sex 等属性
+在最右边Entity Name填写模形的name
+选中此模型，xcode-editor-createNSmanagerObjet
+会自动创建这个模型的类
+Student+CoreDataClass
+Student+CoreDataProperties
+
+ 1//根据模型文件创建模型对象
+ NSURL *modelURL = [[NSBundle mainBundle] URLForResource:@"Model" withExtension:@"momd"];
+ NSManagedObjectModel *model = [[NSManagedObjectModel alloc] initWithContentsOfURL:modelURL];
+ 2//创建持久化存储助理
+ NSPersistentStoreCoordinator *store = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:model];
+ 3 //数据库的路径来设置一个持久的数据库
+    NSString *docStr = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) lastObject];
+    NSString *sqlPath = [docStr stringByAppendingPathComponent:@"coreData.sqlite"];
+    NSLog(@"数据库 path = %@", sqlPath);
+    NSURL *sqlUrl = [NSURL fileURLWithPath:sqlPath];
+    NSError *error = nil;
+    //设置数据库相关信息 ，NSSQLiteStoreType：SQLite作为存储库
+    [store addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:sqlUrl options:nil error:&error];
+ 4 //创建一个管理对象，与模型助理关联
+     if (error) {
+        NSLog(@"添加数据库失败:%@",error);
+    } else {
+        NSLog(@"添加数据库成功");
+    }
+    
+    //3、创建上下文 保存信息 操作数据库
+    
+    NSManagedObjectContext *context = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
+    
+    //关联持久化助理
+    context.persistentStoreCoordinator = store;
+    
+    _context = context;
+    
+    CoreData调试:
+
+打开Product，选择Edit Scheme.
+选择Arguments，在下面的ArgumentsPassed On Launch中添加下面两个选项，如图：
+(1)-com.apple.CoreData.SQLDebug
+(2)1
+    
+62、k线
+63、视频直播
+64、网络封装
+65、布局
+66、架构
+
+67、
+nullable: 表示修饰的属性或参数可以为空 
+nonnull:非空，表示修饰的属性或参数不能为空，
+nonnull,nullable只能修饰对象，不能修饰基本数据类型
+
+null_resettable的使用：
+** null_resettable: get方法:不能返回为空，set方法可以为空**
+@property(nonatomic,strong,null_resettable) NSNumber * number;
+
+null_unspecified的使用：
+
+null_unspecified:不确定是否为空,使用方式有三种：
+@property(nonatomic,strong) NSNumber *_Null_unspecified height;
+@property(nonatomic,strong) NSNumber *__null_unspecified height;
+@property(nonatomic,strong,null_unspecified) NSNumber * height;
+苹果为了减轻我们的工作量，专门提供了两个宏：NS_ASSUME_NONNULL_BEGIN， NS_ASSUME_NONNULL_END。在这两个宏之间的代码，
+所有简单指针对象都被假定为nonnull，因此我们只需要去指定那些nullable的指针。
