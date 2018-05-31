@@ -5123,12 +5123,23 @@ Student+CoreDataProperties
 (2)1
     
 62、k线
+macd： DIFF指标作为短期移动均线 ，DEA作为一个中长期移动平均线
 63、视频直播
+Mac-Operation not permitted问题
+https://blog.csdn.net/z82367825/article/details/55000615 
+FFmpeg-iOS静态库编译
+https://blog.csdn.net/taylorwenzhan/article/details/51918339
+视频直播初窥
+https://www.cnblogs.com/oc-bowen/p/5896199.html
+iOS中集成ijkplayer视频直播框架
+https://www.jianshu.com/p/1f06b27b3ac0
+
 64、网络封装
 65、布局
 66、架构
-
-67、
+67、画方法
+68、算法
+69、
 nullable: 表示修饰的属性或参数可以为空 
 nonnull:非空，表示修饰的属性或参数不能为空，
 nonnull,nullable只能修饰对象，不能修饰基本数据类型
@@ -5145,3 +5156,297 @@ null_unspecified:不确定是否为空,使用方式有三种：
 @property(nonatomic,strong,null_unspecified) NSNumber * height;
 苹果为了减轻我们的工作量，专门提供了两个宏：NS_ASSUME_NONNULL_BEGIN， NS_ASSUME_NONNULL_END。在这两个宏之间的代码，
 所有简单指针对象都被假定为nonnull，因此我们只需要去指定那些nullable的指针。
+70、UIWindow层级 keywindow
+UIKIT_EXTERN const UIWindowLevel UIWindowLevelNormal; //默认，值为0
+UIKIT_EXTERN const UIWindowLevel UIWindowLevelAlert; //值为2000 
+UIKIT_EXTERN const UIWindowLevel UIWindowLevelStatusBar ; // 值为1000
+
+层级越高的window总是显示在最前面
+弹出AlertView和ActionSheet的时候系统会帮你改变keyWindow  但是当弹出键盘的时候keyWindow是不变
+四个关于window变化的通知
+UIKIT_EXTERN NSString *const UIWindowDidBecomeVisibleNotification; // 当window激活时并展示在界面的时候触发，返回空
+UIKIT_EXTERN NSString *const UIWindowDidBecomeHiddenNotification;  // 当window隐藏的时候触发，暂时没有实际测，返回空
+UIKIT_EXTERN NSString *const UIWindowDidBecomeKeyNotification;     // 当window被设置为keyWindow时触发，返回空
+UIKIT_EXTERN NSString *const UIWindowDidResignKeyNotification;     // 当window的key位置被取代时触发，返回空
+
+当前app可以打开的多个window 如系统状态栏其实就是一个window ,程序启动的时候创建的默认的window ，弹出键盘也是一个window ，
+alterView 弹框也是window 。但是keyWindow只有一个 ，一般情况下就是我们程序启动时设置的默认的window
+
+获取keyWindow的方式
+UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+
+1) 同一层级的 最后一个显示出来，上一个被覆盖
+
+2）UIWindow在显示的时候是不管KeyWindow是谁，都是Level优先的，即Level最高的始终显示在最前面。
+
+3）谁最后设置的 makeKeyAndVisible 谁就是keyWindow 其他的也会显示出来 所有的window都可以监听键盘 和点击的事件 
+
+(1)UITextEffectsWindow
+这是iOS8引入的一个新window，是键盘所在的window。它的windowLevel是最高的。
+(2)UIRemoteKeyboardWindow
+iOS9之后,新增了一个类型为 UIRemoteKeyboardWindow 的窗口用来显示键盘按钮。
+销毁一个UIWindow
+self.testWindow.hidden = YES;
+self.testWindow = nil;
+
+添加一个window在手机上
+    UIWindow *window1 = [[UIWindow alloc] initWithFrame:CGRectMake(0, 80, 320, 320)];
+    window1.backgroundColor = [UIColor redColor];
+    window1.windowLevel = UIWindowLevelAlert;
+    [window1 makeKeyAndVisible];
+    
+71、viewDidLoad, viewWillDisappear, viewWillAppear等区别及各自的加载顺序
+viewWillAppear:视图即将可见时调用。默认情况下不执行任何操作
+
+viewDidAppear:视图已完全过渡到屏幕上时调用
+
+viewWillDisappear:Calledafter the view was dismissed, covered or otherwise hidden. Defaultdoesnothing视图被驳回后调用，覆盖或以其他方式隐藏。默认情况下不执行任何操作loadView;Thisis where subclasses should create their custom view hierarchy ifthey aren't using a nib. Should never be calleddirectly.这是当他们没有正在使用nib视图页面，子类将会创建自己的自定义视图层。绝不能直接调用。
+viewDidLoad：在视图加载后被调用，如果是在代码中创建的视图加载器，他将会在loadView方法后被调用，如果是从nib视图页面输出，他将会在视图设置好后后被调用。
+
+viewWillAppear：当收到视图在视窗将可见时的通知会呼叫的方法
+
+viewDidAppear：当收到视图在视窗已可见时的通知会呼叫的方法
+
+viewWillDisappear：当收到视图将去除、被覆盖或隐藏于视窗时的通知会呼叫的方法
+
+viewDidDisappear：当收到视图已去除、被覆盖或隐藏于视窗时的通知会呼叫的方法
+
+didReceiveMemoryWarning：收到系统传来的内存警告通知后会执行的方法
+
+shouldAutorotateToInterfaceOrientation：是否支持不同方向的旋转视图
+
+willAnimateRotationToInterfaceOrientation：在进行旋转视图前的会执行的方法（用于调整旋转视图之用）
+
+
+代码的执行顺序
+
+1、alloc创建对象，分配空间
+
+2、init (initWithNibName) 初始化对象，初始化数据
+
+3、loadView从nib载入视图，通常这一步不需要去干涉。除非你没有使用xib文件创建视图
+
+4、viewDidLoadr控制器载入完成，可以进行自定义数据以及动态创建其他控件
+
+5、viewWillAppear视图将出现在屏幕之前，马上这个视图就会被展现在屏幕上了
+
+6、viewDidAppear视图已在屏幕上渲染完成 当一个视图被移除屏幕并且销毁的时候的执行顺序，这个顺序差不多和上面的相反
+
+1、viewWillDisappear视图将被从屏幕上移除之前执行
+
+2、viewDidDisappear视图已经被从屏幕上移除，用户看不到这个视图了
+
+3、dealloc视图被销毁，此处需要对你在init和viewDidLoad中创建的对象进行释放
+
+
+71、判断模态
+viewDidAppear{
+if (self.presentingViewController) {
+      模态
+    } else {
+
+    }
+
+}
+
+72、runtime的消息机制
+runtime方法名都是有前缀的，谁负责的事情就以这个开头
+runtime本质是发消息，只声明，不实现方法，不会报错，因为runtime运行时，只有在运行时才会去检测方法
+Clang重写m文件为cpp文件 
+clang -rewrite-objc main.m编译出底层代码main.cpp,大概有10万行，搜索autoreleasepool 
+id objc = [[NSObject alloc]init];
+使用
+#import<obj/message.h>
+
+runtime消息机制
+id ob = objc_msgsend(参数1：谁发消息  参数2：发什么消息)
+xode6苹果不推荐用runtime，不希望使用者了解太多底层实现，如果想用需在plish里面添加runtime参数
+就会出runtime方法提示了
+oc的任何方法，最终都转换为消息机制
+oc先转换成c++代码
+
+runtime消息机制调用多个参数
+id objc = objc_msgsend([nsobject class],@selector(alloc));//给类对象发送一个消息
+objc = objc_msgsend(objc,@selector(init));
+objc = objc_msgsend(objc,sel_registername(init));//这两者是一个意思
+runtime用在哪些地方：
+person *p = [person alloc]
+p.name 找不到
+因为没有init方法，init让对象处于真正可用状态，能把方法声明暴露出来
+但用runtime 可以在不初始化的情况下去找到这个私有方法
+应用范围
+调用一些底层私有方法
+调多参数
+objc_msgsend(objc,@selector(run),20);
+
+runtime方法的调用流程
+方法保存在哪里？
+对象方法：p里面有个isa指针指向一个类对象，类对象里面都有方法列表
+类方法：保存在一个元类方法列表中
+怎么找到这个类对象：通过isa指针去查找，方法名注册成对应的方法编号，通过这个方法编号去查找，这个编号查到对应的内存地址，
+从代码区通过内存地址能找到方法的实现
+内存5大区：
+一个由C/C++编译的程序占用的内存分为以下几个部分 ：
+
+  1、栈区（stack）  —   由编译器自动分配释放   ，存放函数的参数值，局部变量的值等。其    操作方式类似于数据结构中的栈。
+
+    2、堆区（heap） —   一般由程序员分配释放，   若程序员不释放，程序结束时可能由OS回收   。注意它与数据结构中的堆是两回事，分配方式倒是类似于链表。
+
+    3、全局区（静态区）（static）—   全局变量和静态变量的存储是放在一块的，初始化的    全局变量和静态变量在一块区域，   未初始化的全局变量和未初始化的静态变量在相邻的另一块区域。   -   程序结束后由系统释放。
+
+    4、文字常量区   —   常量字符串就是放在这里的。   程序结束后由系统释放。
+
+    5、程序代码区   —   存放函数体的二进制代码。        
+
+
+
+
+runtime的应用
+1、为系统类动态添加属性
+NSObject *obj = [NSObject alloc]init];
+obj.name ="objname"//属性本质是让属性与某个对象产生关联
+@interface nsobject(proerty)
+@property nsstring *name; @property 只会生成set,get方法的声明，不会声明实现，也不会声明下划线的成员属性
+@synthesize toDoItems = _toDoItems；可省略
+#import "NSObject+property.h"
+#import <objc/message.h>
+
+@implementation NSObject (property)
+
+- (void)setName:(NSString *)name
+{
+    // Associated : |əˈsəʊʃɪeɪt|关联的意思
+
+    /*
+     产生关联,让某个对象(name)与当前对象的属性(name)产生关联
+     参数1: id object :表示给哪个对象添加关联
+     参数2: const void *key : 表示: id类型的key值(以后用这个key来获取属性) 属性名
+     参数3: id value : 属性值
+     参数4: 策略, 是个枚举(点进去,解释很详细)
+     */
+
+    objc_setAssociatedObject(self, "name", name, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+}
+
+- (NSString *)name
+{
+    return objc_getAssociatedObject(self, "name");
+}
+
+// 下面是策略(是个枚举值)的类型
+OBJC_ASSOCIATION_ASSIGN = 0,
+< Specifies a weak reference to the associated object.
+
+OBJC_ASSOCIATION_RETAIN_NONATOMIC = 1,
+< Specifies a strong reference to the associated object.
+                                          The association is not made atomically.//字符串类型
+
+OBJC_ASSOCIATION_COPY_NONATOMIC = 3,
+< Specifies that the associated object is copied.
+                                       The association is not made atomically
+
+OBJC_ASSOCIATION_RETAIN = 01401,
+< Specifies a strong reference to the associated object.
+                                         The association is made atomically.
+
+OBJC_ASSOCIATION_COPY = 01403
+< Specifies that the associated object is copied.
+                                      The association is made atomically.
+
+
+@end
+
+
+
+73、iOS获取设备唯一标识 https://blog.csdn.net/u014795020/article/details/72667320
+前言
+
+目前市面应用普遍采用用户体验，涉及到部分重要功能时候才提醒用户注册账户，而用户之前的操作，比如收藏，点赞，关注等内容需要同时关联进注册的账户，那么根据什么记录用户的操作信息就尤为重要。下面就列出我之前收集资料总结的方案。
+
+UDID
+
+UDID（Unique Device Identifier），iOS 设备的唯一识别码，是一个40位十六进制序列（越狱的设备通过某些工具可以改变设备的 UDID），移动网络可以利用 UDID 来识别移动设备。 
+许多开发者把 UDID 跟用户的真实姓名、密码、住址、其它数据关联起来，网络窥探者会从多个应用收集这些数据，然后顺藤摸瓜得到这个人的许多隐私数据，同时大部分应用确实在频繁传输 UDID 和私人信息。 为了避免集体诉讼，苹果最终决定在 iOS 5 的时候，将这一惯例废除。 
+现在应用试图获取 UDID 已被禁止且不允许上架。
+
+MAC 地址
+
+MAC（Medium / Media Access Control）地址，用来表示互联网上每一个站点的标示符，是一个六个字节（48位）的十六进制序列。前三个字节是由 IEEE 的注册管理机构 RA 负责给不同厂家分配的”编制上唯一的标示符（Organizationally Unique Identifier)”，后三个字节由各厂家自行指派给生产的适配器接口，称为扩展标示符。 
+MAC 地址在网络上用来区分设备的唯一性，接入网络的设备都有一个MAC地址，他们肯定都是唯一的。一部 iPhone 上可能有多个 MAC 地址，包括 WIFI 的、SIM 的等，但是 iTouch 和 iPad 上就有一个 WIFI 的，因此只需获取 WIFI 的 MAC 地址就好了。一般会采取 MD5（MAC 地址 + bundleID）获取唯一标识。 
+但是 MAC 地址和 UDID 一样，存在隐私问题， iOS 7 之后，所有设备请求 MAC 地址会返回一个固定值，这个方法也不攻自破了。
+
+OpenUDID
+
+UDID 被弃用后，广大开发者需要寻找一个可以替代的 UDID，并且不受苹果控制的方案，由此，OpenUDID 成为了当时使用最广泛的开源 UDID 代替方案。OpenUDID 利用一个非常巧妙的方法在不同程序间存储标示符：在粘贴板中用了一个特殊的名称来存储标示符，通过这种方法，其他应用程序也可以获取。 
+苹果在 iOS 7 之后对粘贴板做了限制，导致同一个设备上的应用间，无法再共享一个 OpenUDID。
+
+UUID + 自己存储
+
+UUID（Universally Unique IDentifier），通用唯一标示符，是一个32位的十六进制序列，使用小横线来连接：8-4-4-4-12，通过 NSUUID（iOS 6 之后）[NSUUID UUID].UUIDString 或者 CFUUID（iOS 2 之后） CFBridgingRelease(CFUUIDCreateString(kCFAllocatorDefault, CFUUIDCreate(kCFAllocatorDefault))) 来获取，但是每次获取的值都不一样，需要自己存储。
+
+推送 token + bundleID
+
+推送 token 保证设备唯一，但是必须有网络情况下才能工作，该方法不依赖于设备本身，但依赖于 apple push，而 apple push 有时候会抽风的。
+
+IDFA
+
+IDFA-identifierForIdentifier（广告标示符），在同一个设备上的所有 APP 都会取到相同的值，是苹果专门给各广告提供商用来追踪用户而设定的。虽然 iPhone 默认是允许追踪的，而且一般用户都不知道有这么个设置，但是用户可以在 设置 - 隐私 - 广告追踪 里重置此 ID 的值，或者限制此 ID 的使用，所以有可能会取不到值。
+
+IDFV
+
+IDFV-identifierForVendor（Vendor 标示符），通过 [UIDevice currentDevice].identifierForVendor.UUIDString 来获取。是通过 bundleID 的反转的前两部分进行匹配，如果相同是同一个 Vendor ，例如对于 com.mayan.app_1 和 com.mayan.app_2 这两个 bundleID 来说，就属于同一个 Vendor ，共享同一个 IDFV，和 IDFA 不同的是，IDFV 的值一定能取到的，所以非常适合于作为内部用户行为分析的主 ID 来识别用户。但是用户删除了该 APP ，则 IDFV 值会被重置，再次安装此 APP ，IDFV 的值和之前的不同。
+
+IDFV + keychain
+
+通过以上几种存储唯一标识的方法分析，总结一下各有优劣。很多方法被苹果禁止，或者漏洞太多，越来越不被开发者利用，现在苹果主推IDFA和IDFV这两种方法，分别对外和对内，但是IDFV在App重新安装时候会被更改，所以我的方法是通过第一次生成的IDFV存储到keychain中，以后每次获取标识符都从keychain中获取。注意：keychain在iOS 7之后开放给开发者，但是在iOS 10中默认是关闭的，需要开发者手动打开。
+我的项目用的是
++(NSString*) getCurrentDeviceUDID
+{
+    return [OpenUDID value];
+}
+
+
+74、空”园三兄弟之nil和Nil及NUL
+说到空指针，大家立马想到的是nil，其实OC大家族中的三个成员nil，Nil还有NULL，都是空指针，即没有指向任何东西的指针，给空指针发送消息也不会报错！
+
+下面就说说关于nil和Nil及NULL的区别: 
+nil: A null pointer to an Objective-C object. nil 是一个OC对象值。
+
+//nil的定义
+#define nil __DARWIN_NULL
+#define __DARWIN_NULL ((void *)0)
+
+//nil怎么用
+Person *p = [Person new]; 
+p = nil;
+Nil: A null pointer to an Objective-C class.给类对象赋值
+
+//Nil的定义
+#define Nil __DARWIN_NULL
+#define __DARWIN_NULL ((void *)0)
+
+//Nil怎么用
+Class someClass = Nil;
+NULL: A null pointer to anything else, is for C-style memory pointers. 用于对非对象指针赋空值，比如C指针 
+
+//NULL的定义
+#define NULL ((void*)0)
+
+//NULL的用法
+char *ptr = NULL;
+int* p = NULL;
+struct S *s = NULL;
+通过查看定义我们发现，nil，Nil，NULL其实并没有什么本质上的不同，只是OC种用不同的形式来表示他们应该用在不用的地方，但是其实他们可以通用，你给一个OC对象或者类对象或者C语言指针赋值为NIL,nil,NULL都是不会报错的。
+
+NSNull: The NSNull class defines a singleton object used to represent null values in collection objects (which don’t allow nil values).
+
+//NSNULL的定义
+@interface NSNull : NSObject <NSCopying, NSSecureCoding>
++ (NSNull *)null;
+@end
+
+//NSNULL的使用
+[NSNull null]; //返回一个单例的NSNULL对象
+//他返回的对象用在比如像NSArray这样的类型中，nil或NULL不能做为加到其中的Object
+//如果定义了一个NSArray，为其分配了内存，又想设置其中的内容为空，则可以用[NSNULL null]返回的对象来初始化NS   
