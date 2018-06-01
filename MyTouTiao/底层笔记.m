@@ -5357,7 +5357,280 @@ OBJC_ASSOCIATION_COPY = 01403
 
 @end
 
+runtime 应用方法交换
+方法交换的本质
+通过isa指针，找到类对象或元类的方法列表，列表中有方法编号，通过编号可以找到实现该方法的地址，交换则是在方法列表中进行的
+什么情况下使用方法交换
+扩展系统的一个方法，如UIImage的imagewithname
+如果用一个子类继承uiimage，复写imagewithname方法，在使用时需要import这个子类，对于一些老项目，所有uiimage对象都得改成子类对象
+如果使用分类复写方法，不可行，因为分类会覆盖掉本身的方法，因为不是继承，不能实现super imagewithname
+如果使用分类扩展一个新的sx_imagewithname也不太好，因为老项目同样需要一个一个的去修改
+所以采用运行时交换方法
+交换方法注意的几点
+1、用于和imagewithname交换的那个分类方法，在调用imagewithname会引起死循环调用，因为这个方法已经被交换
+2、这种方式必须用分类去实现
+3、交换方法写到load里面，因为load函数是把类加载到内存中会执行，只执行一次，注意，swift没有load方法
+有,如果是swift，可以在initialize方法中写，但是需要在dispath_once这个block中执行，因为initialize可能执行多次
+person *p1 =[[person alloc]init]
+person *p2 =[[person alloc]init]
+init执行两次，initialize执行1次，load执行1次
 
+student *s = [[student alloc]init];
+person *p =[[person alloc]init]
+init执行两次，initialize执行两次，load执行1次
+例：
+#import "NSString+ExchangeMethod.h"
+#import <objc/runtime.h>
+
+@implementation NSString (ExchangeMethod)
+
++ (void)load
+{
+    // 获取系统的对象方法
+    Method stringByAppendingStringMethod = class_getInstanceMethod(self, @selector(stringByAppendingString:));
+    
+    // 获取自己定义的对象方法
+    Method sjx_stringByAppendingStringMethod = class_getInstanceMethod(self, @selector(sjx_stringByAppendingString:));
+    
+    // 方法交换
+    method_exchangeImplementations(stringByAppendingStringMethod, sjx_stringByAppendingStringMethod);
+}
+
+- (NSString *)sjx_stringByAppendingString:(NSString *)aString
+{
+    if (aString == nil || aString.length == 0) {
+        aString = @"输入的字符串为空哦！！";
+    }
+    
+    /*
+     因为已经交换了方法，所以在这里调用 sjx_stringByAppendingString: 实际为 stringByAppendingString: 
+     如果这里写 stringByAppendingString: 会造成死循环
+     */
+    return [self sjx_stringByAppendingString:aString];
+}
+
+@end
+
+runtime动态添加方法 开发使用场景：如果一个类方法非常多，加载类到内存的时候也比较耗费资源，需要给每个方法生成映射表，可以使用动态给某个类，添加方法解决。
+
+问题：performselector使用过吗？什么情况下使用？
+在运行时用到过，一个方法只要被实现了，都会添加到方法列表中，performselector会在运行时去方法列表找方法的实现。
+通常与检查方法- (BOOL)respondsToSelector:(SEL)aSelector;去调用，（判断方法是否已经实现，可以调用），
+performselector可以调用没有声明的方法，相当于只要是方法都可以调用，相当于它是高级会员，能访问系统一些私有的方法
+
+resolveInstanceMethod和resolveClassMethod 对象方法和类方法 这两个方法用什么作用？
+person *p = [[person alloc]init];
+[p run];/
+如果run方法没有实现，则会调用resolveInstanceMethod，这个函数里面就可以编写一些运行时的方法
+
+void aaa(id self,sel _cmd){
+
+}
++(BOOL)resolveInstanceMethod:(SEL)sel{
+// NSStringFromSelector(sel)把方法转字符串
+if(sel==NSSelectorFromString(@"eat")){//把字符串转换为方法
+  //class给哪个类添加方法
+  //sel添加哪个方法
+  //方法实现，函数入品，函数名
+  //类型，是否有参数或无参数有返回值
+  class_addmethod(self,sel,imp(aaa),"v@:")
+}
+任何方法都有两个隐藏参数，self,_cmd(获取当前方法的编号)
+NSStringFromSelector(_cmd)会把方法编号转为函数名
+
+知识点：
+#import "ViewController.h"
+#import "Person.h"
+
+/* 
+    1：
+    Runtime(动态添加方法):OC都是懒加载机制,只要一个方法实现了,就会马上添加到方法列表中.
+    app:免费版,收费版
+    QQ,微博,直播等等应用,都有会员机制
+    performSelector：去执行某个方法。performSelector withObject ：object为前面方法的参数
+    
+    2：
+    美团有个面试题?有没有使用过performSelector,什么时候使用?动态添加方法的时候使用过?怎么动态添加方法?用runtime?为什么要动态添加方法?
+ */
+
+@interface ViewController ()
+
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+//    _cmd:当前方法的方法编号
+    
+    Person *p = [[Person alloc] init];
+    
+    // 执行某个方法
+//    [p performSelector:@selector(eat)];
+    
+    [p performSelector:@selector(run:) withObject:@10];
+    
+
+}
+
+@end
+复制代码
+复制代码
+#import "Person.h"
+#import <objc/message.h>
+
+@implementation Person
+
+// 没有返回值,也没有参数
+// void,(id,SEL)
+void aaa(id self, SEL _cmd, NSNumber *meter) {
+    
+    NSLog(@"跑了%@", meter);
+    
+}
+
+// 任何方法默认都有两个隐式参数,self,_cmd（_cmd代表方法编号，打印结果为当前执行的方法名）
+// 什么时候调用:只要一个对象调用了一个未实现的方法就会调用这个方法,进行处理
+// 作用:动态添加方法,处理未实现
++ (BOOL)resolveInstanceMethod:(SEL)sel
+{
+    // [NSStringFromSelector(sel) isEqualToString:@"eat"];
+    if (sel == NSSelectorFromString(@"run:")) {
+        // eat
+        // class: 给哪个类添加方法
+        // SEL: 添加哪个方法
+        // IMP: 方法实现 => 函数 => 函数入口 => 函数名
+        // type: 方法类型：void用v来表示，id参数用@来表示，SEL用:来表示
+        //aaa不会生成方法列表
+        class_addMethod(self, sel, (IMP)aaa, "v@:@");
+        
+        return YES;
+    }
+    
+    return [super resolveInstanceMethod:sel];
+
+}
+
+//- (void)test
+//{
+//    // [NSStringFromSelector(sel) isEqualToString:@"eat"];
+//    if (sel == NSSelectorFromString(@"eat")) {
+//        // eat
+//        // class: 给哪个类添加方法
+//        // SEL: 添加哪个方法
+//        // IMP: 方法实现 => 函数 => 函数入口 => 函数名
+//        // type: 方法类型
+//        class_addMethod(self, sel, (IMP)aaa, "v@:");
+//        
+//        return YES;
+//    }
+//    
+//    return [super resolveInstanceMethod:sel];
+//}
+@end
+复制代码
+####3.动态添加方法
+
+* 开发使用场景：如果一个类方法非常多，加载类到内存的时候也比较耗费资源，需要给每个方法生成映射表，可以使用动态给某个类，添加方法解决。
+
+* 经典面试题：有没有使用performSelector，其实主要想问你有没有动态添加过方法。
+
+* 简单使用
+
+ 
+
+```
+
+@implementation ViewController
+
+ 
+
+- (void)viewDidLoad {
+
+    [super viewDidLoad];
+
+    // Do any additional setup after loading the view, typically from a nib.
+
+    
+
+    Person *p = [[Person alloc] init];
+
+    
+
+    // 默认person，没有实现eat方法，可以通过performSelector调用，但是会报错。
+
+    // 动态添加方法就不会报错
+
+    [p performSelector:@selector(eat)];
+
+    
+
+}
+
+ 
+
+ 
+
+@end
+
+ 
+
+ 
+
+@implementation Person
+
+// void(*)()
+
+// 默认方法都有两个隐式参数，
+
+void eat(id self,SEL sel)
+
+{
+
+    NSLog(@"%@ %@",self,NSStringFromSelector(sel));
+
+}
+
+ 
+
+// 当一个对象调用未实现的方法，会调用这个方法处理,并且会把对应的方法列表传过来.
+
+// 刚好可以用来判断，未实现的方法是不是我们想要动态添加的方法
+
++ (BOOL)resolveInstanceMethod:(SEL)sel
+
+{
+
+    
+
+    if (sel == @selector(eat)) {
+
+        // 动态添加eat方法
+
+        
+
+        // 第一个参数：给哪个类添加方法
+
+        // 第二个参数：添加方法的方法编号
+
+        // 第三个参数：添加方法的函数实现（函数地址）
+
+        // 第四个参数：函数的类型，(返回值+参数类型) v:void @:对象->self :表示SEL->_cmd
+
+        class_addMethod(self, @selector(eat), eat, "v@:");
+
+        
+
+    }
+
+    
+
+    return [super resolveInstanceMethod:sel];
+
+}
+
+@end
 
 73、iOS获取设备唯一标识 https://blog.csdn.net/u014795020/article/details/72667320
 前言
@@ -5450,3 +5723,21 @@ NSNull: The NSNull class defines a singleton object used to represent null value
 [NSNull null]; //返回一个单例的NSNULL对象
 //他返回的对象用在比如像NSArray这样的类型中，nil或NULL不能做为加到其中的Object
 //如果定义了一个NSArray，为其分配了内存，又想设置其中的内容为空，则可以用[NSNULL null]返回的对象来初始化NS   
+
+75、const,static,extern,#define
+#define 定义一般是以项目名开头，以KEY结尾 ，意为取值 
+#define zlburl @"http://"  
+常用的字符串 常用的代码 抽成宏
+const define区别
+推荐常有字符串常量的时候使用const 
+NSString *const  cent = @"zlbcent";//去掉CONST是全局变量
+
+#define是预编译时候   const编译的时候
+#define不会检查错语   const会检查语法错误
+#define可以定义代码   const不会定义代码
+定义太多的宏会造成编译时间过长 ，const这个代码只会编译一次，宏是只要用到的地方都进行了替换 
+因此常用的字符串使用const定义
+一个错误的说法：大量使用宏会造成内存过大
+这个说法是错误的，NSLOG("%@",zlburl)NSLOG("%@",zlburl)NSLOG("%@",zlburl)打印多次后还是同一个内存地址，因为常量会放到常量区里面，只分配一次内存
+
+
