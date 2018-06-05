@@ -5724,7 +5724,7 @@ NSNull: The NSNull class defines a singleton object used to represent null value
 //他返回的对象用在比如像NSArray这样的类型中，nil或NULL不能做为加到其中的Object
 //如果定义了一个NSArray，为其分配了内存，又想设置其中的内容为空，则可以用[NSNULL null]返回的对象来初始化NS   
 
-75、const,static,extern,#define
+75、const,static,extern,#define super superclass class
 #define 定义一般是以项目名开头，以KEY结尾 ，意为取值 
 #define zlburl @"http://"  
 常用的字符串 常用的代码 抽成宏
@@ -5740,4 +5740,82 @@ NSString *const  cent = @"zlbcent";//去掉CONST是全局变量
 一个错误的说法：大量使用宏会造成内存过大
 这个说法是错误的，NSLOG("%@",zlburl)NSLOG("%@",zlburl)NSLOG("%@",zlburl)打印多次后还是同一个内存地址，因为常量会放到常量区里面，只分配一次内存
 
+const用于修饰基本变量和指针变量，且修饰的变量指读，const一定放到变量的左边靠近变量
 
+下面这两写法一样
+int const a = 0
+const int a = 0
+
+
+下面有区别
+int a = 5
+int * const p = &a//报错
+const int  *p = 3 //报错
+int  const *p = 3 //报错
+int const* const p = &a//报错
+const int* const p = &a//报错
+
+const修饰对象变量
+
+NSString *const name = @"123";//123不能改
+NSString const *name = @"123";//123能改
+
+const使用场景
+定义一个全局指读变量
+NSString *const a = @"123";
+方法中定义指读参数
+-(void)test(NSString *const)name
+{
+   name = @"oo";//不能修改
+}
+
+static 作用：修饰一个局部变量，修饰全局变量
+修饰局部变量，会延长其生命周期，只要成员运行，局部变量一直存在，局部变量只会在程序启动分配一次内存
+-(void)tt
+{
+  static int a = 1;
+  a++;
+  }
+修饰全局变量，只会在当前文件使用，修改了全局变量作用局
+
+extern只能用来声明一个全局变量，不能用来定义变量，extern int a = 10 ;ctrl b 会报错
+int a = 3;
+extern int a;//这个不报错
+作用是用来声明全局变量
+c.m中  int a = 5;
+b.m中要使用a ，需要extern int a;
+如果 static int a = 1;  b.m extern int a 编译会报错的
+
+全局变量定义 static const联合使用
+NSString *const name = @"123";
+只能在本文件夹用的全局变量
+static NSString *const name = @"123";
+
+extern const联合使用
+NSString *const name = @"123";
+extern NSString *const name；
+为了防止全局变量冲突，所有全局变量定义到一个文件夹里
+为了遵守苹果的风格，extern换成UIKIT_EXTERN
+
+[super class] //super指向父类的标志，是一个编译标识符，不是一个指针，获取该对象的类名，而非父类，因为super的本质是拿到当前的对象去调用父类的方法
+[self class]//获取该对象的类名
+[self superclass]//获取该类父对象类名
+
+
+项目中遇到的一个问题
+创建一个person类，在使用时提示没有定义
+分析：这个类有的，没定义，说明这个类没有参与编译
+在xcode 中build phases --complle source添加上.m就可以了
+造成原因是创建一个项目的时候下边有个选项未打勾，所以就不参与编译
+
+76、reactivecocoa MVVM
+链式编程思想,必须要返回一个block,block必须有返回值，返回对象的本身
+把所有的代码聚合在block里面
+
+1、为NSObject添加分类
+2、创建一个计算器管理类用于数学运算
+-(int)xmg_makeCalculate:(void(^)(CalculateManager *))block;
+3、在其它类中如何使用
+[NSObject xmg_makeCalculate:^(CalculateManager *mgr){
+  mgr.add(5).add(3).sub(1)
+}];
