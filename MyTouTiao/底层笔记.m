@@ -5809,13 +5809,525 @@ extern NSString *const name；
 造成原因是创建一个项目的时候下边有个选项未打勾，所以就不参与编译
 
 76、reactivecocoa MVVM
-链式编程思想,必须要返回一个block,block必须有返回值，返回对象的本身
-把所有的代码聚合在block里面
 
+链式编程思想:
+
+必须要返回一个block,block必须有返回值，返回对象的本身
+把所有的代码聚合在block里面
+当一个对象的方法返回值是block时,直接对象.方法
 1、为NSObject添加分类
++ (int)xmg_makeCalculate:(void (^)(CalculateManager *))block
+{
+    // 创建计算管理者
+    CalculateManager *mgr = [[CalculateManager alloc] init];
+    
+    // 执行计算
+    block(mgr);
+    
+    return mgr.result;
+}
 2、创建一个计算器管理类用于数学运算
--(int)xmg_makeCalculate:(void(^)(CalculateManager *))block;
+
+@propery(noamtic,assgin)int result;
+-（instance）add:(int)value
+{
+  _result+=value;
+  return self;
+}
+把add方法封装成block，则可以实现.add(5).add(3)把block当成返回值
+把-（instance）add:(int)value换成-(void(^)())add:(int)value则可以实现mgr.add(5)
+@property (nonatomic, assign) int result;
+- (CalculateManager * (^)(int))add
+{
+    
+    return ^(int value){
+        _result += value;
+        
+        return self;
+        
+    };
+    
+}
 3、在其它类中如何使用
-[NSObject xmg_makeCalculate:^(CalculateManager *mgr){
+int reslut = [NSObject xmg_makeCalculate:^(CalculateManager *mgr){
   mgr.add(5).add(3).sub(1)
 }];
+
+
+响应式编程思想：
+不需要考虑调用顺序，只需要考虑结果，产生一个事件后，事件会像流一样的传播出去，
+然后影响结果，产生一个东西会影响很多东西
+
+kvo就是响应式编程思想。对象的属性一改变，就能知道。
+例：a+b = c; 链式，先知道a,再知道b，就能求出c， 响应式，先知道b，后知道a，也能求出c
+不用管某个变量是否有值，先写好方程式，有值的时候自然能算出来
+kvo本质就是一个对象有没有调用set方法
+@public
+ nsstring *_name;外界通过p->name就可以访问了，通过p->name去修改值就不能改变成员属性了
+ 因为没访问set方法
+ 监听一个方法有没打印，可以重写一个方法，两种方式重写一个方法：一种分类，一种是子类继承
+ 用分类不太好，因为分类没有super方法，不能调用重写前的方法；
+ 本质，不需要覆盖原有的方法实现，只需要判断set方法有没调用
+ 
+ kvo的实现思路：
+1、 创建一个NSObject的分类，增加如下方法，这个方法中，通过运行时 objc_setAssociatedObject，把self与观察者observer，通过observerKey关联，
+ object_setClass(self, [XMGKVONotifying_Person class]);把person的isa指针绑定到子类XMGKVONotifying_Person类，解决调用person.name时直接调用XMGKVONotifying_Person.setName
+ // 监听某个对象的属性
+// 谁调用就监听谁
+- (void)xmg_addObserver:(NSObject *)observer forKeyPath:(NSString *)keyPath options:(NSKeyValueObservingOptions)options context:(void *)context
+{
+    
+    /*
+     // 1.自定义NSKVONotifying_Person子类
+     // 2.重写setName,在内部恢复父类做法,通知观察者
+     // 3.如何让外界调用自定义Person类的子类方法,修改当前对象的isa指针,指向NSKVONotifying_Person
+     */
+    
+    // 把观察者保存到当前对象
+    objc_setAssociatedObject(self, (__bridge const void *)(observerKey), observer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    
+    // 修改对象isa指针
+    object_setClass(self, [XMGKVONotifying_Person class]);
+    
+}
+关键策略是一个枚举值。
+
+OBJC_ASSOCIATION_ASSIGN = 0,      <指定一个弱引用关联的对象>
+
+OBJC_ASSOCIATION_RETAIN_NONATOMIC = 1,<指定一个强引用关联的对象>
+
+OBJC_ASSOCIATION_COPY_NONATOMIC = 3,  <指定相关的对象复制>
+
+OBJC_ASSOCIATION_RETAIN = 01401,      <指定强参考>
+
+OBJC_ASSOCIATION_COPY = 01403    <指定相关的对象复制>
+
+
+ 2、自定一个 XMGKVONotifying_Person类，继承person,通过self与observerKey取出观察者对象，观察者对象去调用observeValueForKeyPath，则实现了当person.name值改变时会调用observeValueForKeyPath方法
+ extern NSString *const observerKey ;
+@implementation XMGKVONotifying_Person
+- (void)setName:(NSString *)name
+{
+    [super setName:name];
+    
+    // 通知观察者调用observeValueForKeyPath
+    // 需要把观察者保存到当前对象
+    // 获取观察者
+   id obsetver = objc_getAssociatedObject(self, observerKey);
+    
+    [obsetver observeValueForKeyPath:@"name" ofObject:self change:nil context:nil];
+    
+}
+@end
+
+
+函数式编程思想：是把操作尽量写成一系列嵌套的函数或者方法调用
+函数式编程本质:就是往方法中传入Block,方法中嵌套Block调用，把代码聚合起来管理
+函数式编程特点：每个方法必须有返回值（本身对象）,把函数或者Block当做参数,block参数（需要操作的值）block返回值（操作结果）
+代表：ReactiveCocoa。
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view, typically from a nib.
+    CalculateManager *mgr = [[CalculateManager alloc] init];
+    
+   int result 执行顺序6 = [[mgr calculate:^(int result){执行顺序1
+       // 存放所有的计算代码
+        result += 5; 执行顺序4
+        result *= 5;
+        return result; 执行顺序7
+    }] result]; 执行顺序8
+    NSLog(@"%d",result);
+}
+
+@end
+
+@interface CalculateManager : NSObject
+
+@property (nonatomic, assign) int result;
+
+// 计算
+- (instancetype)calculate:(int(^)(int))calculateBlock;
+
+@end
+
+@implementation CalculateManager
+- (instancetype)calculate:(int (^)(int))calculateBlock  执行顺序2
+{
+    _result =  calculateBlock(_result); 执行顺序3
+    return self;执行顺序5
+}
+@end
+
+ReactiveCocoa编程思想
+
+ReactiveCocoa结合了几种编程风格：
+
+函数式编程（Functional Programming）
+
+响应式编程（Reactive Programming）
+你可能听说过ReactiveCocoa被描述为函数响应式编程（FRP）框架
+以后使用RAC解决问题，就不需要考虑调用顺序，直接考虑结果，把每一次操作都写成一系列嵌套的方法中，使代码高聚合，方便管理
+
+如何导入ReactiveCocoa框架
+通常都会使用CocoaPods（用于管理第三方框架的插件）帮助我们导入。
+
+cd 到工程目录 
+touch podfile 创建文件
+open podfile 打开文件
+pod search  ReactiveCocoa查看描述 找到pod 'ReactiveCocoa', '~> 4.0.2-alpha-1'
+pod install出错
+加上use_frameworks! swift的东西，则可以用
+由于ReactiveCocoa没有提示，最好创建一个全局的头文件，把ReactiveCocoa import到这个文件中
+
+ReactiveCocoa常见类
+常见类
+RACSiganl:信号类,只要有数据传递就用这个信号类。只要有数据改变，信号内部接收到数据，就会马上发出数据。它本身没有发送信号的能力
+发送数据是交给订阅者去发送数据的
+默认一个信号都是冷信号，也就是值改变了，也不会触发，只有订阅了这个信号，这个信号才会变为热信号，值改变了才会触发。
+如何订阅信号：调用信号RACSignal的subscribeNext就能订阅
+RACSignal使用步骤：
+创建信号 + (RACSignal *)createSignal:(RACDisposable * (^)(id<RACSubscriber> subscriber))didSubscribe
+订阅信号,才会激活信号 - (RACDisposable *)subscribeNext:(void (^)(id x))nextBlock
+发送信号 - (void)sendNext:(id)value
+有数所产生就使用RACSiganl
+不同类型的信号处理订阅的方式不一样
+// 1.创建信号
+    RACSignal *siganl = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {步骤1
+
+        // block调用时刻：每当有订阅者订阅信号，就会调用block。步骤3
+
+        // 2.发送信号
+        [subscriber sendNext:@1];
+
+        // 如果不在发送数据，最好发送信号完成，内部会自动调用[RACDisposable disposable]取消订阅信号。
+        [subscriber sendCompleted];//取消订阅信号
+
+        return [RACDisposable disposableWithBlock:^{
+
+            // block调用时刻：当信号发送完成或者发送错误，就会自动执行这个block,取消订阅信号。
+
+            // 执行完Block后，当前信号就不在被订阅了。
+
+            NSLog(@"信号被销毁");
+
+        }];
+    }];
+//订阅信号,才会激活信号.步骤2订阅会调用步聚1的block
+  RACDisposable *disposable =  [siganl subscribeNext:^(id x) {x信号发出的值
+        // block调用时刻：每当有信号发出数据，就会调用block.
+        NSLog(@"接收到数据:%@",x);
+    }];
+    
+这个是怎么实现的，可以安装一下OmniGraffle64绘图软件了解一下流程，流程图软件
+// RACSignal底层实现：
+    // 1.创建信号，首先把didSubscribe保存到信号中，还不会触发。
+    // 2.当信号被订阅，也就是调用signal的subscribeNext:nextBlock
+    // 2.2 subscribeNext内部会创建订阅者subscriber，并且把nextBlock保存到subscriber中。
+    // 2.1 subscribeNext内部会调用siganl的didSubscribe
+    // 3.siganl的didSubscribe中调用[subscriber sendNext:@1];
+    // 3.1 sendNext底层其实就是执行subscriber的nextBlock
+RACSubscriber:表示订阅者的意思，用于发送信号并且把nextBlock保存到subscriber中这是一个协议，不是一个类，只要遵守这个协议，并且实现方法才能成为订阅者。通过create创建的信号，都有一个订阅者，帮助他发送数据。
+RACDisposable:用于取消订阅或者清理资源，当信号发送完成或者发送错误的时候，就会自动触发它。当发送订阅完成就会默认取消订阅，调这个block
+因为这会RACSubscriber订阅者不存在了，所以只要订阅者在这个信号就不会被取消息，可以创建一个RACSubscriber的强指针去保存RACSubscriber，信号就不会被取消了
+【disposable dispose】	可主动取消订阅
+
+
+
+
+RACReplaySubject与RACSubject
+RACReplaySubject:重复提供信号类，RACSubject的子类。
+Subject 可以翻译为信号提供者，信号提供者，自己可以充当信号，又能发送信号。
+使用场景一:替代代理，代理有一大堆协议，很烦人
+ // 1.创建信号
+    RACSubject *subject = [RACSubject subject];//因为继承一个RACSignal,内部保存了一个数组，
+        // 2.订阅信号
+    [subject subscribeNext:^(id x) {//创建了一个订阅者，并保存了next这个block,订阅者保存在数组中，不同的信号订阅方式不同
+        // block调用时刻：当信号发出新值，就会调用.
+        NSLog(@"第一个订阅者%@",x);
+    }];
+     // 3.发送信号
+    [subject sendNext:@"1"];//这个就不用在block中用订阅者发送，取出每个订阅者并遍列数组中的block执行它
+这种信号不同于RACSignal，可被订阅多次，每订阅一次会创建一个订阅者
+
+
+
+RACReplaySubject
+// 1.创建信号
+RACReplaySubject *replaySubject = [RACReplaySubject subject];//创建信号时没有block，可以先订阅信号，也可以先发送
+// 2.发送信号
+[replaySubject sendNext:@1];//保存值1，遍历所有订阅者，这个时候只有一个订阅者，去发数据
+// 3.订阅信号
+[replaySubject subscribeNext:^(id x) {//创建了一个订阅者,遍历所有的值，拿到当前订阅者去发送消息，只拿到一个订阅者去发送数据
+
+        NSLog(@"第一个订阅者接收到的数据%@",x);
+}];
+
+RACReplaySubject与RACSubject区别
+RACReplaySubject 可以先发送信号再订阅数据，因为它可以先把要发送的值保存起来，subscribeNext 遍历所有的值，拿到当前订阅者去发送消息
+
+
+RACSubject代替代理
+// 需求:
+    // 1.给当前控制器添加一个按钮，modal到另一个控制器界面
+    // 2.另一个控制器view中有个按钮，点击按钮，通知当前控制器
+    
+步骤一：在第二个控制器.h，添加一个RACSubject代替代理。
+@interface TwoViewController : UIViewController
+
+@property (nonatomic, strong) RACSubject *delegateSignal;
+
+@end
+
+步骤二：监听第二个控制器按钮点击
+@implementation TwoViewController
+- (IBAction)notice:(id)sender {
+    // 通知第一个控制器，告诉它，按钮被点了
+
+     // 通知代理
+     // 判断代理信号是否有值
+    if (self.delegateSignal) {
+        // 有值，才需要通知
+        [self.delegateSignal sendNext:nil];
+    }
+}
+@end
+
+步骤三：在第一个控制器中，监听跳转按钮，给第二个控制器的代理信号赋值，并且监听.
+@implementation OneViewController
+- (IBAction)btnClick:(id)sender {
+
+    // 创建第二个控制器
+    TwoViewController *twoVc = [[TwoViewController alloc] init];
+
+    // 设置代理信号
+    twoVc.delegateSignal = [RACSubject subject];
+
+    // 订阅代理信号
+    [twoVc.delegateSignal subscribeNext:^(id x) {
+
+        NSLog(@"点击了通知按钮");
+    }];
+
+    // 跳转到第二个控制器
+    [self presentViewController:twoVc animated:YES completion:nil];
+
+}
+@end
+
+
+rac中的集合类
+
+RACTuple:元组类,类似NSArray,用来包装值. swift元组除了保存对象还能保存基本数据类型，这里的元组只能保存对象
+- (void)tuple
+{
+    // 元组
+    RACTuple *tuple = [RACTuple tupleWithObjectsFromArray:@[@"213",@"321",@1]];
+    NSString *str = tuple[0];
+    
+    NSLog(@"%@",str);
+}
+
+RACSequence:RAC中的集合类，用于代替NSArray,NSDictionary,可以使用它来快速遍历数组和字典，NSArray,NSDictionary可转换为RACSequence
+// 数组遍历，复杂写法
+    NSArray *arr = @[@"213",@"321",@1];//NSArray转换为RACSequence
+    RACSequence *sequence = arr.rac_sequence;
+    把这个集合转换成信号，只有信号才能订阅，这样就遍历出里面的值
+    // 把集合转换成信号
+    RACSignal *signal = sequence.signal;
+   [signal subscribeNext:^(id x) {//内部会把所有的元素发出来
+          NSLog(@"%@",x);
+   }];
+   
+   //数组遍历简单写法：
+    [arr.rac_sequence.signal subscribeNext:^(id x) {
+        NSLog(@"%@",x);
+    }];
+    
+//字典遍历
+// 字典
+    NSDictionary *dict = @{@"account":@"aaa",@"name":@"xmg",@"age":@18};
+    
+    // 转换成集合
+    [dict.rac_sequence.signal subscribeNext:^(RACTuple *x) {
+        //       NSString *key = x[0];
+        //        NSString *value = x[1];
+        //        NSLog(@"%@ %@",key,value);
+        
+        // RACTupleUnpack:用来解析元组
+        // 宏里面的参数,传需要解析出来的变量名
+        // = 右边,放需要解析的元组
+        RACTupleUnpack(NSString *key,NSString *value) = x;//解包元组
+        
+        NSLog(@"%@ %@",key,value);
+    }];
+}
+
+
+  // 解析plist文件
+   NSString *filePath = [[NSBundle mainBundle] pathForResource:@"flags.plist" ofType:nil];
+    NSArray *dictArr = [NSArray arrayWithContentsOfFile:filePath];
+    
+//    NSMutableArray *arr = [NSMutableArray array];
+//    [dictArr.rac_sequence.signal subscribeNext:^(NSDictionary *x) {
+//        Flag *flag = [Flag flagWithDict:x];
+//        [arr addObject:flag];
+//    }];
+    
+    // 高级用法
+    // 会把集合中所有元素都映射成一个新的对象
+   NSArray *arr = [[dictArr.rac_sequence map:^id(NSDictionary *value) {
+        // value:集合中元素
+        // id:返回对象就是映射的值
+        return [Flag flagWithDict:value];
+    }] array];
+    
+    NSLog(@"%@",arr);
+    
+7.ReactiveCocoa开发中常见用法。
+
+7.1 代替代理:
+rac_signalForSelector：用于替代代理。
+    // 需求：自定义redView,控制器监听红色view中按钮点击
+    // 之前都是需要通过代理监听，给红色View添加一个代理属性，点击按钮的时候，通知代理做事情
+    // rac_signalForSelector:把调用某个对象的方法的信息转换成信号，就要调用这个方法，就会发送信号。
+    // 这里表示只要redV调用btnClick:,就会发出信号，订阅就好了。
+    监听某个对象有没调用某个方法，但是这种方式不好，不能传值
+    [[redV rac_signalForSelector:@selector(btnClick:)] subscribeNext:^(id x) {
+        NSLog(@"点击红色按钮");
+    }];
+    
+
+7.2 代替KVO :
+rac_valuesAndChangesForKeyPath：用于监听某个对象的属性改变。与传统比较好处，如果监听多值，不用在观察者方法中写if语句去判断是哪个值改变了
+ // 把监听redV的center属性改变转换成信号，只要值改变就会发送信号
+    // observer:可以传入nil
+    [[redV rac_valuesAndChangesForKeyPath:@"center" options:NSKeyValueObservingOptionNew observer:nil] subscribeNext:^(id x) {
+
+        NSLog(@"%@",x);
+
+    }];
+7.3 监听事件:
+rac_signalForControlEvents：用于监听某个事件。
+    [[self.btn rac_signalForControlEvents:UIControlEventTouchUpInside] subscribeNext:^(id x) {
+
+        NSLog(@"按钮被点击了");
+    }];
+7.4 代替通知:
+rac_addObserverForName:用于监听某个通知。
+    // 把监听到的通知转换信号
+    [[[NSNotificationCenter defaultCenter] rac_addObserverForName:UIKeyboardWillShowNotification object:nil] subscribeNext:^(id x) {
+        NSLog(@"键盘弹出");
+    }];
+
+7.5 监听文本框文字改变:
+rac_textSignal:只要文本框发出改变就会发出这个信号。
+   [_textField.rac_textSignal subscribeNext:^(id x) {
+
+       NSLog(@"文字改变了%@",x);
+   }];
+7.6 处理当界面有多次请求时，需要都获取到数据时，才能展示界面
+
+rac_liftSelector:withSignalsFromArray:Signals:当传入的Signals(信号数组)，每一个signal都至少sendNext过一次，就会去触发第一个selector参数的方法。
+使用注意：几个信号，参数一的方法就几个参数，每个参数对应信号发出的数据。
+
+
+    
+77、https
+简化版
+客户端发请求服务器，服务器最开始有私钥和公钥，私钥保存，只把公钥放到一个证书中，这个证书是受保护空间中的，证书是购买的，客户端需要选择是否安装这个证书，并信任它，如
+果客户端信任，就建立了一个受保护层，服务器就可以在这个保护层把数据传给客户端
+这个证书先客户端安装，安装后传的请求参数都通过这个证书的公钥进行了加密，发给服务器，服务器通过自己的私匙解密，然后把返回的数据通过私钥加密，发给客户端
+客户端再通过公钥对这个服务器返回的数据解密
+ssl或tls层是介于http与tcp层中间的，
+复杂版 传输过程中传输内容都需要用hash加密，防止被更改
+1、客户端把支持的协议版本，比如TLS 1.0版，客户端生成的随机数，支持的加密方法，压缩方法，信息发给服务器，
+2、服务器有一个私钥，一个公钥，这时服务器生成一个随机数
+，把这个随机数，还有公钥放到证收中，传给客户端，（像银行需要确认客户是否安全，这里可以发送一个正式客户提供USB密钥，里面就包含了一张客户端证书。密钥对了才能继续操作）
+3、客户端安装信任证书后，再生成一个随机数，加上之前生成的随机数，和服务器发过来的随机数，结合这个证书的公钥
+把请求参数加密，发给服务器，
+4、服务器根据三个随机数，和私钥进行解密，再把返回的数据通过三个随机数，和私钥加密返回给客户端，(这里握手成功后一般可以用对称加密处理，因为已经认证了安全性，所以对称加密耗时更少)
+5、客户端再通过三个随机数和证书中的
+公钥解密数据。
+
+如果是自签名没花钱买的证书，会弹一个框，提示不一定安全
+有些网站不会询问你是否安装证书，因为这是强制安装的
+
+urlsession的https方式，在代理方法中写上安装证书，信任证书的代码
+afnetworking的https也是设置如域名信任，安装证书的代码就行，不需要作其它处理
+   非对称加密算法：RSA, DSA/DSS
+   对称加密算法： AES, 3DES
+   HASH算法：MD5, SHA1, SHA256
+
+服务器端会向CA申请认证书，此证书包含了CA及服务器端的一些信息（可以理解为类似公章），这样，服务器端将证书发给客户端的过程中，中间方是无法伪造的，保证了，发给客户端的公钥是服务器端发送的。
+
+网络专业版：
+1 客户端发起一个https的请求，把自身支持的一系列Cipher Suite（密钥算法套件，简称Cipher）发送给服务端
+
+ 
+
+2  服务端，接收到客户端所有的Cipher后与自身支持的对比，如果不支持则连接断开，反之则会从中选出一种加密算法和HASH算法
+
+   以证书的形式返回给客户端 证书中还包含了 公钥 颁证机构 网址 失效日期等等。
+
+ 
+
+3 客户端收到服务端响应后会做以下几件事
+
+    3.1 验证证书的合法性    
+
+　　  颁发证书的机构是否合法与是否过期，证书中包含的网站地址是否与正在访问的地址一致等
+
+        证书验证通过后，在浏览器的地址栏会加上一把小锁(每家浏览器验证通过后的提示不一样 不做讨论)
+
+   3.2 生成随机密码
+
+        如果证书验证通过，或者用户接受了不授信的证书，此时浏览器会生成一串随机数，然后用证书中的公钥加密。 　　　　　　
+
+    3.3 HASH握手信息
+
+       用最开始约定好的HASH方式，把握手消息取HASH值，  然后用 随机数加密 “握手消息+握手消息HASH值(签名)”  并一起发送给服务端
+
+       在这里之所以要取握手消息的HASH值，主要是把握手消息做一个签名，用于验证握手消息在传输过程中没有被篡改过。
+
+ 
+
+4  服务端拿到客户端传来的密文，用自己的私钥来解密握手消息取出随机数密码，再用随机数密码 解密 握手消息与HASH值，并与传过来的HASH值做对比确认是否一致。
+
+    然后用随机密码加密一段握手消息(握手消息+握手消息的HASH值 )给客户端
+
+ 
+
+5  客户端用随机数解密并计算握手消息的HASH，如果与服务端发来的HASH一致，此时握手过程结束，之后所有的通信数据将由之前浏览器生成的随机密码并利用对称加密算法进行加密  
+
+     因为这串密钥只有客户端和服务端知道，所以即使中间请求被拦截也是没法解密数据的，以此保证了通信的安全
+
+客户端如何验证 证书的合法性？
+
+ 
+
+1. 验证证书是否在有效期内。
+
+　　在服务端面返回的证书中会包含证书的有效期，可以通过失效日期来验证 证书是否过期
+
+2. 验证证书是否被吊销了。
+
+　　被吊销后的证书是无效的。验证吊销有CRL(证书吊销列表)和OCSP(在线证书检查)两种方法。
+
+证书被吊销后会被记录在CRL中，CA会定期发布CRL。应用程序可以依靠CRL来检查证书是否被吊销了。
+
+CRL有两个缺点，一是有可能会很大，下载很麻烦。针对这种情况有增量CRL这种方案。二是有滞后性，就算证书被吊销了，应用也只能等到发布最新的CRL后才能知道。
+
+增量CRL也能解决一部分问题，但没有彻底解决。OCSP是在线证书状态检查协议。应用按照标准发送一个请求，对某张证书进行查询，之后服务器返回证书状态。
+
+OCSP可以认为是即时的（实际实现中可能会有一定延迟），所以没有CRL的缺点。
+
+ 
+
+3. 验证证书是否是上级CA签发的。
+
+
+windows中保留了所有受信任的根证书，浏览器可以查看信任的根证书，自然可以验证web服务器的证书，
+是不是由这些受信任根证书颁发的或者受信任根证书的二级证书机构颁发的（根证书机构可能会受权给底下的中级证书机构，然后由中级证书机构颁发中级证书）
+在验证证书的时候，浏览器会调用系统的证书管理器接口对证书路径中的所有证书一级一级的进行验证，只有路径中所有的证书都是受信的，整个验证的结果才是受信
+ 
