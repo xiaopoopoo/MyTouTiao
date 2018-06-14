@@ -1,3 +1,5 @@
+TimLiu-iOS  各路大神收集的资料：https://github.com/Tim9Liu9/TimLiu-iOS/blob/master/README.md
+
 夏天的风_song
 链接：https://www.jianshu.com/p/7ca9048afa5b
     1.库和宏的一点点
@@ -6021,7 +6023,7 @@ RACSignal使用步骤：
     
 这个是怎么实现的，可以安装一下OmniGraffle64绘图软件了解一下流程，流程图软件
 // RACSignal底层实现：
-    // 1.创建信号，首先把didSubscribe保存到信号中，还不会触发。
+    // 1.创建信号，首先把didSubscribe保存到信号中，还不会触发。 
     // 2.当信号被订阅，也就是调用signal的subscribeNext:nextBlock
     // 2.2 subscribeNext内部会创建订阅者subscriber，并且把nextBlock保存到subscriber中。
     // 2.1 subscribeNext内部会调用siganl的didSubscribe
@@ -6065,6 +6067,36 @@ RACReplaySubject *replaySubject = [RACReplaySubject subject];//创建信号时�
 
 RACReplaySubject与RACSubject区别
 RACReplaySubject 可以先发送信号再订阅数据，因为它可以先把要发送的值保存起来，subscribeNext 遍历所有的值，拿到当前订阅者去发送消息
+
+- (void)RACSubject
+{
+    // 1.创建信号
+    RACSubject *subject = [RACSubject subject];
+    
+    // 2.订阅信号
+    
+    // 不同信号订阅的方式不一样
+    // RACSubject处理订阅:仅仅是保存订阅者
+    [subject subscribeNext:^(id x) {
+        NSLog(@"订阅者一接收到数据:%@",x);
+    }];
+    
+    // 3.发送数据
+    [subject sendNext:@1];
+    
+    //    [subject subscribeNext:^(id x) {
+    //        NSLog(@"订阅二接收到数据:%@",x);
+    //    }];
+    // 保存订阅者
+    
+   
+    // 底层实现:遍历所有的订阅者,调用nextBlock
+    
+    // 执行流程:
+    
+    // RACSubject被订阅,仅仅是保存订阅者
+    // RACSubject发送数据,遍历所有的订阅,调用他们的nextBlock
+}
 
 
 RACSubject代替代理
@@ -6115,6 +6147,28 @@ RACSubject代替代理
 }
 @end
 
+RACReplaySubject 可以先发送信号再订阅数据，因为它可以先把要发送的值保存起来，subscribeNext 遍历所有的值，拿到当前订阅者去发送消息
+- (void)RACReplaySubject
+{
+    // 1.创建信号
+    RACReplaySubject *subject = [RACReplaySubject subject];
+    
+    // 2.订阅信号
+    [subject subscribeNext:^(id x) {
+        NSLog(@"%@",x);
+    }];
+    // 遍历所有的值,拿到当前订阅者去发送数据
+    
+    // 3.发送信号
+    [subject sendNext:@1];
+//    [subject sendNext:@1];
+    // RACReplaySubject发送数据:
+    // 1.保存值
+    // 2.遍历所有的订阅者,发送数据
+    
+    
+    // RACReplaySubject:可以先发送信号,在订阅信号
+}
 
 rac中的集合类
 
@@ -6184,7 +6238,7 @@ RACSequence:RAC中的集合类，用于代替NSArray,NSDictionary,可以使用�
     
     NSLog(@"%@",arr);
     
-7.ReactiveCocoa开发中常见用法。
+7.ReactiveCocoa开发中使有场影
 
 7.1 代替代理:
 rac_signalForSelector：用于替代代理。
@@ -6231,8 +6285,18 @@ rac_textSignal:只要文本框发出改变就会发出这个信号。
 rac_liftSelector:withSignalsFromArray:Signals:当传入的Signals(信号数组)，每一个signal都至少sendNext过一次，就会去触发第一个selector参数的方法。
 使用注意：几个信号，参数一的方法就几个参数，每个参数对应信号发出的数据。
 
+8、总结
+RACSignal RACSubject RACReplaySubject不同信号订阅方式不同，无论什么信号都会创建RACSubscriber订阅者，订阅者一发发送就会调用subernext这段代码，
 
+RACSignal，RACSignal-》[创建一个新的信号]并保存didSubscribe到这个新信号中-》subscribeNext:nextBlock方法[订阅信号]，方法内部实现创建订阅者，把nextBlock保存到订阅者中，[调用新信号保存的didSubscribe]->
+didSubscribe中调用[subscriber sendNext:@1]发送信号方法--》sendNext方法执行nextBlock订阅 （当两个对象互相传值用这种信号）
+
+RACSubject RACSubject-》[创建一个新的信号]并没有保存什么didSubscribe-》新信号订阅subscribeNext的方法内部实现创建订阅者，保存订阅者--》
+发信号的方法，遍列所有订阅者，调用它们的nextBlock订阅block(替换代理用此信号）
+
+RACReplaySubject 无论是创建订阅，或发送信号，都会创建一个订阅者它可以先把要发送的值保存起来，subscribeNext 遍历所有的值，拿到当前订阅者去发送消息，这个信号订阅和发送信号的顺序可以随便切换
     
+
 77、https
 简化版
 客户端发请求服务器，服务器最开始有私钥和公钥，私钥保存，只把公钥放到一个证书中，这个证书是受保护空间中的，证书是购买的，客户端需要选择是否安装这个证书，并信任它，如
