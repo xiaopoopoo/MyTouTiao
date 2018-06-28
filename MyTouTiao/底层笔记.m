@@ -6280,11 +6280,13 @@ rac_textSignal:只要文本框发出改变就会发出这个信号。
 
        NSLog(@"文字改变了%@",x);
    }];
-7.6 处理当界面有多次请求时，需要都获取到数据时，才能展示界面
+7.6 使用场景处理当界面有多个模块，每个模块都请求数据，需要所有模块请求数据完成，才能展示界面
 
 rac_liftSelector:withSignalsFromArray:Signals:当传入的Signals(信号数组)，每一个signal都至少sendNext过一次，就会去触发第一个selector参数的方法。
 使用注意：几个信号，参数一的方法就几个参数，每个参数对应信号发出的数据。
 
+
+    
 8、总结
 RACSignal RACSubject RACReplaySubject不同信号订阅方式不同，无论什么信号都会创建RACSubscriber订阅者，订阅者一发发送就会调用subernext这段代码，
 
@@ -6295,8 +6297,83 @@ RACSubject RACSubject-》[创建一个新的信号]并没有保存什么didSubsc
 发信号的方法，遍列所有订阅者，调用它们的nextBlock订阅block(替换代理用此信号）
 
 RACReplaySubject 无论是创建订阅，或发送信号，都会创建一个订阅者它可以先把要发送的值保存起来，subscribeNext 遍历所有的值，拿到当前订阅者去发送消息，这个信号订阅和发送信号的顺序可以随便切换
-    
 
+rac_liftSelector 一个界面有多个接口请求数据，等所有请求都完成再展示数据，这时候用这个方法
+// 使用注意：几个信号，参数一的方法就几个参数，每个参数对应信号发出的数据。
+[self rac_liftSelector:@selector(updateUIWithR1:r2:) withSignalsFromArray:@[request1,request2]];//request1,request2是信号，当这两个信号发送数据的时候才会调用下面方法
+// 更新UI
+- (void)updateUIWithR1:(id)data r2:(id)data1
+{
+    NSLog(@"更新UI%@  %@",data,data1);
+}    
+
+
+   热销模块：
+   RACSignal *siganl = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {步骤1
+
+        // 请求数据
+        NSLog("AFN请求数据")；
+
+        // 2.请求完成发送数据
+        [subscriber sendNext:@1];
+
+    }];
+    
+   最新模块：
+   RACSignal *newsiganl = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {步骤1
+
+        // 请求数据
+        NSLog("AFN请求数据")；
+
+        // 2.请求完成发送数据
+        [subscriber sendNext:@1];
+
+    }];
+    
+[self rac_liftSelector:@selector(updateUIWithR1:r2:) withSignalsFromArray:@[siganl,newsiganl]];//，当这两个请求信号发送数据的时候才会调用下面方法，r1:r2就是sendNext发送的数据
+
+// 更新UI
+- (void)updateUIWithR1:(id)data r2:(id)data1
+{
+    NSLog(@"更新UI%@  %@",data,data1);
+} 
+
+rac宏
+
+   [_textField.rac_textSignal subscribeNext:^(id x) {
+
+       self.labelView.text = x;
+   }];
+ // 只要文本框文字改变，就会修改label的文字 给某个对象的某个属性绑定一个信号，这个信号一改变就会修改值
+    RAC(self.labelView,text) = _textField.rac_textSignal;
+    
+        // RACObserve(self.view, center)监听某个对象的某个属性，只要属性改变就产生信号，就可以用subscribeNext订阅
+    [RACObserve(self.view, center) subscribeNext:^(id x) {
+      
+        NSLog(@"%@",x);
+    }];
+    
+防循环引用
+@weakify(self)//保证这个是弱指针不会强引用self
+RACSignal *signal = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {步骤1
+
+       @strongify(self)//用一个强指针指向self，保证这个指针在这个block这个代码块不会提前销毁，
+       NSLog(self);//此时self 就是一个弱指针了
+    }];
+    _signal = signal
+    
+  
+RACTuplePack：把数据包装成RACTuple（元组类）
+  // 把参数中的数据包装成元组
+    RACTuple *tuple = RACTuplePack(@10,@20);
+    RACTupleUnpack：把RACTuple（元组类）解包成对应的数据。
+    // 把参数中的数据包装成元组
+    RACTuple *tuple = RACTuplePack(@"xmg",@20);
+
+    // 解包元组，会把元组的值，按顺序给参数里面的变量赋值
+    // name = @"xmg" age = @20
+    RACTupleUnpack(NSString *name,NSNumber *age) = tuple;
+    
 77、https
 简化版
 客户端发请求服务器，服务器最开始有私钥和公钥，私钥保存，只把公钥放到一个证书中，这个证书是受保护空间中的，证书是购买的，客户端需要选择是否安装这个证书，并信任它，如
@@ -6316,6 +6393,9 @@ ssl或tls层是介于http与tcp层中间的，
 
 如果是自签名没花钱买的证书，会弹一个框，提示不一定安全
 有些网站不会询问你是否安装证书，因为这是强制安装的
+
+//忽略host方式，可支持ip访问
+[httpClient.requestSerializer setValue:httpClient.baseURL.host forHTTPHeaderField:@"host"];
 
 urlsession的https方式，在代理方法中写上安装证书，信任证书的代码
 afnetworking的https也是设置如域名信任，安装证书的代码就行，不需要作其它处理
@@ -6395,3 +6475,57 @@ windows中保留了所有受信任的根证书，浏览器可以查看信任的�
 是不是由这些受信任根证书颁发的或者受信任根证书的二级证书机构颁发的（根证书机构可能会受权给底下的中级证书机构，然后由中级证书机构颁发中级证书）
 在验证证书的时候，浏览器会调用系统的证书管理器接口对证书路径中的所有证书一级一级的进行验证，只有路径中所有的证书都是受信的，整个验证的结果才是受信
  
+ 
+ 78、自己动手搭建VPN服务器
+2017年12月06日 16:48:07
+阅读数：4063
+1.注册vultr服务，选择2.5美元/月套餐
+https://my.vultr.com/  sbpdcfn@126.com Snrifk81...
+2.SSH 客户端登陆服务器（此处选用xshell）
+3.安装启动shadowsocks服务
+apt-get update
+apt-get install shadowsocks
+4.启动shadowsocks服务
+ssserver -p 8999 -k  你的密码 -m rc4-md5 -d start
+5.自动启动shadowsocks服务
+1)将你的启动脚本复制到/etc/init.d目录下（以下假设你的脚本为vpnRun）
+vim /etc/init.d/vpnRun.sh
+#!/bin/bash
+ssserver -p 8999 -k 你的密码 -m rc4-md5 -d start
+exit 0
+
+
+2)设置脚本文件的权限
+$sudo chmod 775 /etc/init.d/vpnRun.sh
+
+
+3)执行如下命令脚本放到启动脚本中去
+$cd /etc/init.d/
+ln -s vpnRun.sh /etc/rc5.d/S95vpnRun
+
+
+/*
+3)执行如下命令脚本放到启动脚本中去
+$cd /etc/init.d/
+$sudo update-rc.d vpnRun.sh defaults 95
+sudo update-rc.d vpnRun.sh defaults 90
+需要注意的是数字95是脚本的启动顺序号，按照自己的需要相应的修改即可。在你有多个启动脚本，而它们之间又有先后启动的依赖关系时你就知道这个数字的具体作用了。
+
+
+4)卸载启动脚本
+$cd /etc/init.d
+$sudo update-rc.d -f vpnRun.sh remove
+*/
+
+
+ss客户端下载地址
+
+Windows  https://github.com/shadowsocks/shadowsocks-windows/releases
+
+Mac OS  https://github.com/shadowsocks/ShadowsocksX-NG/releases
+
+Linux  https://github.com/shadowsocks/shadowsocks-qt5/releases
+
+IOS  https://github.com/shadowsocks/shadowsocks-iOS/releases
+
+Android  https://github.com/shadowsocks/shadowsocks-android/releases
