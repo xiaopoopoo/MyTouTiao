@@ -6485,6 +6485,10 @@ https://my.vultr.com/  sbpdcfn@126.com Snrifk81...
 3.安装启动shadowsocks服务
 apt-get update
 apt-get install shadowsocks
+
+CentOS:
+$ yum install python-setuptools && easy_install pip
+$ pip install shadowsocks
 4.启动shadowsocks服务
 ssserver -p 8999 -k  你的密码 -m rc4-md5 -d start
 5.自动启动shadowsocks服务
@@ -6517,7 +6521,190 @@ $cd /etc/init.d
 $sudo update-rc.d -f vpnRun.sh remove
 */
 
+78-----2
 
+作为一名程序员，难免会需要访问“外网”，查找资料 
+我查阅了相关资料，发现去买一个VPN账号并不划算，价格和自己买一个VPS差不多 
+于是我决定自己搭建一个VPN
+
+一、选择合适的VPS
+
+什么是VPS请自己百度吼 
+国外常见的VPS有很多，如Linode、Vultr、SugarHosts等，具体请看该网站https://www.vpser.net/ 
+我选择的是Vultr，他们家有$2.5/月的廉价VPS，每月500G流量，当然，能不能抢到货就看你们自己咯
+
+具体购买流程我就不多说了（买东西应该不用教吧，哈哈哈哈）
+
+二、正式开始
+
+操作系统：CentOS 7 
+搭建VPN的方式有很多，我也只查阅了ss的搭建方式。略略略
+
+第一步：搭建ss
+
+啥是ss？？？ss是shadowsocks的简称，一个可穿透防火墙的快速代理（官方文档）
+
+CentOS:
+$ yum install python-setuptools && easy_install pip
+$ pip install shadowsocks
+
+# 其他操作系统请查看官方文档
+1
+2
+3
+4
+5
+第二步：编写ss配置
+
+$ vim /etc/shadowsocks.json
+
+# 如果提示 vim: command not found
+# 可以使用 vi /etc/shadowsocks.json
+# vi 是linux系统下标准的编辑器，类似于windows的记事本
+# vim 需要另外安装
+1
+2
+3
+4
+5
+6
+如果不懂 vi 怎么使用，请自行百度
+
+填入下列json信息（单用户，多用户，选择其中一种)
+
+/****** 单用户 ******/
+{
+    "server":"120.0.0.1", // 这里填写你的服务器外网IP
+    "server_port":8388,   // 这是你要连接ss的端口
+    "local_address":"120.0.0.1", // 默认填写120.0.0.1即可
+    "local_port":1080, // 默认填写1080即可
+    "password":"password", // 密码
+    "timeout":300,
+    "method":"aes-256-cfb",
+    "fast_open":false
+}
+/****** 多用户 ******/
+{
+    "server":"120.0.0.1", // 你的服务器外网IP
+    "port_password": {
+        "8381":"password1",
+        "8382":"password2",
+        "8383":"password3"    // 最后一个账户后面没","，加上就报错
+    },
+    "timeout":300,
+    "method":"aes-256-cfb",
+    "fast_open":false
+}
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+第三步：配置开机启动
+
+$ vim /etc/rc.local
+1
+填写
+
+ssserver -c /etc/shadowsocks.json -d start
+1
+第四步：开启端口
+
+注意：接下来开始对CentOS的版本有要求了！
+
+我使用的是CentOS 7 ！！！ 
+CentOS 6 的童鞋们我会在下面给相关链接，请自行查阅！！！
+
+# 查看已开放端口
+$ firewall-cmd --list-ports
+
+# 开启端口 以开启8388端口为例
+$ firewall-cmd --zone=public --add-port=8388/tcp --permanent
+
+# 重启防火墙
+$ firewall-cmd --reload
+1
+2
+3
+4
+5
+6
+7
+8
+CentOS 7 以下版本请看这里 Centos 7和 Centos 6开放查看端口 防火墙关闭打开
+
+第五步：安装serverspeeder加速（ TCP 加速引擎）
+
+安装
+
+# 安装
+$ wget -N --no-check-certificate https://github.com/91yun/serverspeeder/raw/master/serverspeeder.sh && bash serverspeeder.sh
+
+# 卸载
+$ chattr -i /serverspeeder/etc/apx* && /serverspeeder/bin/serverSpeeder.sh uninstall -f
+1
+2
+3
+4
+5
+当然，在你安装的时候，有很大可能会报内核不支持 
+这个时候就需要修改Linux内核了，一定要选择对应系统版本的内核，不然VPS可能会die
+
+CentOS 7 内核更换（内核：3.10.0-327.el7.x86_64）
+
+# 安装 3.10.0-327.el7.x86_64 内核
+$ rpm -ivh http://xz.wn789.com/CentOSkernel/kernel-3.10.0-229.1.2.el7.x86_64.rpm --force
+1
+2
+3
+如果安装内核的时候报错 
+The name of network interface is not eth0, please retry after changing the name 
+那么请执行下面这个命令，没报错就不用了
+
+$ yum install net-tools -y
+1
+查看内核是否安装成功
+
+$ rpm -qa | grep kernel
+# 如果打印出来的信息里存在 3.10.0-327.el7.x86_64 ，说明安装成功
+1
+2
+重启VPS
+
+$ reboot
+1
+查看当前使用内核版本
+
+$ uname -r 
+# 3.10.0-327.el7.x86_64
+1
+2
+至此，再执行一下serverspeeder安装命令，就万事大吉了！！！
+
+最后一步
+
+# 启动ss
+$ ssserver -c /etc/shadowsocks.json -d start
+# 停止ss
+$ ssserver -c /etc/shadowsocks.json -d stop
 ss客户端下载地址
 
 Windows  https://github.com/shadowsocks/shadowsocks-windows/releases
