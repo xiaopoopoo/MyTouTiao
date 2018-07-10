@@ -6374,6 +6374,1450 @@ RACTuplePack：把数据包装成RACTuple（元组类）
     // name = @"xmg" age = @20
     RACTupleUnpack(NSString *name,NSNumber *age) = tuple;
     
+RACMulticastConnection
+    在项目里,经常会使用这种方式创建一个signal 然后next
+    RACSignal *four = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+       
+        NSLog(@"oneSignal createSignal");
+        [subscriber sendNext:@""];
+        [subscriber sendCompleted];
+        
+        return [RACDisposable disposableWithBlock:^{
+            NSLog(@"oneSignal dispose");
+        }];
+    }];
+    
+    [four subscribeNext:^(id x) {
+        NSLog(@"fristSignal 1");
+    }];
+    [four subscribeNext:^(id x) {
+       NSLog(@"fristSignal 2");
+   }];
+   看上去是没有问题的,但是一跑起来就会发现
+
+2015-10-17 00:06:20.050 conatAndThen[4518:2969779] oneSignal createSignal
+2015-10-17 00:06:20.051 conatAndThen[4518:2969779] fristSignal 1
+2015-10-17 00:06:20.052 conatAndThen[4518:2969779] oneSignal dispose
+2015-10-17 00:06:20.053 conatAndThen[4518:2969779] oneSignal createSignal
+2015-10-17 00:06:20.053 conatAndThen[4518:2969779] fristSignal 2
+2015-10-17 00:06:20.053 conatAndThen[4518:2969779] oneSignal dispose
+createSignal 被调用两次,来看看这是为什么
+1.createSignal传入createBlock 返回 一个RACDynamicSignal 对象
+
+这个对象保存了didSubscrib的block
+
+2.在subscribNext中传入nextBlock创建一个RACSubscriber对象
+
+3.执行subscribe这个方法
+
+在subscribe中 调用了didSubscribe
+
+并将保存了nextBlock的RACSubscriber对象
+
+4.如果在createBlock中调用了subsribe sendNext的话 subscribe就会调用传入的nextBlock
+
+总的来说
+
+我们在createBlock经常看到的id<RACSubscriber> subscriber
+
+这个subsriber就是在subsrbeNext时创建的,每次执行subscribeNext都会调用createBlock
+
+,这就不难理解为什么createBlock为什么会重复执行
+
+这根本就是不同的RACSubscriber
+
+RAC 通过RACSignal 的multicast 方法来解决这个问题
+
+这个方法返回一个RACMulticastConnection对象 调用connect 方法后,再获取signal属性,createBlock被调用多次的问题就会得到解决
+RACMulticastConnection *connection = [four multicast:[RACReplaySubject subject]];
+ 
+[connection connect];
+ 
+[connection.signal subscribeNext:^(id x) {
+    NSLog(@"fristSignal 1");
+}];
+ 
+[connection.signal subscribeNext:^(id x) {
+    NSLog(@"fristSignal 2");
+}];
+结果
+2015-10-17 00:16:55.053 conatAndThen[4576:2977593] oneSignal createSignal
+2015-10-17 00:16:55.054 conatAndThen[4576:2977593] oneSignal dispose
+2015-10-17 00:16:55.055 conatAndThen[4576:2977593] fristSignal 1
+2015-10-17 00:16:55.056 conatAndThen[4576:2977593] fristSignal 2
+
+来看看RACMulticastConnection是怎么解决问题的
+
+mulitcast 这个方法,首先就创建了一个RACMulticastConnection对象保存参数起来
+
+connect 方法里面会对sourceSignal subscribe 也就是执行createBlock
+
+所以我们看到是fristSignal 1比dispose先一步执行
+
+这时我们在后续操作的subscriNext的signal已经不是原来的signal了,
+
+而是didsubscribeBlock为空的signal,所以不管后面有多少次subscribNext都不会让createBlock重复执行
+
+raccommand
+是处理事件的类如按钮点击事件
+RAC中用于处理事件的类，可以把事件如何处理,事件中的数据如何传递，包装到这个类中，他可以很方便的监控事件的执行过程。
+监听按钮点击，网络请求，raccommand
+一、RACCommand使用步骤:
+1.创建命令 initWithSignalBlock:(RACSignal * (^)(id input))signalBlock
+2.在signalBlock中，创建RACSignal，并且作为signalBlock的返回值
+3.执行命令 - (RACSignal *)execute:(id)input
+
+二、RACCommand使用注意:
+1.signalBlock必须要返回一个信号，不能传nil.
+2.如果不想要传递信号，直接创建空的信号[RACSignal empty];
+3.RACCommand中信号如果数据传递完，必须调用[subscriber sendCompleted]，这时命令才会执行完毕，否则永远处于执行中。
+
+三、RACCommand设计思想：内部signalBlock为什么要返回一个信号，这个信号有什么用。
+1.在RAC开发中，通常会把网络请求封装到RACCommand，直接执行某个RACCommand就能发送请求。
+2.当RACCommand内部请求到数据的时候，需要把请求的数据传递给外界，这时候就需要通过signalBlock返回的信号传递了。
+
+四、如何拿到RACCommand中返回信号发出的数据。
+1.RACCommand有个执行信号源executionSignals，这个是signal of signals(信号的信号),意思是信号发出的数据是信号，不是普通的类型。
+2.订阅executionSignals就能拿到RACCommand中返回的信号，然后订阅signalBlock返回的信号，就能获取发出的值。
+
+五、监听当前命令是否正在执行executing
+
+六、使用场景,监听按钮点击，网络请求
+
+七、代码
+
+    // 1.创建命令
+    RACCommand *command = [[RACCommand alloc] initWithSignalBlock:^RACSignal *(id input) {
+
+        //input打印结果是1
+        NSLog(@"执行命令");
+
+        // 创建空信号,必须返回信号
+        //        return [RACSignal empty];
+
+        // 2.创建信号,用来传递数据
+        return [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+            [subscriber sendNext:@"请求数据"];
+
+            // 注意：数据传递完，最好调用sendCompleted，这时命令才执行完毕。
+            [subscriber sendCompleted];
+
+            return nil;
+        }];
+
+    }];
+
+    // 强引用命令，不要被销毁，否则接收不到数据
+    _conmmand = command;
+
+
+    // 3.执行命令
+    [self.conmmand execute:@1];
+
+    // 4.订阅RACCommand中的信号//executionSignals 正在执行的信号
+    [command.executionSignals subscribeNext:^(id x) {
+
+        [x subscribeNext:^(id x) {
+
+            NSLog(@"%@",x);//打印的是请求数据
+        }];
+
+    }];
+
+    // RAC高级用法
+    // switchToLatest:用于signal of signals，获取signal of signals发出的最新信号,也就是可以直接拿到RACCommand中的信号
+    [command.executionSignals.switchToLatest subscribeNext:^(id x) {
+
+        NSLog(@"%@",x);
+    }];
+
+    // 5.监听命令是否执行完毕,默认会来一次，可以直接跳过，skip表示跳过第一次信号。
+    [[command.executing skip:1] subscribeNext:^(id x) {
+
+        if ([x boolValue] == YES) {
+            // 正在执行
+            NSLog(@"正在执行");
+
+        }else{
+            // 执行完成
+            NSLog(@"执行完成");
+        }
+
+    }];
+    
+1.ReactiveCocoa常见操作方法介绍。
+
+1.1 ReactiveCocoa操作须知
+
+所有的信号（RACSignal）都可以进行操作处理，因为所有操作方法都定义在RACStream.h中，而RACSignal继承RACStream。
+1.2 ReactiveCocoa操作思想
+
+运用的是Hook（钩子）思想，Hook是一种用于改变API(应用程序编程接口：方法)执行结果的技术.
+Hook用处：截获API调用的技术。
+Hook原理：在每次调用一个API返回结果之前，先执行你自己的方法，改变结果的输出。
+RAC开发方式：RAC中核心开发方式，也是绑定，之前的开发方式是赋值，而用RAC开发，应该把重心放在绑定，也就是可以在创建一个对象的时候，就绑定好以后想要做的事情，而不是等赋值之后在去做事情。
+列如：把数据展示到控件上，之前都是重写控件的setModel方法，用RAC就可以在一开始创建控件的时候，就绑定好数据。
+1.3 ReactiveCocoa核心方法bind
+
+ReactiveCocoa操作的核心方法是bind（绑定）,给RAC中的信号进行绑定，只要信号一发送数据，就能监听到，从而把发送数据改成自己想要的数据。
+
+在开发中很少使用bind方法，bind属于RAC中的底层方法，RAC已经封装了很多好用的其他方法，底层都是调用bind，用法比bind简单.
+
+bind方法简单介绍和使用。
+    // 假设想监听文本框的内容，并且在每次输出结果的时候，都在文本框的内容拼接一段文字“输出：”
+
+    // 方式一:在返回结果后，拼接。
+        [_textField.rac_textSignal subscribeNext:^(id x) {
+
+            NSLog(@"输出:%@",x);
+
+        }];
+
+    // 方式二:在返回结果前，拼接，使用RAC中bind方法做处理。
+    // bind方法参数:需要传入一个返回值是RACStreamBindBlock的block参数
+    // RACStreamBindBlock是一个block的类型，返回值是信号，参数（value,stop），因此参数的block返回值也是一个block。
+
+    // RACStreamBindBlock:
+    // 参数一(value):表示接收到信号的原始值，还没做处理
+    // 参数二(*stop):用来控制绑定Block，如果*stop = yes,那么就会结束绑定。
+    // 返回值：信号，做好处理，在通过这个信号返回出去，一般使用RACReturnSignal,需要手动导入头文件RACReturnSignal.h。
+
+    // bind方法使用步骤:
+    // 1.传入一个返回值RACStreamBindBlock的block。
+    // 2.描述一个RACStreamBindBlock类型的bindBlock作为block的返回值。
+    // 3.描述一个返回结果的信号，作为bindBlock的返回值。
+    // 注意：在bindBlock中做信号结果的处理。
+
+    // 底层实现:
+    // 1.源信号调用bind,会重新创建一个绑定信号。
+    // 2.当绑定信号被订阅，就会调用绑定信号中的didSubscribe，生成一个bindingBlock。
+    // 3.当源信号有内容发出，就会把内容传递到bindingBlock处理，调用bindingBlock(value,stop)
+    // 4.调用bindingBlock(value,stop)，会返回一个内容处理完成的信号（RACReturnSignal）。
+    // 5.订阅RACReturnSignal，就会拿到绑定信号的订阅者，把处理完成的信号内容发送出来。
+
+    // 注意:不同订阅者，保存不同的nextBlock，看源码的时候，一定要看清楚订阅者是哪个。
+    // 这里需要手动导入#import <ReactiveCocoa/RACReturnSignal.h>，才能使用RACReturnSignal。
+
+    [[_textField.rac_textSignal bind:^RACStreamBindBlock{
+
+        // 什么时候调用:
+        // block作用:表示绑定了一个信号.
+
+        return ^RACStream *(id value, BOOL *stop){
+
+            // 什么时候调用block:当信号有新的值发出，就会来到这个block。
+
+            // block作用:做返回值的处理
+
+            // 做好处理，通过信号返回出去.
+            return [RACReturnSignal return:[NSString stringWithFormat:@"输出:%@",value]];
+        };
+
+    }] subscribeNext:^(id x) {
+
+        NSLog(@"%@",x);
+
+    }];
+    
+1.4ReactiveCocoa操作方法之映射(flattenMap,Map)
+
+flattenMap，Map用于把源信号内容映射成新的内容。
+flattenMap简单使用
+
+   // 监听文本框的内容改变，把结构重新映射成一个新值.
+
+  // flattenMap作用:把源信号的内容映射成一个新的信号，信号可以是任意类型。
+
+    // flattenMap使用步骤:
+    // 1.传入一个block，block类型是返回值RACStream，参数value
+    // 2.参数value就是源信号的内容，拿到源信号的内容做处理
+    // 3.包装成RACReturnSignal信号，返回出去。
+
+    // flattenMap底层实现:
+    // 0.flattenMap内部调用bind方法实现的,flattenMap中block的返回值，会作为bind中bindBlock的返回值。
+    // 1.当订阅绑定信号，就会生成bindBlock。
+    // 2.当源信号发送内容，就会调用bindBlock(value, *stop)
+    // 3.调用bindBlock，内部就会调用flattenMap的block，flattenMap的block作用：就是把处理好的数据包装成信号。
+    // 4.返回的信号最终会作为bindBlock中的返回信号，当做bindBlock的返回信号。
+    // 5.订阅bindBlock的返回信号，就会拿到绑定信号的订阅者，把处理完成的信号内容发送出来。
+
+
+
+    [[_textField.rac_textSignal flattenMap:^RACStream *(id value) {
+
+        // block什么时候 : 源信号发出的时候，就会调用这个block。
+
+        // block作用 : 改变源信号的内容。
+
+        // 返回值：绑定信号的内容.
+        return [RACReturnSignal return:[NSString stringWithFormat:@"输出:%@",value]];
+
+    }] subscribeNext:^(id x) {
+
+        // 订阅绑定信号，每当源信号发送内容，做完处理，就会调用这个block。
+
+        NSLog(@"%@",x);
+
+    }];
+    
+    Map简单使用:
+
+ // 监听文本框的内容改变，把结构重新映射成一个新值.
+
+    // Map作用:把源信号的值映射成一个新的值
+
+    // Map使用步骤:
+    // 1.传入一个block,类型是返回对象，参数是value
+    // 2.value就是源信号的内容，直接拿到源信号的内容做处理
+    // 3.把处理好的内容，直接返回就好了，不用包装成信号，返回的值，就是映射的值。
+
+    // Map底层实现:
+    // 0.Map底层其实是调用flatternMap,Map中block中的返回的值会作为flatternMap中block中的值。
+    // 1.当订阅绑定信号，就会生成bindBlock。
+    // 3.当源信号发送内容，就会调用bindBlock(value, *stop)
+    // 4.调用bindBlock，内部就会调用flattenMap的block
+    // 5.flattenMap的block内部会调用Map中的block，把Map中的block返回的内容包装成返回的信号。
+    // 5.返回的信号最终会作为bindBlock中的返回信号，当做bindBlock的返回信号。
+    // 6.订阅bindBlock的返回信号，就会拿到绑定信号的订阅者，把处理完成的信号内容发送出来。
+
+       [[_textField.rac_textSignal map:^id(id value) {
+        // 当源信号发出，就会调用这个block，修改源信号的内容
+        // 返回值：就是处理完源信号的内容。
+        return [NSString stringWithFormat:@"输出:%@",value];
+    }] subscribeNext:^(id x) {
+
+        NSLog(@"%@",x);
+    }];
+FlatternMap和Map的区别
+
+1.FlatternMap中的Block返回信号。
+2.Map中的Block返回对象。
+3.开发中，如果信号发出的值不是信号，映射一般使用Map
+4.开发中，如果信号发出的值是信号，映射一般使用FlatternMap。
+总结：signalOfsignals用FlatternMap。
+
+    // 创建信号中的信号
+    RACSubject *signalOfsignals = [RACSubject subject];
+    RACSubject *signal = [RACSubject subject];
+
+    [[signalOfsignals flattenMap:^RACStream *(id value) {
+
+     // 当signalOfsignals的signals发出信号才会调用
+
+        return value;
+
+    }] subscribeNext:^(id x) {
+
+        // 只有signalOfsignals的signal发出信号才会调用，因为内部订阅了bindBlock中返回的信号，也就是flattenMap返回的信号。
+        // 也就是flattenMap返回的信号发出内容，才会调用。
+
+        NSLog(@"%@aaa",x);
+    }];
+
+    // 信号的信号发送信号
+    [signalOfsignals sendNext:signal];
+
+    // 信号发送内容
+    [signal sendNext:@1];
+    
+    1.5 ReactiveCocoa操作方法之组合。
+concat:按一定顺序拼接信号，当多个信号发出的时候，有顺序的接收信号。
+    RACSignal *signalA = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+        [subscriber sendNext:@1];
+
+        [subscriber sendCompleted];
+
+        return nil;
+    }];
+    RACSignal *signalB = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+        [subscriber sendNext:@2];
+
+        return nil;
+    }];
+
+    // 把signalA拼接到signalB后，signalA发送完成，signalB才会被激活。
+    RACSignal *concatSignal = [signalA concat:signalB];
+
+    // 以后只需要面对拼接信号开发。
+    // 订阅拼接的信号，不需要单独订阅signalA，signalB
+    // 内部会自动订阅。
+    // 注意：第一个信号必须发送完成，第二个信号才会被激活
+    [concatSignal subscribeNext:^(id x) {
+
+        NSLog(@"%@",x);
+
+    }];
+
+    // concat底层实现:
+    // 1.当拼接信号被订阅，就会调用拼接信号的didSubscribe
+    // 2.didSubscribe中，会先订阅第一个源信号（signalA）
+    // 3.会执行第一个源信号（signalA）的didSubscribe
+    // 4.第一个源信号（signalA）didSubscribe中发送值，就会调用第一个源信号（signalA）订阅者的nextBlock,通过拼接信号的订阅者把值发送出来.
+    // 5.第一个源信号（signalA）didSubscribe中发送完成，就会调用第一个源信号（signalA）订阅者的completedBlock,订阅第二个源信号（signalB）这时候才激活（signalB）。
+    // 6.订阅第二个源信号（signalB）,执行第二个源信号（signalB）的didSubscribe
+    // 7.第二个源信号（signalA）didSubscribe中发送值,就会通过拼接信号的订阅者把值发送出来.
+    
+    then:用于连接两个信号，当第一个信号完成，才会连接then返回的信号。
+     // then:用于连接两个信号，当第一个信号完成，才会连接then返回的信号
+    // 注意使用then，之前信号的值会被忽略掉.
+    // 底层实现：1、先过滤掉之前的信号发出的值。2.使用concat连接then返回的信号
+    [[[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+        [subscriber sendNext:@1];
+        [subscriber sendCompleted];
+        return nil;
+    }] then:^RACSignal *{
+        return [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+            [subscriber sendNext:@2];
+            return nil;
+        }];
+    }] subscribeNext:^(id x) {
+
+        // 只能接收到第二个信号的值，也就是then返回信号的值
+        NSLog(@"%@",x);
+    }];
+merge:把多个信号合并为一个信号，任何一个信号有新值的时候就会调用.
+    // merge:把多个信号合并成一个信号
+    //创建多个信号
+    RACSignal *signalA = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+        [subscriber sendNext:@1];
+
+
+        return nil;
+    }];
+
+    RACSignal *signalB = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+        [subscriber sendNext:@2];
+
+        return nil;
+    }];
+
+    // 合并信号,任何一个信号发送数据，都能监听到.
+    RACSignal *mergeSignal = [signalA merge:signalB];
+
+    [mergeSignal subscribeNext:^(id x) {
+
+        NSLog(@"%@",x);
+
+    }];
+
+    // 底层实现：
+    // 1.合并信号被订阅的时候，就会遍历所有信号，并且发出这些信号。
+    // 2.每发出一个信号，这个信号就会被订阅
+    // 3.也就是合并信号一被订阅，就会订阅里面所有的信号。
+    // 4.只要有一个信号被发出就会被监听。
+    
+    zipWith:把两个信号压缩成一个信号，只有当两个信号同时发出信号内容时，并且把两个信号的内容合并成一个元组，才会触发压缩流的next事件。
+     RACSignal *signalA = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+        [subscriber sendNext:@1];
+
+
+        return nil;
+    }];
+
+    RACSignal *signalB = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+        [subscriber sendNext:@2];
+
+        return nil;
+    }];
+
+
+
+    // 压缩信号A，信号B
+    RACSignal *zipSignal = [signalA zipWith:signalB];
+
+    [zipSignal subscribeNext:^(id x) {
+
+        NSLog(@"%@",x);
+    }];
+
+    // 底层实现:
+    // 1.定义压缩信号，内部就会自动订阅signalA，signalB
+    // 2.每当signalA或者signalB发出信号，就会判断signalA，signalB有没有发出个信号，有就会把最近发出的信号都包装成元组发出。
+combineLatest:将多个信号合并起来，并且拿到各个信号的最新的值,必须每个合并的signal至少都有过一次sendNext，才会触发合并的信号。
+      RACSignal *signalA = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+        [subscriber sendNext:@1];
+
+        return nil;
+    }];
+
+    RACSignal *signalB = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+        [subscriber sendNext:@2];
+
+        return nil;
+    }];
+
+    // 把两个信号组合成一个信号,跟zip一样，没什么区别
+    RACSignal *combineSignal = [signalA combineLatestWith:signalB];
+
+    [combineSignal subscribeNext:^(id x) {
+
+        NSLog(@"%@",x);
+    }];
+
+    // 底层实现：
+    // 1.当组合信号被订阅，内部会自动订阅signalA，signalB,必须两个信号都发出内容，才会被触发。
+    // 2.并且把两个信号组合成元组发出。
+reduce聚合:用于信号发出的内容是元组，把信号发出元组的值聚合成一个值
+     RACSignal *signalA = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+        [subscriber sendNext:@1];
+
+        return nil;
+    }];
+
+    RACSignal *signalB = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+        [subscriber sendNext:@2];
+
+        return nil;
+    }];
+
+    // 聚合
+    // 常见的用法，（先组合在聚合）。combineLatest:(id<NSFastEnumeration>)signals reduce:(id (^)())reduceBlock
+    // reduce中的block简介:
+    // reduceblcok中的参数，有多少信号组合，reduceblcok就有多少参数，每个参数就是之前信号发出的内容
+    // reduceblcok的返回值：聚合信号之后的内容。
+   RACSignal *reduceSignal = [RACSignal combineLatest:@[signalA,signalB] reduce:^id(NSNumber *num1 ,NSNumber *num2){
+
+       return [NSString stringWithFormat:@"%@ %@",num1,num2];
+
+   }];
+
+    [reduceSignal subscribeNext:^(id x) {
+
+        NSLog(@"%@",x);
+    }];
+
+    // 底层实现:
+    // 1.订阅聚合信号，每次有内容发出，就会执行reduceblcok，把信号内容转换成reduceblcok返回的值。
+1.6 ReactiveCocoa操作方法之过滤。
+
+filter:过滤信号，使用它可以获取满足条件的信号.
+
+// 过滤:
+// 每次信号发出，会先执行过滤条件判断.
+[_textField.rac_textSignal filter:^BOOL(NSString *value) {
+      return value.length > 3;
+}];
+ignore:忽略完某些值的信号.
+
+  // 内部调用filter过滤，忽略掉ignore的值
+[[_textField.rac_textSignal ignore:@"1"] subscribeNext:^(id x) {
+
+  NSLog(@"%@",x);
+}];
+distinctUntilChanged:当上一次的值和当前的值有明显的变化就会发出信号，否则会被忽略掉。
+
+  // 过滤，当上一次和当前的值不一样，就会发出内容。
+// 在开发中，刷新UI经常使用，只有两次数据不一样才需要刷新
+[[_textField.rac_textSignal distinctUntilChanged] subscribeNext:^(id x) {
+
+  NSLog(@"%@",x);
+}];
+take:从开始一共取N次的信号
+
+// 1、创建信号
+RACSubject *signal = [RACSubject subject];
+
+// 2、处理信号，订阅信号
+[[signal take:1] subscribeNext:^(id x) {
+
+  NSLog(@"%@",x);
+}];
+
+// 3.发送信号
+[signal sendNext:@1];
+
+[signal sendNext:@2];
+takeLast:取最后N次的信号,前提条件，订阅者必须调用完成，因为只有完成，就知道总共有多少信号.
+
+// 1、创建信号
+RACSubject *signal = [RACSubject subject];
+
+// 2、处理信号，订阅信号
+[[signal takeLast:1] subscribeNext:^(id x) {
+
+  NSLog(@"%@",x);
+}];
+
+// 3.发送信号
+[signal sendNext:@1];
+
+[signal sendNext:@2];
+
+[signal sendCompleted];
+takeUntil:(RACSignal *):获取信号直到执行完这个信号
+
+// 监听文本框的改变，知道当前对象被销毁
+[_textField.rac_textSignal takeUntil:self.rac_willDeallocSignal];
+skip:(NSUInteger):跳过几个信号,不接受。
+
+  // 表示输入第一次，不会被监听到，跳过第一次发出的信号
+  [[_textField.rac_textSignal skip:1] subscribeNext:^(id x) {
+
+      NSLog(@"%@",x);
+  }];
+switchToLatest:用于signalOfSignals（信号的信号），有时候信号也会发出信号，会在signalOfSignals中，获取signalOfSignals发送的最新信号。
+
+RACSubject *signalOfSignals = [RACSubject subject];
+RACSubject *signal = [RACSubject subject];
+[signalOfSignals sendNext:signal];
+[signal sendNext:@1];
+
+// 获取信号中信号最近发出信号，订阅最近发出的信号。
+// 注意switchToLatest：只能用于信号中的信号
+[signalOfSignals.switchToLatest subscribeNext:^(id x) {
+
+  NSLog(@"%@",x);
+}];
+1.7 ReactiveCocoa操作方法之秩序。
+
+doNext: 执行Next之前，会先执行这个Block
+doCompleted: 执行sendCompleted之前，会先执行这个Block
+
+[[[[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+  [subscriber sendNext:@1];
+  [subscriber sendCompleted];
+  return nil;
+}] doNext:^(id x) {
+// 执行[subscriber sendNext:@1];之前会调用这个Block
+  NSLog(@"doNext");;
+}] doCompleted:^{
+   // 执行[subscriber sendCompleted];之前会调用这个Block
+  NSLog(@"doCompleted");;
+
+}] subscribeNext:^(id x) {
+
+  NSLog(@"%@",x);
+}];
+1.8 ReactiveCocoa操作方法之线程。
+deliverOn: 内容传递切换到制定线程中，副作用在原来线程中,把在创建信号时block中的代码称之为副作用。
+
+subscribeOn: 内容传递和副作用都会切换到制定线程中。
+
+1.9 ReactiveCocoa操作方法之时间。
+
+timeout：超时，可以让一个信号在一定的时间后，自动报错。
+
+RACSignal *signal = [[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+ return nil;
+}] timeout:1 onScheduler:[RACScheduler currentScheduler]];
+
+[signal subscribeNext:^(id x) {
+
+ NSLog(@"%@",x);
+} error:^(NSError *error) {
+ // 1秒后会自动调用
+ NSLog(@"%@",error);
+}];
+interval 定时：每隔一段时间发出信号
+
+[[RACSignal interval:1 onScheduler:[RACScheduler currentScheduler]] subscribeNext:^(id x) {
+
+ NSLog(@"%@",x);
+}];
+delay 延迟发送next。
+
+ RACSignal *signal = [[[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+ [subscriber sendNext:@1];
+ return nil;
+}] delay:2] subscribeNext:^(id x) {
+
+ NSLog(@"%@",x);
+}];
+1.9 ReactiveCocoa操作方法之重复。
+
+retry重试 ：只要失败，就会重新执行创建信号中的block,直到成功.
+     __block int i = 0;
+    [[[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+            if (i == 10) {
+                [subscriber sendNext:@1];
+            }else{
+                NSLog(@"接收到错误");
+                [subscriber sendError:nil];
+            }
+            i++;
+
+        return nil;
+
+    }] retry] subscribeNext:^(id x) {
+
+        NSLog(@"%@",x);
+
+    } error:^(NSError *error) {
+
+
+    }];
+replay重放：当一个信号被多次订阅,反复播放内容
+        RACSignal *signal = [[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+
+        [subscriber sendNext:@1];
+        [subscriber sendNext:@2];
+
+        return nil;
+    }] replay];
+
+    [signal subscribeNext:^(id x) {
+
+        NSLog(@"第一个订阅者%@",x);
+
+    }];
+
+    [signal subscribeNext:^(id x) {
+
+        NSLog(@"第二个订阅者%@",x);
+
+    }];
+throttle节流:当某个信号发送比较频繁时，可以使用节流，在某一段时间不发送信号内容，过了一段时间获取信号的最新内容发出。
+        RACSubject *signal = [RACSubject subject];
+
+    _signal = signal;
+
+    // 节流，在一定时间（1秒）内，不接收任何信号内容，过了这个时间（1秒）获取最后发送的信号内容发出。
+    [[signal throttle:1] subscribeNext:^(id x) {
+
+        NSLog(@"%@",x);
+    }];
+
+1.介绍MVVM架构思想
+
+1 程序为什么要架构：便于程序员开发和维护代码。
+
+2 常见的架构思想:
+
+MVC M:模型 V:视图 C:控制器
+
+MVVM M:模型 V:视图+控制器 VM:视图模型
+
+MVCS M:模型 V:视图 C:控制器 C:服务类
+
+VIPER V:视图 I:交互器 P:展示器 E:实体 R:路由 (http://www.cocoachina.com/ios/20140703/9016.html)
+
+3 MVVM介绍
+
+模型(M):保存视图数据。
+
+视图+控制器(V):展示内容 + 如何展示
+
+视图模型(VM):处理展示的业务逻辑，包括按钮的点击，数据的请求和解析等等。
+
+2.ReactiveCocoa + MVVM 登录界面
+
+1.需求
+
+1.监听两个文本框的内容，有内容才允许按钮点击
+2.默认登录请求.
+2.分析
+
+1.界面的所有业务逻辑都交给控制器做处理
+2.在MVVM架构中把控制器的业务全部搬去VM模型，也就是每个控制器对应一个VM模型.
+3.步骤
+
+        1.创建LoginViewModel类，处理登录界面业务逻辑.
+        2.这个类里面应该保存着账号的信息，创建一个账号Account模型
+        3.PHLoginViewModel应该保存着账号信息Account模型。
+        4.需要时刻监听Account模型中的账号和密码的改变，怎么监听？
+        5.在非RAC开发中，都是习惯赋值，在RAC开发中，需要改变开发思维，由赋值转变为绑定，可以在一开始初始化的时候，就给Account模型中的属性绑定，并不需要重写set方法。
+        6.每次Account模型的值改变，就需要判断按钮能否点击，在VM模型中做处理，给外界提供一个能否点击按钮的信号.
+        7.这个登录信号需要判断Account中账号和密码是否有值，用KVO监听这两个值的改变，把他们聚合成登录信号.
+        8.监听按钮的点击，由VM处理，应该给VM声明一个RACCommand，专门处理登录业务逻辑.
+        9.执行命令，把数据包装成信号传递出去
+        10.监听命令中信号的数据传递
+        11.监听命令的执行时刻
+4.代码实现
+
+4.1 控制器的代码
+
+@interface ViewController ()
+@property (weak, nonatomic) IBOutlet UITextField *accountField;
+@property (weak, nonatomic) IBOutlet UITextField *pwdField;
+@property (weak, nonatomic) IBOutlet UIButton *loginBtn;
+@property (nonatomic, strong) PHLoginViewModel *phLoginVM;
+@end
+
+@implementation ViewController
+
+- (PHLoginViewModel *)phLoginVM
+{
+    if (_phLoginVM == nil) {
+        _phLoginVM = [[PHLoginViewModel alloc] init];
+    }
+    return _phLoginVM;
+}
+
+// MVVM:
+// VM:视图模型,处理界面上所有业务逻辑
+// 每一个控制器对应一个VM模型
+// VM:最好不要包括视图V
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view, typically from a nib.
+
+    [self phBindViewModel];
+
+    [self phLoginEvent];
+}
+
+// 绑定viewModel
+- (void)phBindViewModel
+{
+    // 1.给视图模型的账号和密码绑定信号
+    RAC(self.phLoginVM, account) = _accountField.rac_textSignal;
+    RAC(self.phLoginVM, pwd) = _pwdField.rac_textSignal;
+
+}
+
+// 登录事件
+- (void)phLoginEvent
+{
+    // 1.处理文本框业务逻辑
+    // 设置按钮能否点击
+    RAC(_loginBtn, enabled) = self.phLoginVM.phLoginEnableSiganl;
+
+    // 2.监听登录按钮点击
+    [[_loginBtn rac_signalForControlEvents:UIControlEventTouchUpInside] subscribeNext:^(id x) {
+       // 处理登录事件
+        [self.phLoginVM.phLoginCommand execute:nil];
+    }];
+}
+
+
+4.2 VM的代码
+
+VM.h的代码
+// 保存登录界面的账号和密码
+@property (nonatomic, strong) NSString *account;
+@property (nonatomic, strong) NSString *pwd;
+
+// 处理登录按钮是否允许点击
+@property (nonatomic, strong, readonly) RACSignal *phLoginEnableSiganl;
+
+///** 登录按钮命令 */
+@property (nonatomic, strong, readonly) RACCommand *phLoginCommand;
+VM.m的代码
+- (instancetype)init
+{
+    if (self = [super init]) {
+        [self setup];
+    }
+    return self;
+}
+
+// 初始化操作
+
+- (void)setup
+{
+    //1.处理登录点击的信号
+    _phLoginEnableSiganl = [RACSignal combineLatest:@[RACObserve(self, account),RACObserve(self, pwd)] reduce:^id(NSString *account, NSString *pwd){
+
+        return @(account.length && pwd.length);
+    }];
+
+    //2.处理登录点击命令
+    _phLoginCommand = [[RACCommand alloc] initWithSignalBlock:^RACSignal *(id input) {
+        // block:执行命令就会调用
+        // block作用:事件处理
+        // 发送登录请求
+        NSLog(@"发送登录请求");
+        return [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                // 发送数据
+                [subscriber sendNext:@"请求登录数据"];
+                [subscriber sendCompleted];
+            });
+            return nil;
+        }];
+    }];
+
+    //3.处理登录请求返回的结果
+    [_phLoginCommand.executionSignals.switchToLatest subscribeNext:^(id x) {
+        NSLog(@"%@",x);
+    }];
+
+    //4.处理登录执行过程
+    [[_phLoginCommand.executing skip:1] subscribeNext:^(id x) {
+
+        if ([x boolValue] == YES) {
+            // 正在执行
+            NSLog(@"正在执行");
+            // 显示蒙版
+            [MBProgressHUD showMessage:@"正在登录ing......"];
+        } else {
+            // 执行完成
+            // 隐藏蒙版
+            [MBProgressHUD hideHUD];
+            NSLog(@"执行完成");
+        }
+    }];
+}
+
+3.ReactiveCocoa + MVVM 网络请求数据
+
+1.需求
+
+请求豆瓣音乐信息，url:https://api.douban.com/v2/book/search?q=经典
+2.分析
+
+请求一样，交给VM模型管理
+3.步骤
+
+        1.控制器提供一个视图模型（PHRequesViewModel），处理界面的业务逻辑
+        2.VM提供一个命令，处理请求业务逻辑
+        3.在创建命令的block中，会把请求包装成一个信号，等请求成功的时候，就会把数据传递出去。
+        4.请求数据成功，应该把字典转换成模型，保存到视图模型中，控制器想用就直接从视图模型中获取。
+        5.假设控制器想展示内容到tableView，直接让视图模型成为tableView的数据源，
+          把所有的业务逻辑交给视图模型去做，这样控制器的代码就非常少了。
+4.控制器的代码
+
+@interface ViewController ()
+/** 请求视图模型 */
+@property (nonatomic, strong) PHRequestViewModel *phRequestVM;
+@end
+
+@implementation ViewController
+
+- (PHRequestViewModel *)phRequestVM
+{
+    if (_phRequestVM == nil) {
+        _phRequestVM = [[PHRequestViewModel alloc] init];
+    }
+    return _phRequestVM;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    // 创建tableView
+
+    UITableView *tableView = [[UITableView alloc] initWithFrame:self.view.bounds];
+    tableView.dataSource = self.phRequestVM;
+    self.phRequestVM.tableView = tableView;
+    [self.view addSubview:tableView];
+
+    // 执行请求
+    [self.phRequestVM.phRequestCommand execute:nil];
+}
+
+5.VM的代码
+
+@interface PHRequestViewModel : NSObject<UITableViewDataSource>
+
+// 请求命令
+@property (nonatomic, strong, readonly) RACCommand *phRequestCommand;
+
+// 模型数组
+@property (nonatomic, strong, readonly) NSArray *models;
+// 控制器中的view
+@property (nonatomic, weak) UITableView *tableView;
+@end
+
+@implementation PHRequestViewModel
+- (instancetype)init
+{
+    if (self = [super init]) {
+        [self setup];
+    }
+    return self;
+}
+
+- (void)setup
+{
+    _phRequestCommand = [[RACCommand alloc] initWithSignalBlock:^RACSignal *(id input) {
+        // 执行命令
+        // 发送请求
+
+        // 创建信号
+        RACSignal *signal = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+           // 创建请求管理者
+            AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+            [manager GET:@"https://api.douban.com/v2/music/search" parameters:@{@"q":@"经典"} success:^(AFHTTPRequestOperation * _Nonnull operation, id  _Nonnull responseObject) {
+                // 请求成功的时候调用
+                NSLog(@"%@",responseObject);
+                // 输出plist文件
+                [responseObject writeToFile:@"/Users/apple/Desktop/yinyue.plist" atomically:YES];
+
+                // 请求成功的时候调用
+
+                [subscriber sendNext:responseObject];
+                [subscriber sendCompleted];
+            } failure:^(AFHTTPRequestOperation * _Nonnull operation, NSError * _Nonnull error) {
+
+
+            }];
+
+            return nil;
+        }];
+
+         // 在返回数据信号时，把数据中的字典映射成模型信号，传递出去
+        return [signal map:^id(NSDictionary *value) {
+            NSMutableDictionary *dictArr = value[@"musics"];
+
+             // 字典转模型，遍历字典中的所有元素，全部映射成模型，并且生成数组
+            NSArray *modelArr = [[dictArr.rac_sequence map:^id(id value) {
+
+                return [PHMusic ph_MusicWithDict:value];
+            }] array];
+            return modelArr;
+        }];
+    }];
+
+    // 获取请求的数据
+
+    [_phRequestCommand.executionSignals.switchToLatest subscribeNext:^(id x) {
+       // 有了新数据
+        _models = x;
+        // 刷新表格
+        [self.tableView reloadData];
+    }];
+
+}
+
+# pragma mark - UITableViewDataSource
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return self.models.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    static NSString *ID = @"cell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:ID];
+
+    if (cell == nil) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:ID];
+    }
+
+    PHMusic *music = self.models[indexPath.row];
+    cell.textLabel.text = music.title;
+    cell.imageView.image = [UIImage imageNamed:music.image];
+
+    return cell;
+}
+
+噶梨给给的博客
+ReactiveCocoa应用－1
+1.简介
+  ReactiveCocoa（简称为RAC）,是由Github开源的一个应用于iOS和OS开发的新框架,Cocoa是苹果整套框架的简称，因此很多苹果框架喜欢以Cocoa结尾。
+2.作用
+  在我们iOS开发过程中，当某些事件响应的时候，需要处理某些业务逻辑,这些事件都用不同的方式来处理。比如按钮的点击使用action，ScrollView滚动使用delegate，属性值改变使用KVO等系统提供的方式。其实这些事件
+  ，都可以通过RAC处理。ReactiveCocoa为事件提供了很多处理方法，而且利用RAC处理事件很方便，可以把要处理的事情，和监听的事情的代码放在一起，这样非常方便我们管理，就不需要跳到对应的方法里。
+3.编程风格
+ 函数式编程（Functional Programming）
+ 响应式编程（Reactive Programming）
+ 所以，你可能听说过ReactiveCocoa被描述为函数响应式编程（FRP）框架。以后使用RAC解决问题，就不需要考虑调用顺序，直接考虑结果，把每一次操作都写成一系列嵌套的方法中。
+4.导入
+ 使用pods导入
+5.创建与使用
+ 5.1 RACSignal
+   RACSignal是RAC中最核心的类，整个RAC框架主要就是将事件的触发绑定到信号上，然后在需要做处理的地方订阅信号，当事件触发的时候，订阅者就能够收到相应的消息来同步处理一些事情，所谓的信号，
+   就是这个RACSignal类。
+RACSignal类的一些绕弯子的地方：
+1 RACSignal只是一个信号，但是它自己不能主动的去发送，它只是一个信号，自己不能够主动的去做事情。
+2 创建了一个RACSignal类后，如果没有订阅这，即使RACSignal的事件触发了，也不会有信号触发。只有存在订阅者的时候，信号才会触发。
+ 创建
++ (RACSignal *)createSignal:(RACDisposable * (^)(id subscriber))didSubscribe {
+RACSignal *signal = [[RACSignal alloc] init];
+signal.didSubscribe = didSubscribe;
+return [signal setNameWithFormat:@"+createSignal:"];
+}
+这个方法是RACSignal的类方法，返回值是一个RACSignal类的对象，传入参数是一个名字为didSubscribe的block，这个block的返回值是一个RACDisposable类的对象，
+传入参数是一个实现了RACSubscriber协议的对象。方法内部流程：第一步：创建了一个RACSignal对象signal。第二步：将方法中的名为didSubscribe的block参数赋值给signal.didSubscribe属性。
+第三步然后返回这个signal对象
+
+@property (nonatomic, copy) RACDisposable * (^didSubscribe)(id subscriber);
+
+可以看到，signal.didSubscribe的block类型就是createSignal方法中的didSubscribe
+
+创建一个RACSignal对象  
+
+RACSignal *signal = [RACSignal createSignal:^RACDisposable *(id didSubscribe) {
+        
+        NSLog(@"信号触发");
+        
+        [didSubscribe sendNext:@"消息"];//didSubscribe是订阅者
+        [didSubscribe sendCompleted];
+        
+        return [RACDisposable disposableWithBlock:^{
+            NSLog(@"信号处理完成");
+        }];
+    }];
+
+block中存放的这段代码就是createSignal方法中的didSubscribe参数，方法中传入的参数(id didSubscriber)就是这个信号的订阅者对象，这个protocol中最常用的两个方法：
+
+@protocol RACSubscriber
+@required
+// 发送当前的信号给订阅者.
+// value - 信号传递的值，可以为空
+- (void)sendNext:(id)value;
+// 发送完成状态给订阅者.
+//
+// 结束订阅, 并销毁订阅者 (之后该订阅者不能够在订阅这个信号).
+- (void)sendCompleted;
+
+createSignal中的didSubscribe存放的就是被订阅后触发的命令，当一个信号被订阅的同时，就会执行didSubscribe中的命令。
+
+订阅信号使用的是RACSignal对象的subscribeNext方法：
+  [signal subscribeNext:^(id x) {
+        NSLog(@"收到了: %@", x);
+    }];
+//信号触发
+//收到了: 消息
+//信号处理完成
+当RACSignal对象调用subscribeNext的时候，就是订阅了这个RACSignal对象，同时就会执行之前RACSignal对象通过createSiganl方法中的名为didSubscribe的block参数中存放的代码块，当代码块中的sendNext方法之行后，
+就会调用subscribeNext方法的nextBlock代码块中的命令，然后调用sendCompleted命令确认信号完成，销毁订阅，最后通过createSignal:中block参数返回的RACDisposable对象完成收尾。
+
+  RACSubject
+    可以看到，RACSignal不能够自己主动发送信号，只是在被订阅的时候，调用didSubscribe来发送，如果要让信号主动发送一些内容，需要使用另一个类RACSubject，这里看一下RACSubject的继承关系，
+    其实它就是继承自RACSignal，然后自己遵守了RACSignal的createSignal方法中的subscriber参数所遵守的那个RACSubscriber协议：
+@interface RACSubject : RACSignal
+ 
+// Returns a new subject.
++ (instancetype)subject;
+ 
+@end
+
+RACSubject的创建之通过一个subject的类方法即可，创建后订阅这个信号后再发送，订阅者就能够收到：
+   RACSubject *subject = [RACSubject subject];
+    NSLog(@"%@", subject);
+
+    [subject subscribeNext:^(id x) {
+        NSLog(@"1接收到: %@", x);
+    }];
+    
+    [subject subscribeNext:^(id x) {
+        NSLog(@"2接收到: %@", x);
+    }];
+    [subject sendNext:@"信号"];
+//1接收到: 信号
+//2接收到: 信号
+
+信号的发送和订阅可以在两个地方分别实现，这样可以实现类似于代理的回调：
+创建一个二级界面，声明一个RACSubject对象：
+@interface SecondViewController : UIViewController
+ 
+@property (nonatomic, strong) RACSubject *delegateSignal;
+ 
+@end
+
+点击事件
+[[button rac_signalForControlEvents:UIControlEventTouchDown] subscribeNext:^(id x) {
+        if (self.delegateSignal) {
+            [self.delegateSignal sendNext:@"来自远方的问候"];
+        }
+    }];
+
+在上级界面中，创建二级控制器的RACSubject对象，同时订阅这个信号：
+ SecondViewController *secondViewController = [[SecondViewController alloc] init];
+    secondViewController.delegateSignal = [RACSubject subject];
+    [secondViewController.delegateSignal subscribeNext:^(id x) {
+        NSLog(@"收到了远方的回调: %@", x);
+    }];
+    
+    [self presentViewController:secondViewController animated:YES completion:nil];
+//收到了远方的回调: 来自远方的问候
+这样就完成发送信号，订阅者就能够收到回调。
+
+5.2，RACCommand
+RACCommand是用来包装RACSignal的一个类，可以把RACSignal包装成命令段形式，可以用execute方法执行这个命令，而且可以监听到内部的执行状态。
+          RACCommand初始化的方法是initWithSignalBlock，在block中返回一个RACSignal对象：
+ RACCommand *command = [[RACCommand alloc] initWithSignalBlock:^RACSignal *(id input) {
+        RACSignal *signal = [RACSignal createSignal:^RACDisposable *(id subscriber) {
+            //延时2s，模仿网络请求
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [subscriber sendNext:@"数据"];
+                [subscriber sendCompleted];
+            });
+            return nil;
+        }];
+        
+        return [signal map:^id(NSString *string) {
+            return [NSString stringWithFormat:@"加工过的%@", string];
+        }];
+    }];
+  进一步监听command的状态：
+ [[command.executing skip:1] subscribeNext:^(id x) {
+        if ([x boolValue] == YES) {
+            NSLog(@"正在请求");
+        }else{
+            NSLog(@"请求完毕");
+        }
+    }];
+
+通过execute方法执行命令，其实就是相当于订阅command内部的signal，execute方法返回一个RACSignal对象，所以可以直接订阅它来接受信号：
+   [[command execute:nil] subscribeNext:^(id x) {
+        NSLog(@"请求到 %@", x);
+    }];
+//正在请求
+//请求到 加工过的数据
+//请求完毕
+
+5.3，RACSequence
+       RACSequence是针对集合类操作定义的一个类，可以用来做遍历：
+  NSArray *array = @[@1,@2,@3,@4,@5];
+    [array.rac_sequence.signal subscribeNext:^(id x) {
+        NSLog(@"%@", x);
+    }];
+    
+    NSDictionary *dict = @{@"name" : @"Joker", @"age" : @"0"};
+    [dict.rac_sequence.signal subscribeNext:^(RACTuple *x) {
+        RACTupleUnpack(NSString *key, NSString *value) = x;
+        NSLog(@"%@ : %@", key, value);
+    }];
+      字典的遍历返回的是RACTuple类，读取内部的值用RACTupleUnpack解包
+
+
+ReactiveCocoa应用－2 
+1.监听方法的调用
+  rac_signalForSelector可以用来监听一个对象方法的调用，当方法调用的时候，就能收到回调：
+
+
+UIViewController *xxxViewController = [[UIViewController alloc]init];
+[[xxxViewController rac_signalForSelector:@selector(touchesBegan:withEvent:)]subscribeNext:^(idx)
+{
+ NSLog(@"xxxViewController- touchesBegan:withEvent:");
+}];
+
+
+ [self presentViewController:xxxViewController animated:YES completion:nil];
+
+当二级界面点击事件触发，就会收到回调，这个可以用来替代代理。
+
+2.监听控制事件
+
+
+可以用来监听控制事件，如按钮的点击：
+
+
+
+
+ [[button rac_signalForControlEvents:UIControlEventTouchDown]subscribeNext:^(idx)
+
+{
+        //按钮点击对应的操作
+}];
+
+
+
+用来替换addTarget方法
+
+
+3.监听文本改变
+[self.textField.rac_textSignal subscribeNext:^(idx)
+
+{
+    NSLog(@"当前的文字：%@",x);
+ }];
+textField文字改变的时候，订阅者就会收到
+
+4.监听属性 
+
+用来监听某个对象的某个属性的改变，格式为：RACObserve(要监听的对象， 要监听对象的属性)：
+
+[RACObserve(self.label,text)subscribeNext:^(idx)
+
+{
+  NSLog(@"当前Label的文字：%@",x);
+}];
+当UILabel的text改变时，订阅者就能收到
+
+
+4.属性绑定
+
+将某个对象的属性和信号绑定起来，当订阅者收到信号的同时，改变对象的属性，格式为：RAC(对象，对象的属性) =
+RACSignal对象
+//textField输入改变的同时改变label的文字
+RAC(self.label,text)= self.textField.rac_textSignal;
+
+
+ReactiveCocoa应用－3 
+
+RAC+MVVM
+  写一个例子，利用ReactiveCocoa实现一个最简单的登录界面，通过：MVC->MVC ＋ RAC ->MVVM ＋RAC 来一步一步的过渡代码
+先提前定义下登陆界面的需求：一共需要两个输入框输入账号和密码，一个登陆按钮进行登陆操作。账号和密码必长度须在1-6位之间，登录按钮默认为不可点击状态，当账号和密码同时不为空且满足长度条件时，登录按钮变为可点击状态，点击按钮完成登录操作
+1.MVC
+ 通过controlEvents来监听textField的改变，来监听两个输入框内容的改变，同时根据两个输入框内容长度来实时改变按钮的状态
+#pragma mark - MVC
+- (void)setMVC
+{
+     [self.nameTextField addTarget:self action:@selector(nameTextFieldEditChanged) forControlEvents:UIControlEventEditingChanged];
+      self.nameTextField.backgroundColor = [UIColor blueColor];
+
+    [self.passwordTextField addTarget:self action:@selector(passwordTextFieldEditChanged) forControlEvents:UIControlEventEditingChanged];
+    self.passwordTextField.backgroundColor = [UIColor blueColor];
+    
+    self.loginButton.enabled = NO;
+    
+    [self.loginButton addTarget:self action:@selector(loginButtonClick:) forControlEvents:UIControlEventTouchDown];
+}
+ 
+- (void)nameTextFieldEditChanged
+{
+    self.account.account = self.nameTextField.text;
+    
+    self.nameTextField.backgroundColor = self.nameTextField.text.length <= 6 ? [UIColor blueColor] : [UIColor redColor];
+    
+    self.loginButton.enabled = self.nameTextField.text.length && self.nameTextField.text.length <= 6 && self.passwordTextField.text.length && self.passwordTextField.text.length <= 6;
+}
+ 
+- (void)passwordTextFieldEditChanged
+{
+    self.account.password = self.nameTextField.text;
+    
+    self.passwordTextField.backgroundColor = self.passwordTextField.text.length <=  6 ? [UIColor blueColor] : [UIColor redColor];
+    
+    self.loginButton.enabled = self.nameTextField.text.length && self.nameTextField.text.length <= 6 && self.passwordTextField.text.length && self.passwordTextField.text.length <= 6;
+}
+ 
+- (void)loginButtonClick:(UIButton *)sender
+{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        NSLog(@"登录成功:%@", self.account.account);
+    });
+}
+
+2.MVC+RAC
+  信号的定义绑定和监听都在Controller中实现，这里可以看到同样的效果，用RAC只需要定义一个方法就可以了，代码量大幅度减少，使可读性更高
+#pragma mark - MVC+RAC
+- (void)setRAC
+{
+    RAC(self.account, account) = self.nameTextField.rac_textSignal;
+    RAC(self.account, password) = self.passwordTextField.rac_textSignal;
+    RACSignal *loginButtonEnableSignal = [RACSignal combineLatest:@[RACObserve(self.account, account), RACObserve(self.account, password)] reduce:^id(NSString *account, NSString *password){
+        return @(account.length && password.length && account.length < 7 && password.length < 7);
+    }];
+    
+    RAC(self.loginButton, enabled) = loginButtonEnableSignal;
+    
+    RAC(self.nameTextField, backgroundColor) = [RACObserve(self.account, account) map:^id(NSString *value) {
+        return value.length > 6 ? [UIColor redColor] : [UIColor blueColor];
+    }];
+    
+    RAC(self.passwordTextField, backgroundColor) = [RACObserve(self.account, password) map:^id(NSString *value) {
+        return value.length > 6 ? [UIColor redColor] : [UIColor blueColor];
+    }];
+    
+    [[self.loginButton rac_signalForControlEvents:UIControlEventTouchDown] subscribeNext:^(id x) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            NSLog(@"登录成功:%@", self.account.account);
+        });
+    }];
+}
+
+3.MVVM+RAC
+  将Controller中关于Model的值监听和Model值改变的同时对View的影响判断等相关的业务全都交给ViewModel去做，Controller主要的作用就是将View和ViewModel关联起来。最后还是要说一下，并不是用了RAC就是MVVM，是不是MVVM取决于有没有ViewModel，而不是有没有RAC，没有RAC也是可以实现MVVM的
+ViewModel：
+
+@interface JKRLoginViewModel : NSObject
+@property (nonatomic, strong) JKRAccount *account; 
+@property (nonatomic, strong) RACSignal *enableLoginSignal;
+@property (nonatomic, strong) RACSignal *accountTextFieldBackgroundColorSignal;
+@property (nonatomic, strong) RACSignal *passwordTextFieldBackgroundSignal; 
+@property (nonatomic, strong) RACCommand *LoginCommand;
+@end
+
+#import "JKRLoginViewModel.h"
+
+@implementation JKRLoginViewModel
+ 
+- (JKRAccount *)account
+{
+    if (!_account) {
+        _account = [[JKRAccount alloc] init];
+    }
+    return _account;
+}
+ 
+- (instancetype)init
+{
+    if (self = [super init]) {
+        [self initialBind];
+    }
+    return self;
+}
+ 
+- (void)initialBind
+{
+    _enableLoginSignal = [RACSignal combineLatest:@[RACObserve(self.account, account), RACObserve(self.account, password)] reduce:^id(NSString *account, NSString *password){
+        return @(account.length && password.length && account.length < 7 && password.length < 7);
+    }];
+    
+    _accountTextFieldBackgroundColorSignal = [RACObserve(self.account, account) map:^id(NSString *string) {
+        return string.length > 6 ? [UIColor redColor] : [UIColor blueColor];
+    }];
+    
+    _passwordTextFieldBackgroundSignal = [RACObserve(self.account, password) map:^id(NSString *string) {
+        return string.length > 6 ? [UIColor redColor] : [UIColor blueColor];
+    }];
+    
+    __weak typeof(self) weakSelf = self;
+    
+    _LoginCommand = [[RACCommand alloc] initWithSignalBlock:^RACSignal *(id input) {
+        NSLog(@"点击了登录");
+        
+        return [RACSignal createSignal:^RACDisposable *(id subscriber) {
+            
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [subscriber sendNext:[NSString stringWithFormat:@"登录成功:%@", weakSelf.account.account]];
+                
+                [subscriber sendCompleted];
+            });
+            return [RACDisposable disposableWithBlock:^{
+                NSLog(@"登录信号完成");
+            }];
+        }];
+    }];
+    
+    [_LoginCommand.executionSignals.switchToLatest subscribeNext:^(id x) {
+        if ([x isEqualToString:@"登录成功"]) {
+            NSLog(@"登录成功");
+        }
+    }];
+
+    [[_LoginCommand.executing skip:1] subscribeNext:^(id x) {
+        if ([x isEqualToNumber:@(YES)]) {
+            NSLog(@"登录中");
+        }else{
+            NSLog(@"登录完成");
+        }
+    }];
+}
+@end
+
+Controller：
+#pragma mark - MVVM+RAC
+- (void)bindModel
+{
+    RAC(self.loginViewModel.account, account) = self.nameTextField.rac_textSignal;
+    RAC(self.loginViewModel.account, password) = self.passwordTextField.rac_textSignal;
+
+    RAC(self.loginButton, enabled) = self.loginViewModel.enableLoginSignal;
+
+    RAC(self.nameTextField, backgroundColor) = self.loginViewModel.accountTextFieldBackgroundColorSignal;
+
+    RAC(self.passwordTextField, backgroundColor) = self.loginViewModel.passwordTextFieldBackgroundSignal;
+
+    [[self.loginButton rac_signalForControlEvents:UIControlEventTouchDown] subscribeNext:^(id x) {
+        [[self.loginViewModel.LoginCommand execute:nil] subscribeNext:^(id x) {
+            NSLog(@"%@", x);
+        }];
+    }];
+}
+
+
 77、https
 简化版
 客户端发请求服务器，服务器最开始有私钥和公钥，私钥保存，只把公钥放到一个证书中，这个证书是受保护空间中的，证书是购买的，客户端需要选择是否安装这个证书，并信任它，如
@@ -6480,7 +7924,7 @@ windows中保留了所有受信任的根证书，浏览器可以查看信任的�
 2017年12月06日 16:48:07
 阅读数：4063
 1.注册vultr服务，选择2.5美元/月套餐
-https://my.vultr.com/  sbpdcfn@126.com Snrifk81...
+https://my.vultr.com/  sbpdcfn@126.com Snrifk81...   系统帐号：root snrifk81...
 2.SSH 客户端登陆服务器（此处选用xshell）
 3.安装启动shadowsocks服务
 apt-get update
