@@ -1,5 +1,5 @@
 TimLiu-iOS  各路大神收集的资料：https://github.com/Tim9Liu9/TimLiu-iOS/blob/master/README.md
-
+http://www.52im.net/forum.php?mod=viewthread&tid=510&highlight=webrtc 即时通讯网
 夏天的风_song
 链接：https://www.jianshu.com/p/7ca9048afa5b
     1.库和宏的一点点
@@ -8160,3 +8160,338 @@ Linux  https://github.com/shadowsocks/shadowsocks-qt5/releases
 IOS  https://github.com/shadowsocks/shadowsocks-iOS/releases
 
 Android  https://github.com/shadowsocks/shadowsocks-android/releases
+
+
+
+
+
+79、html5学习
+
+框架：
+sencha-touch
+phoneGap
+jQuery mobile跨平台
+Bootstrap
+
+开发方式：
+原生，html5，原生结合html5
+
+网页由三部份组成：
+html,css,javascript
+
+<!--根标签-->
+<html>
+   <!--头部-->
+   <head>
+      <!--标题标签-->
+      <title>我的第一个程序</title>
+      <!--设置编码-->
+      <meta charset="UTF-8">
+   </head>
+   <!--主要内容-->
+   <body>
+       <div>你好,世界!</div>
+   </body>
+</html>
+<!--HTML中的标签-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>常见的HTML的标签</title>
+</head>
+<body>
+    <!--标题标签-->
+    <h1>我是h1标签</h1>
+    <h2>我是h2标签</h2>
+    <h3>我是h3标签</h3>
+    <h4>我是h4标签</h4>
+    <h5>我是h5标签</h5>
+    <h6>我是h6标签</h6>
+    <hr>
+    <div>我是div标签我是div标签我是div标签我是div标签</div>
+    <div>我是div标签我是div标签我是div标签我是div标签</div>
+    <div>我是div标签我是div标签我是div标签我是div标签</div>
+    <div>我是div标签我是div标签我是div标签我是div标签</div>
+    <div>我是div标签我是div标签我是div标签我是div标签</div>
+    <div>
+        <div>
+            <p>我是段落</p>
+        </div>
+    </div>
+
+    <!--表单标签-->
+    <input placeholder="我是占位文字"><br><br><br><br>
+    <input value="我是默认的文字"><br>
+    <input type="date"><br>
+    <input type="file"><br>
+    <input type="color"><br>
+    <input type="radio"><br>
+    <input type="checkbox"><br>
+
+    <!--段落标签-->
+    <p>我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签</p>
+    <p>我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签</p>
+    <p>我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签</p>
+    <p>我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签</p>
+
+    <!--图像标签-->
+    <!--
+      相对路径和绝对路径:
+      相对路径: 资源在当前的项目中  ./  ../ ././
+      绝对路径: 资源不在当前的项目中 网络上  本地  http://  https:// ftp://  file:///
+http://localhost:63342/%E4%BB%A3%E7%A0%81/01-HTML%E7%9A%84%E5%9F%BA%E6%9C%AC%E8%AF%AD%E6%B3%95/img/img_01.jpg
+    -->
+   <a href="http://www.520it.com" target="_blank">
+       <img src="http://www.520it.com/userfiles/1/images/cms/site/2015/09/index_06.jpg" alt="这是一张图片" width="20%" />
+   </a>
+
+    <img src="img/img_01.jpg" width="150" />
+
+    <!--换行标签-->
+    <br>
+
+    <!--列表标签-->
+    <!--无序列表-->
+    <ul>
+        <li>我是无序列表</li>
+        <li>我是无序列表</li>
+        <li>我是无序列表</li>
+        <li>我是无序列表</li>
+        <li>我是无序列表</li>
+    </ul>
+
+    <!--有序列表-->
+    <ol type="I">
+        <li>我是有序列表</li>
+        <li>我是有序列表</li>
+        <li>我是有序列表</li>
+        <li>我是有序列表</li>
+        <li>我是有序列表</li>
+    </ol>
+
+    <!--超链接标签-->
+    <a href="#">我是超链接</a>
+    <a href="http://www.baidu.com" target="_blank">百度一下,你就知道</a>
+
+    <!--div标签-->
+    <hr>
+    <div>我是div标签我是div标签我是div标签我是div标签</div>
+    <div>我是div标签我是div标签我是div标签我是div标签</div>
+    <div>我是div标签我是div标签我是div标签我是div标签</div>
+    <div>我是div标签我是div标签我是div标签我是div标签</div>
+    <div>我是div标签我是div标签我是div标签我是div标签</div>
+</body>
+</html>
+
+href和src的区别：
+
+href是引用,相当于iOS中的import,不是必需的.(比如<link>,<a>,...)
+src是引入,是必需的,没有这个资源,标签就用不起来.(比如<img>,<audio>,<video>,...)
+
+双标签(首尾呼应,内部可以层层嵌套)<HTML中大部分是双标签>相当于容器
+单标签(<img>,<meta>,<input>...)
+
+
+html5中新增标签
+
+                   
+
+结构性标签： 用来描述如一篇报纸的新闻，有标题，文章内容，辅助信息，导航等，这些标签是会自动缩放的
+1. section
+表示页面中的一个内容区块，比如章节，页眉等,该标签呢我们同样可以把他理解为一个容器，或者说是一个大容器，
+主要功能其实就是进行分区，报纸大家也都见过，有很多不同的板块，当我们开发一个页面进行功能分拆的时候，这就需要<section/>了。
+2. article
+表示页面中的一块与上下文不相关的内容。
+3. header
+这个主要是用来存放标题的了，很好理解。
+4. footer
+内容区块的脚注，比如编写一些底部一些公司信息
+5. nav
+导航链接的部分
+新增加的标签我感觉目前的使用还不是很多，目前多数网站还是<div/>,<span/>之类的，不过作为知识还是应该了解一下啦
+
+例：
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>一个papi酱，老总讲了又讲，丽人丽妆咋这么急？--百度百家</title>
+</head>
+<body>
+   <!--文章-->
+   <article>
+       <!--头部-->
+       <header>
+           <h2>一个papi酱，老总讲了又讲，丽人丽妆咋这么急？</h2>
+           <h4>分类 :互联网</h4>
+           <img src="img/share.png">
+       </header>
+       <!--主要内容-->
+       <img src="http://g.hiphotos.baidu.com/news/crop%3D0%2C1%2C415%2C249%3Bw%3D638/sign=b11ea766412309f7f320f7524f3e20c2/e61190ef76c6a7ef304f1ad4fafaaf51f2de66d3.jpg" width="40%">
+       <section>
+           <h3>丽人丽妆快炒过头了</h3>
+           <p>看它借助PAPI酱炒作用心，除了这类人物具有爆款价值外，可能还有借机传播公司价值、后续融资、IPO的用意。当然，阻击对手的用心似乎也在流露。</p>
+           <p>当初嫁接PAPI酱被质疑是个内部循环、营销噱头，罗振宇、黄韬、阿里的关系，确实容易引发外界质疑。不过，如果丽人丽妆最后真金白银地掏了，那也是不错的品牌传播案。声量上来，无所谓好坏。</p>
+       </section>
+       <section>
+           <h3>丽人丽妆这家公司风格，确实本不像今日</h3>
+           <p>它的商业模式有些看点，但也谈不上特别出奇。它从化妆品代运营模式走出来，走向所谓真零售，自采自销，与许多国内外化妆品品牌建立了授权合作，崇尚的是所谓“网上专柜”。</p>
+       </section>
+       <!--尾部-->
+       <footer>
+           <h3>版权声明</h3>
+           <div>本文仅代表作者观点，不代表百度立场。</div>
+           <div>本文系作者授权百度百家发表，未经许可，不得转载。</div>
+       </footer>
+   </article>
+</body>
+</html>
+
+极块性标签：
+完成web页面区域的划分，确保内容有效的分隔
+aside
+表示出article之外的，与article元素相关内容的辅助信息。
+figure 对多个元素组合并展示的元素，常与figcaption联合使用，很少用
+code 表示一段代码块，很多浏览器不支持
+dialog qq聊天中的汽泡，一般不常用
+
+
+行内语义性标签:
+丰富展示内容
+meter:表示特定范围内的百分比，如用电量，工资，数量百分比
+time:显示时间，目前所有的浏览器都不支持
+progress：表示进度
+audio：播放音频
+video：播放视频
+
+交互性标签：
+detail
+datagrid
+menu 所有主流浏览器均不支持 menu 元素
+command 目前只有 Internet Explorer 支持 <command> 标签
+
+
+例：
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+ <meter value="30" max="100" min="0">浏览器兼容</meter>
+ <progress value="40" max="100"></progress>
+
+  <!--音频-->
+  <audio src="source/music.m4a" controls="controls"></audio>//controls是播放器必须的
+  <video src="source/BigBuck.m4v" controls="controls"></video>
+</body>
+</html>
+
+css层叠相式表：
+用来控制html5的样式
+编写格式：键值对方式
+color:red;
+background-color:blue;
+font-size:20px;
+
+css的三种书写形式：
+行内样式： 在标签的style属性中写<body style="color:red">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CSS的行内样式</title>
+</head>
+<body>
+   <div style="color: blue; font-size: 28px; background-color: aqua;">我是容器标签</div>
+   <p style="color: red; font-size: 60px; border:5px dashed purple">我是段落标签</p>
+   <div>我是容器标签</div>
+   <div>我是容器标签</div>
+   <div>我是容器标签</div>
+   <div>我是容器标签</div>
+   <div>我是容器标签</div>
+   <p>我是段落标签</p>
+   <p>我是段落标签</p>
+   <p>我是段落标签</p>
+   <p>我是段落标签</p>
+   <p>我是段落标签</p>
+   <p>我是段落标签</p>
+</body>
+</html>
+
+页内样式：在本网页的style标签中书写
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CSS的页内样式</title>
+    <!--
+      css的规律:
+      1. 就近原则
+      2. 叠加原则
+    -->
+    <link href="css/index.css" rel="stylesheet">
+    <style>
+        div{
+            color:red;
+            font-size: 30px;
+            border: 4px solid yellow;
+        }
+
+        p{
+            color: blue;
+            font-size: 44px;
+            background-color: yellowgreen;
+        }
+    </style>
+
+    <!--
+       网站 =  N个网页 + 服务器 + 数据库 + ....
+    -->
+</head>
+<body>
+    <div>我是容器标签</div>
+    <div>我是容器标签</div>
+    <div>我是容器标签</div>
+    <div>我是容器标签</div>
+    <div>我是容器标签</div>
+    <p>我是段落标签</p>
+    <p>我是段落标签</p>
+    <p>我是段落标签</p>
+    <p>我是段落标签</p>
+    <p>我是段落标签</p>
+    <p>我是段落标签</p>
+</body>
+</html>
+
+外部样式：在单独的CSS文件中书写，然后在网页中用link标签引用，可以共享使用css样式
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CSS的外部样式</title>
+    <!--引用外部的样式-->
+    <link rel="stylesheet" href="css/index.css">//rel 关系
+</head>
+<body>
+    <div>我是容器标签</div>
+    <div>我是容器标签</div>
+    <p>我是段落标签</p>
+    <p>我是段落标签</p>
+</body>
+</html>
+
+index.css
+div{
+   color: olivedrab;
+   font-size: 66px;
+   background-color: greenyellow;
+}
+
+p{
+    color: goldenrod;
+    font-size: 2px;
+    border: 2px dashed darkolivegreen;//宽度，线条虚线，双线
+}
