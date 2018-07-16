@@ -8613,7 +8613,12 @@ input:focus{
         }
  <div id="main">我是div标签</div>
  
- 
+伪元素选择器：
+:first-letter 向文本的第一个字母添加特死样式
+:first-line  向文本的首行添加特殊样式
+:before 在元素之前添加内容
+:after  在元素之后添加内容
+
 可用例子：
  <!DOCTYPE html>
 <html lang="en">
