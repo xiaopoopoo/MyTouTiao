@@ -1808,7 +1808,7 @@ func doSomething(item: UIBarButtonItem) {
 27.swift与oc混编
 在xcode创建oc文件，swift会自动添加一个bridage的文件，在这个文件中#import"oc.h",则这个类就可以用了
 
-28.git的使用  分钟 git 命令入门到放弃
+28.git的使用  分钟 git 命令入门到放弃 TOWER工具破解版
 
 使用homebrew安装
 brew install git
@@ -8496,3 +8496,206 @@ p{
     font-size: 2px;
     border: 2px dashed darkolivegreen;//宽度，线条虚线，双线
 }
+
+
+css的选择器
+
+标签选择器：根据标签的名称选择样式
+div{
+   color: olivedrab;
+}
+
+类选择器：
+.high{
+   color: olivedrab;
+}
+<div class="high">我是容器标签</div>
+<div class="high">我是容器标签</div>
+
+id选择器：一一对应
+#id{
+   color: olivedrab;
+}
+<div class="first">我是容器标签</div>
+
+并列选择器： 相当于或
+div, .high{
+   color: olivedrab;
+}
+<di>我是容器标签</div>
+<div class="high">我是容器标签</div>
+
+复合选择器：逻辑与针对单个标签，找到class为high的p标签,中间不能有空格
+p.high{
+   color: olivedrab;
+}
+<div class="high">我是容器标签</div>
+<div>我是容器标签</div>
+<div>我是容器标签</div>
+<p class="high">我是容器标签</div>
+
+后代选择器：中间必须有空格
+方式1：
+div div span{
+   color: olivedrab;
+}
+方式2：
+div span{
+   color: olivedrab;
+}
+<div class="high">
+<p></p>
+<div><span></span></div>
+</div>
+
+
+直接后代选择器：中间没有空格
+<div>a{
+   color: olivedrab;
+}
+<div class="high">
+<a></a>
+<div><a></a></div>
+</div>
+
+相邻兄弟选择器:在div上面或者下面的第一个p标签会被选中
+div+p{
+   color: olivedrab;
+}
+<div class="high">
+<a></a>
+</div>
+<p><a></a></p>
+<p><a></a></p>
+
+属性选择器:标签可以添加任意属性
+<div>[name]{
+   color: olivedrab;
+}
+<div>[name][age]{
+   color: olivedrab;
+}
+<div>[name="high"]{
+   color: olivedrab;
+}
+<div name="high">
+</div>
+
+<div name="high" age="20">
+</div>
+
+伪类选择器：在标签后面加一个:跟上属性，触发某些操作的时候去执行
+:active 向被激活的元素添加样式
+:focus  向拥有键盘输入焦点的元素添加样式  常用
+:hover  当鼠标悬浮在元素上方时，向元素添加样式  常用
+:link   向未被访问的链接添加样式
+:visited 向已被访问的链接添加样式
+:first-child 向元素的第一个子元素添加样式
+:lang 向带有指定lang属性的元素添加样式
+
+        /*伪类*/
+input:focus{
+            /*去除外线条*/
+            outline: none;
+            /*改变宽度和高度*/
+            width: 500px;
+            height: 50px;
+            /*改变文字的大小*/
+            font-size: 20px;
+}
+<input placeholder="我是输入框">
+
+        /*当鼠标移动上来*/
+        #main:hover{
+            width: 300px;
+            height: 200px;
+            background-color: aqua;
+        }
+ <div id="main">我是div标签</div>
+ 
+ 
+可用例子：
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CSS的常见选择器</title>
+    <style>
+        /* 标签选择器 */
+        div{
+            color: red;
+        }
+
+        p{
+            color: blue;
+        }
+
+        /* 类选择器 */
+        .test1{
+           color: green;
+        }
+
+        /*id选择器*/
+        #main{
+            font-size: 40px;
+        }
+
+        /*并列选择器*/
+        #main, .test1{
+           border: 1px solid rosybrown;
+        }
+
+        /*复合选择器*/
+        p#test1{
+            background-color: yellow;
+        }
+
+        /*后代选择器*/
+        div sapn{
+            color: red;
+        }
+
+        /*直接后代选择器*/
+        div.test1>a{
+           color: green;
+        }
+
+        /*伪类*/
+        input:focus{
+            /*去除外线条*/
+            outline: none;
+            /*改变宽度和高度*/
+            width: 500px;
+            height: 50px;
+            /*改变文字的大小*/
+            font-size: 20px;
+        }
+
+        /*当鼠标移动上来*/
+        #main:hover{
+            width: 300px;
+            height: 200px;
+            background-color: aqua;
+        }
+    </style>
+</head>
+<body>
+    <div id="main">我是div标签</div>
+    <!--<div id="main">我是div标签</div>-->
+    <div>我是div标签</div>
+    <p>我是段落标签</p>
+    <p>我是段落标签</p>
+    <p>我是段落标签</p>
+    <p>我是段落标签</p>
+    <p id="test1">我是段落标签</p>
+    <div class="test1">
+        我是div标签
+        <a href="#">我是超链接</a>
+        <div>
+            <span href="#">我是二级链接</span>
+        </div>
+    </div>
+    <br><br><br><br>
+    <input placeholder="我是输入框">
+</body>
+</html>
