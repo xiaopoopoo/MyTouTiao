@@ -8704,3 +8704,160 @@ input:focus{
     <input placeholder="我是输入框">
 </body>
 </html>
+
+
+
+选择器的优先级别：
+ <title>选择器的优先级别</title>
+    <!--
+      css样式遵循的规律:
+      1. 相同类型的选择器遵循: a.就近原则 b.叠加原则 class="test1 test2"
+      2. 不同类型的选择器遵循:
+         a> 选择器的针对性越强，它的优先级就越高
+         b> 选择器的权值加到一起，大的优先；如果权值相同，后定义的优先
+         c>
+          important > 内联 > id > 类| 伪类 | 属性选择 | 伪元素 > 标签  > 通配符 > 继承
+
+    -->
+    <style>
+
+        /*复合选择器*/
+        div.test1{/*权值:10+1*/
+            color: darkolivegreen;
+        }
+
+        div#main{/*权值:100+1*/
+            color: chartreuse;
+        }
+
+        /*id选择器*/
+        #main{/*权值:100*/
+            color:deeppink;
+        }
+
+        #second{
+            color: palegoldenrod;
+        }
+
+
+        /*类选择器*/
+        .test1{/*权值:10*/
+            color: blue;
+        }
+
+        .test2{/*权值:10*/
+            color: yellow;
+        }
+
+        /*标签选择器*/
+        div{/*权值:1*/
+            color: red !important;//权值最高1000
+        }
+
+        /*
+        通配符:
+            1. 优先级别非常低
+            2. 性能比较差
+        */
+        *{  /*权值:0*/
+           font-size: 30px ;
+        }
+    </style>
+</head>
+<body>
+   <div id="main" class="test1 test2" style="color: blue;">我是用来测试优先级别的</div>//类名有两个，test1 test2 ，id 只能有一个
+</body>
+</html>
+
+
+标签的类型和修改标签的类型：
+display: block;
+display: inline;
+display: inline-block;
+display: none;//把某个标签隐藏掉
+
+行内标签：多个标签同一行显示,宽度和高度取决于内容的尺寸，改不了它的宽高的
+<span label a >
+
+块级标签：一个标签独占一行，能够随时设置宽和高
+<div p ul li h1 h2>
+
+行内块级标签：前面两者优点集合，在同一行显示，可以改变高度宽度
+<input button>
+
+整个列子：
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>常见的标签的类型</title>
+    <style>
+        div{
+            background-color: red;
+            width: 200px;
+            height: 80px;
+
+            /*隐藏标签*/
+            /*display: none;*/
+
+            /*改变标签的类型: 块级--->行内标签*/
+            /*display: inline;*/
+
+            /*改变标签的类型: 块级--->行内-块级标签*/
+            display: inline-block;
+        }
+
+        p{
+            background-color: yellow;
+            width: 100px;
+            height: 80px;
+
+            /*改变标签的类型: 块级--->行内标签*/
+            /*display: inline;*/
+
+            /*改变标签的类型: 块级--->行内-块级标签*/
+            display: inline-block;
+        }
+
+        span{
+            background-color: aqua;
+            width: 300px;
+            height: 90px;
+
+            /*改变标签的类型: 行内--->块级标签*/
+            /*display: block;*/
+
+            /*改变标签的类型: 行内--->行内-块级标签*/
+            /*display: inline-block;*/
+        }
+
+        button{
+            width: 100px;
+            height: 80px;
+        }
+    </style>
+</head>
+<body>
+
+<!--块级标签-->
+  <div>div标签</div>
+  <p>段落标签</p>
+
+
+<!--行内标签(内联标签)-->
+  <span>我是行内标签</span>
+  <span>我是行内标签</span>
+  <span>我是行内标签</span>
+  <a href="#">我是超链接</a>
+  <a href="#">我是超链接</a>
+
+<!--行内-块级标签-->
+  <input>
+  <button>我是按钮</button>
+  <button>我是按钮</button>
+</body>
+</html>
+
+
+
+css的属性，继承和不可用
