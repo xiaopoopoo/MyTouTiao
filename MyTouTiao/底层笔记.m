@@ -8860,4 +8860,92 @@ display: none;//把某个标签隐藏掉
 
 
 
-css的属性，继承和不可用
+css的属性，继承和不可继承
+继承性划分方式：
+
+可继承属性，父标签中的属性，会作用于子标签
+一般是文字控制类的属性，控制文字样式的
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CSS的可继承属性</title>
+    <style>
+        body{
+           color: red;
+           font-size: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div>我是块级标签</div>
+    <span>我是行内标签</span>
+    <button>我是行内-块级标签</button>
+</body>
+</html>
+
+不可继承属性，父标签中属性是私有的，不可作用于子标签
+一般是区块控制属性，如宽高
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        #main{
+            background-color: red;
+            width: 500px;
+            height: 300px;
+        }
+
+        .test1{
+            /*width: 100px;*/
+            background-color: green;
+        }
+    </style>
+</head>
+<body>
+    <div id="main">
+        <div class="test1">我是里面的</div>
+    </div>
+</body>
+</html>
+
+常用的属性：
+所有标签都可以继承：cursor控制光标的形状 visibility
+display:none 同样隐藏，但不占位了
+visibility：
+visible	默认值。元素是可见的。
+hidden	元素是不可见的。隐藏了，但是保留了占位
+collapse	当在表格元素中使用时，此值可删除一行或一列，但是它不会影响表格的布局。
+被行或列占据的空间会留给其他内容使用。如果此值被用在其他的元素上，会呈现为 "hidden"。
+inherit	规定应该从父元素继承 visibility 属性的值。
+
+内联标签可继承
+letter-spacing、word-spacing、white-space、line-height、color、font、font-family、font-size、font-style、font-variant、font-weight、text-decoration、text-transform、direction
+常用的：
+line-height 行高
+color
+font 过期了
+font-family 设置字体的样式，黑体。。
+font-size
+font-weight 是否加粗
+text-decoration 对文本修饰，下划线，上划线等
+块级标签可继承
+text-indent 首行缩进
+text-align  水平居中
+列表标签可继承
+list-style、list-style-type、list-style-position、list-style-image
+常用的：list-style 列表的属性，列表的类型，主要用途是去除列表左边的标符号
+
+不可继承属性
+常用的：
+display、margin、border、padding、background
+height、min-height、max-height、width、min-width、max-width
+overflow、position、left、right、top、bottom、z-index
+float
+不常用的：
+clear
+table-layout、vertical-align
+page-break-after、page-bread-before
+unicode-bidi
