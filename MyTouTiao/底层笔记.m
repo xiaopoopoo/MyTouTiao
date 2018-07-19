@@ -9092,3 +9092,92 @@ margin :10px; 4个外边距都为10px
    <p>辅助</p>
 </body>
 </html>
+
+
+css新增的一些特性
+
+可以设置标签透明度：
+
+rgba透明度 RGB(红色R+绿色G+蓝色B),RGBA则在其基础上增加了Alpha通道，可用于设置透明值
+background-color: rgba(255,0,0,1.0);
+
+块阴影与圆角阴影
+box-shadow  text-shadow
+ /*块阴影*/
+ box-shadow: 10px 10px  10px purple;//水平（必选），cui直（必选） ，阴影朦胧，阴影颜色
+/*文字阴影*/
+text-shadow: 10px 10px 9px purple;
+
+圆角
+border-radius
+border-top-left-radius: 100px;
+border-bottom-right-radius: 100px;
+
+边框图片
+border-image
+
+
+形变 动画
+transform: none | <transform-function>[<transform-fuction>]
+
+
+  <title>CSS3新增的特性</title>
+    <style>
+        div{
+           width: 200px;
+           height: 80px;
+           margin: 30px;
+           background-color: rgba(255,0,0,1.0);
+            /*块阴影*/
+           box-shadow: 10px 10px  10px purple;
+            /*设置圆角*/
+           /*border-radius: 20px;*/
+            border-top-left-radius: 100px;
+            border-bottom-right-radius: 100px;
+
+        }
+
+        div:hover{
+            /*设置不透明度*/
+            opacity: 0.1;
+        }
+
+
+        /*.test1{*/
+            /*background-color: rgba(255,0,0,1.0);*/
+        /*}*/
+
+        /*.test2{*/
+            /*background-color: rgba(255,0,0,0.8);*/
+        /*}*/
+
+        /*.test3{*/
+            /*background-color: rgba(255,0,0,0.6);*/
+        /*}*/
+
+        /*.test4{*/
+            /*background-color: rgba(255,0,0,0.4);*/
+        /*}*/
+
+        /*.test5{*/
+            /*background-color: rgba(255,0,0,0.2);*/
+        /*}*/
+
+        .test6{
+            color: red;
+            font-size: 200px;
+            /*文字阴影*/
+            text-shadow: 10px 10px 9px purple;
+        }
+    </style>
+</head>
+<body>
+   <div class="test1">1</div>
+   <div class="test2">2</div>
+   <div class="test3">3</div>
+   <div class="test4">4</div>
+   <div class="test5">5</div>
+
+   <p class="test6">SeeMyGo</p>
+</body>
+</html>
