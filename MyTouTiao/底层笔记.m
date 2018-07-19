@@ -8949,3 +8949,146 @@ clear
 table-layout、vertical-align
 page-break-after、page-bread-before
 unicode-bidi
+
+其它css属性：
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        .test1{
+            font-family: sans-serif;
+            font-weight: bolder;
+            /*添加到文本的修饰*/
+            text-decoration: line-through;
+        }
+
+        p.test2{
+            width: 250px;
+            height: 100px;;
+            background-color: orange;
+            /*首行缩进*/
+            text-indent: 2%;
+            /*处理超出的内容:hidden直接裁剪*/
+            overflow: scroll;
+        }
+
+        a{
+            text-decoration: none;
+        }
+
+        ul{
+            list-style: none;
+        }
+
+        div.test3{
+            /*no-repeat:不平铺*/
+            background: url("images/bg.jpeg") no-repeat;
+            background-size: cover;
+            width: 500px;
+            height: 150px;
+        }
+    </style>
+</head>
+<body>
+    <p class="test1">我是段落标签</p>
+    <p class="test2">我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签我是段落标签</p>
+
+    <a href="#">百度一下,你就知道</a>
+
+    <ul>
+        <li>1122121212121</li>
+        <li>1122121212121</li>
+        <li>1122121212121</li>
+        <li>1122121212121</li>
+    </ul>
+
+    <div class="test3">设置背景</div>
+</body>
+</html>
+
+盒子模型：每一个标签相当于一个盒子
+content：装的文字图片
+往外padding:盒子与内容之间的填充
+boder:边框
+margin:盒子与盒子之间
+
+标准的盒子模型： 
+content  padding-top padding-left padding-right padding-bottom
+boder-top boder-left boder-right boder-bottom
+margin-top margin-left margin-right margin-bottom
+
+在goole,firefox,safair等支持3c标准的浏览器上，盒子的大小是content的大小
+但在360等是支持ie标准的协议有所不同，盒子大小是算上boder为基础的
+
+content的属性有哪些：
+height  设置元素高度
+max-height  设置元素最大高度，考虑到兼容性，最大上限
+max-width
+min-height  设置元素最小高度
+min-width
+width
+
+padding的属性：
+padding  设置所有的边距距离
+padding-bottom
+padding-left
+padding-right
+padding-top
+
+padding :10px 5px 15px 20px; 上右下左
+padding :10px 5px  上下10px 左右5px
+padding :10px 5px 15px ; 上10px右左5px下15px
+padding :10px; 4个内边距都为10px
+
+
+border属性：
+border:5px solid red;   宽度 样式 颜色
+border-radius: 边框圆解
+
+margin属性：
+margin  所有外边距属性
+margin-bottom 下边距属性
+margin-left
+margin-right
+margin-top
+
+margin :10px 5px 15px 20px; 上右下左
+margin :10px 5px  上下10px 左右5px
+margin :10px 5px 15px ; 上10px右左5px下15px
+margin :10px; 4个外边距都为10px
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>HTML的盒子模型</title>
+    <style>
+        *{
+            margin: 0;
+        }
+
+        div{
+            background: red;
+            width: 250px;
+            height: 140px;
+            /*设置边框*/
+            border: 2px solid black;
+            /*设置内边距*/
+            padding:10px;
+            /*设置外边距*/
+            margin: 30px;
+        }
+        p{
+            background-color: blue;
+            width: 200px;
+            height: 130px;
+        }
+    </style>
+</head>
+<body>
+   <div>演示盒子模型</div>
+   <p>辅助</p>
+</body>
+</html>
