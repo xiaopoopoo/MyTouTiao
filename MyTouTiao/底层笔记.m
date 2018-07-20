@@ -9181,3 +9181,211 @@ transform: none | <transform-function>[<transform-fuction>]
    <p class="test6">SeeMyGo</p>
 </body>
 </html>
+
+css脱离标准流  布局
+什么是标准流布局？
+从上到下，从左到右的布局
+脱离标准流：
+float属性的常用取值有:
+left：脱离标准流，浮动在父标签的最左边
+right：脱离标准流，浮动在父标签的最右边
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Float浮动-脱离标准流</title>
+    <!--
+      注意:
+      任何标签只要一浮动,类型就会被转为行内-块级标签
+    -->
+    <style>
+        #main{
+            background-color: red;
+            width: 500px;
+            height: 200px;
+        }
+
+        .test1{
+            background-color: blue;
+            /*浮动在父标签的左边*/
+            float: left;
+            width: 30px;
+            height: 60px;
+        }
+
+        .test2{
+            background-color: yellow;
+            float: right;/*浮动在父标签的右边*/
+        }
+
+        .test3{
+            background-color: purple;/*因为1,2的浮动，它的起点从div1右边开始，终点从div2左边结束*/
+        }
+    </style>
+</head>
+<body>
+   <div id="main">
+       <div class="test1">1</div>
+       <div class="test2">2</div>
+       <div class="test3">3</div>
+   </div>
+</body>
+</html>
+
+
+position属性: 标签浮动在父标签的任何一个位置  ，子绝父相 原则，父亲改成相对，儿子改成绝对
+absolute 生成绝对定位元素，相对于static定位以外的第一个父元素进行定位 ，会找父标签的position属性，如果是static，不会定位，继续找到一个不是static的父标签进行定位，如果找到body还未找到，相对于body定位
+         位置通过:left top right bottom
+fixed    生成绝对定位的元素，相对于浏览器窗口定位
+         位置通过：left top right bottom
+relative 生成相对定位元素，相对于其它正常位置进行定位
+         left:20 会向元素的left位置添加你像素
+static   默认值，没有定位，元素出现在正常的流中（忽略top,bottom,left,right,z-index声明）
+inherit  规定应该从父元素继承position属性的值
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <!--子绝父相-->
+    <style>
+        *{
+            margin:0;
+        }
+        div.test1{
+           background-color: red;
+           height: 50px;
+            /*相对浏览器进行定位*/
+           position: fixed;
+           bottom:0;
+           width: 100%;
+
+        }
+
+        div.test2{
+            margin:100px;
+            width: 200px;
+            height: 150px;
+            background-color: greenyellow;/*top: 20px;会找父标签的position属性，如果不是static，不会定位，继续找到一个是static的父标签进行定位，如果找到body还未找到，相对于body定位,通过margin定位*/
+
+            position: relative;
+        }
+
+        div.test3{
+            width: 100px;
+            height: 40px;
+            background-color: purple;
+
+            position: absolute;
+            /*top: 20px;会找父标签的position属性，如果是static，不会定位，继续找到一个不是static的父标签进行定位，如果找到body还未找到，相对于body定位*/
+            left: 0;
+            bottom:0;
+        }
+    </style>
+</head>
+<body>
+   <div class="test1">定位到浏览器的尾部</div>
+
+   <div class="test2">
+       <div class="test3">212121</div>
+   </div>
+</body>
+</html>
+
+
+居中：水平居中 垂直居中
+一个标签要居中，需要在它的父类进行设置
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>HTML标签的居中</title>
+    <!--
+      水平居中:
+       适用于行内标签和行内-块级标签: text-align 
+       适用于块级标签水平居中:  margin:0 auto;
+
+      垂直居中:
+      适用于行内标签和行内-块级标签: line-height
+      适用于块级标签: position left top tanslate
+    -->
+    <style>
+        #main{
+            background-color: red;
+            width: 300px;
+            height: 200px;
+            /*垂直居中:行高 这个行高就应该是内容的高度200px*/
+            line-height: 200px;
+
+            /*水平居中:适用于行内标签和行内-块级标签*/
+            text-align: center;
+
+            position: relative;
+        }
+
+        span{
+            background-color: blue;
+        }
+
+        .test1{
+            background-color: yellow;
+            width: 100px;
+            height: 50px;
+            line-height: 50px;
+            /*块级标签---水平居中*/
+            /*margin-left: 100px;*/
+            /*margin-left: auto;*/
+            /*margin-right: auto;*/
+            margin:0 auto;
+
+            position: absolute;
+            left:50%;
+            top:50%;
+            transform: translate(-50%, -50%);/*块级标签平移*/
+        }
+    </style>
+</head>
+<body>
+<!--水平居中  垂直居中-->
+
+   <div id="main">
+      <!--行内标签-->
+      <!--<span>行内标签</span>-->
+
+       <!--行内-块级标签-->
+       <!--<button>我是按钮</button>-->
+
+       <!--块级标签-->
+       <div class="test1">qwqwqw</div>
+   </div>
+</body>
+</html>
+
+
+css属性补充：
+box-sizing: border-box;
+默认属性是：content-box;
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        input{
+            width: 500px;
+            height: 20px;
+            padding-left: 10px;//默认增加内边距是住外扩张，如果用border-box，内边距会往里扩张
+
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <input>
+</body>
+</html>
