@@ -3461,7 +3461,7 @@ CGContextStrokeLineSegments(context, point, 2);//绘制线段（默认不绘制�
 UIView,UIViewController继承自UIResponder，会沿着事件响应条向上传递，即是指向它的父容器传递,即nextResponder
 
 问题2
-同一手势，如点击事件，在父uiview和子uiview中都有实现，就会出现冲突
+手势冲突，同一手势，如点击事件，在父uiview和子uiview中都有实现，就会出现冲突
 
 问题3
 -(UIViewController *)getCurrentViewController{
@@ -8163,10 +8163,122 @@ IOS  https://github.com/shadowsocks/shadowsocks-iOS/releases
 Android  https://github.com/shadowsocks/shadowsocks-android/releases
 
 
+79、UITableView滑动删除
+ios11下tableView自定义侧滑删除图片
+2018年05月24日 18:19:14 阅读数：282更多
+个人分类： ios11问题 适配问题 tableView侧滑删除 图片改变颜色处理
+之前写ios11下tableView适配过程中遗留了一个问题,随后找到的了解决方法,一直忘了更新,具体的问题是在ios11下,自定义侧滑删除图片时,图片莫名其妙的被渲染成了白色,不管什么颜色的图片都会变成一样的白色,为此苦恼了很久,不清楚现在苹果是否修复了这个问题,在此记录一下解决方案
+
+主要的知识点在于不同版本下tableView的层级不同,我们需要取出最终的view,将它赋给一个button,然后我们去自定义这个button,达到更改样式的目的
+
+首先声明一个属性,记录当前需要删除的cell editingIndexPath 
+如果自定义的删除中只需要图片,不需要文字,就用下面的方法去掉文字
+
+- (NSString *)tableView:(UITableView *)tableView titleForDeleteConfirmationButtonForRowAtIndexPath:(NSIndexPath *)indexPath {
+    //    return @"删除";
+
+    return @"          ";
+}
+然后在这两个方法中分别赋值和置空
+
+- (void)tableView:(UITableView *)tableView willBeginEditingRowAtIndexPath:(NSIndexPath *)indexPath{
+    self.editingIndexPath = indexPath;
+    [self.view setNeedsLayout];   // 触发-(void)viewDidLayoutSubviews
+}
+
+- (void)tableView:(UITableView *)tableView didEndEditingRowAtIndexPath:(NSIndexPath *)indexPath{
+
+    self.editingIndexPath = nil;
+}
+控制器中重写这个方法
+
+- (void)viewDidLayoutSubviews{
+    [super viewDidLayoutSubviews];
+
+    if (self.editingIndexPath){
+        [self configSwipeButtons];
+    }
+}
+核心的方法,在这里区分了ios11以及8到10的不同情况
+
+#pragma mark - configSwipeButtons
+- (void)configSwipeButtons{
+    // 获取选项按钮的reference
+    if (@available(iOS 11.0, *)){
+
+        // iOS 11层级 (Xcode 9编译): UITableView -> UISwipeActionPullView
+        for (UIView *subview in self.tableView.subviews)
+        {
+            NSLog(@"%@-----%zd",subview,subview.subviews.count);
+            if ([subview isKindOfClass:NSClassFromString(@"UISwipeActionPullView")] && [subview.subviews count] >= 1)
+            {
+                // 和iOS 10的按钮顺序相反
+
+                subview.backgroundColor = KBackgroundColor_F4;
+                UIButton *deleteButton = subview.subviews[0];
+                [self configDeleteButton:deleteButton];
+            }
+        }
+    }else{
+        // iOS 8-10层级: UITableView -> UITableViewCell -> UITableViewCellDeleteConfirmationView
+        JKMineAddressCell *tableCell = [self.tableView cellForRowAtIndexPath:self.editingIndexPath];
+        for (UIView *subview in tableCell.subviews)
+        {
+            if ([subview isKindOfClass:NSClassFromString(@"UITableViewCellDeleteConfirmationView")])
+            {
+                UIView *confirmView = (UIView *)[subview.subviews firstObject];
+
+                //改背景颜色
+
+                confirmView.backgroundColor = KBackgroundColor_F4;
+
+                for (UIView *sub in confirmView.subviews)
+                {
+                    //添加图片
+                    if ([sub isKindOfClass:NSClassFromString(@"UIView")]) {
+
+                        UIView *deleteView = sub;
+                        UIImageView *imageView = [[UIImageView alloc] init];
+                        imageView.image = [UIImage imageNamed:@"address_cell_delete"];
+                        [deleteView addSubview:imageView];
+
+                        [imageView mas_makeConstraints:^(MASConstraintMaker *make) {
+                            make.centerX.equalTo(deleteView);
+                            make.centerY.equalTo(deleteView);
+                        }];
+                    }
+                }
+                break;
+            }
+        }
+    }
+}
+其实这里的主要思路就是自己重写了一个button,对这个button进行自定义,然后显示出来的就是你自定义的这个button样式
+
+- (void)configDeleteButton:(UIButton*)deleteButton{
+    if (deleteButton) {
+        [deleteButton setImage:[UIImage imageNamed:@"需要的图片样式"] forState:UIControlStateNormal];
+        [deleteButton addTarget:self action:@selector(deleteAction:) forControlEvents:UIControlEventAllTouchEvents];
+        [deleteButton setBackgroundColor:KBackgroundColor_F4];
+
+    }
+}
+最后在这里执行删除的逻辑
+
+// 点击左滑出现的按钮时触发
+-(void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+//执行删除逻辑
+}
+
+//按钮的点击操作
+- (void)deleteAction:(UIButton *)sender{
+    [self.view setNeedsLayout];
+    [sender setBackgroundColor:KBackgroundColor_F4];
+}
+并且这里支持ios11的快速左滑触发删除的功能,将上述的代码分别集成到包含tableView的控制器中,就可以达到最终的目的
 
 
-
-79、html5学习
+80、html5学习
 
 框架：
 sencha-touch
