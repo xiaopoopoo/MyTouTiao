@@ -8278,6 +8278,256 @@ ios11下tableView自定义侧滑删除图片
 并且这里支持ios11的快速左滑触发删除的功能,将上述的代码分别集成到包含tableView的控制器中,就可以达到最终的目的
 
 
+
+
+80、每一个网络请求封装成对象
+直接封装一个简易的tool，里面直接调用AF，返回responseObject直接返回， 这
+样不行吗， 为什么要弄这么麻烦？
+显而易见的优点大概有以下几点：
+
+1，前后隔离AFNetworking，以后如果升级AF或者替换其他框架， 只需要改动直接与AF接触的网络请求类，避免对项目中业务代码产生影响（半小时完成从AF2.6升级AF3.0，重度使用的三方框架一般都要隔离一下）
+
+2，将每个接口抽象成一个类，易于管理，按每个接口的需求构造请求（比如有的接口要缓存，有的接口不要缓存）
+
+3，所有接口调用都经过网络请求，可以方便的在基类中处理公共逻辑（比如项目全部完成了，突然要用请求参数排序，加盐等方式加密）
+
+4.不多次创建请求类 防止内存泄漏
+
+5.通知中心 可通知所有关心此请求 请求失败还是成功 可完全知道是那次请求 和那次请求的具体参数 和请求来的数据
+
+6.数据同步很方便 （例如点赞 收藏等功能）
+
+
+
+81、IOS UITableView的展开与收缩、折叠功能
+表格视图的展开与收缩，就像腾讯QQ的好友列表的功能一样在开发中我们常常用到。实现的思路有两个： 
+1.定义一个分组的tableView，在头部视图上添加tap手势触发展开与收缩的事件，声明bool值或者标识符记录展开与收缩的状态。当 tableView展开的时候，刷新那一组的cell高度为大于0的数值，那么就展开了。当tableView收缩的时候，刷新那一组的cell高度等于0,那么就收缩了。 
+2.定义一个分组的tableView，在头部视图上添加tap手势触发展开与收缩的事件，声明bool值或者标识符记录展开与收缩的状态。当 tableView展开的时候，使用关键代码[self.tableView insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationTop],(就是在相应的分组当中插入cell)那么就展开了。当tableView收缩的时候，使用关键代码[self.listTable deleteRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationBottom],（也就是在相应的分组中删除所有的cell）那么就收缩了。
+
+第一种方法如下：
+
+ #import "ViewController.h"
+ #import "SectionHeadView.h"
+ #import "CustomerTableViewCell.h"
+
+define COLOR_RGB(_R,_G,_B,_A)  [UIColor colorWithRed:_R/255.0 green:_G/255.0 blue:_B/255.0 alpha:_A]
+
+@interface ViewController ()<UITableViewDelegate,UITableViewDataSource>{
+    NSArray        *_dataSource;
+    NSArray        *shopNameArr;
+    NSMutableArray *openArr;
+}
+
+@property (nonatomic, strong)UITableView *myTableView;
+
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [self getSources];
+    [self initalizeUserInterface];
+}
+
+- (void)getSources{
+
+    _dataSource = @[@[@"周为",@"李超",@"周为",@"李超",@"张路",@"12",@"周为",@"李超",@"张路",@"12",@"张路",@"12",@"34",@"56",@"78",@"910"],@[@"唐进",@"周为",@"李超",@"张路",@"12",@"刘虎",@"李源",@"樊亮",@"周为",@"李超",@"张路",@"12",@"周为",@"李超",@"张路",@"12"],@[@"周心云",@"周为",@"李超",@"张路",@"12",@"周为",@"李超",@"张路",@"12",@"周为",@"李超",@"张路",@"12",@"周为",@"李超",@"张路",@"12",@"周为",@"李超",@"张路",@"12"]];
+    shopNameArr = @[@"我的室友",@"睿峰朋友",@"班主任"];
+    openArr = [@[] mutableCopy];
+
+    for (int i = 0; i < shopNameArr.count; i++) {
+
+        [openArr addObject:@"0"];
+
+    }//记录展开状态
+
+}
+
+- (void)initalizeUserInterface{
+
+    self.automaticallyAdjustsScrollViewInsets =NO;
+    [self.view addSubview:self.myTableView];
+}
+
+//设置多少组
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return _dataSource.count;
+}
+
+//设置每组多少行
+-(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    NSArray *arr = _dataSource[section];
+    return arr.count;
+}
+
+//设置每行多高
+-(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if ([[openArr objectAtIndex:indexPath.section]isEqual:@"0"]) {
+        return 0;
+    }else{
+        return 45;
+    }
+
+}
+
+//调整section头部的间距
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+    return 30;
+}
+
+// 自定义头部视图
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+
+    //重用头部视图
+    static NSString *HeadViewIdentifier = @"HeadViewIdentifier";
+    SectionHeadView *headView = [[SectionHeadView alloc]initWithReuseIdentifier:HeadViewIdentifier];
+    headView.realShopName.text = [shopNameArr objectAtIndex:section];
+    headView.rightImageView.image = [UIImage imageNamed:@"catalogs_arrow@2x.png"];//给右边图片
+    //使用block修饰
+    __block SectionHeadView *weakHeadView = headView;
+    headView.TapCallBack = ^(void){
+
+    //NSLog(@"回调组的点击手势：%@",[shopNameArr objectAtIndex:section]);
+
+        if ([[openArr objectAtIndex:section]isEqual:@"0"]) {
+
+            [openArr setObject:@"1" atIndexedSubscript:section];
+
+            [UIView animateWithDuration:0.4 animations:^{
+
+                weakHeadView.rightImageView.transform = CGAffineTransformMakeRotation(M_PI);
+
+            } completion:^(BOOL finished) {
+               //展开的时候为了防止右边尖头动画执行完毕再弹回来，我们这里刷新的是当前组下面的cell
+                NSMutableArray *arr = [@[] mutableCopy];
+                NSArray *brr = _dataSource[section];
+                for (int i = 0; i < brr.count; i++) {
+
+                    [arr addObject:[NSIndexPath indexPathForRow:i inSection:section]];
+
+                }
+                //刷新特定的cell
+                [self.myTableView reloadRowsAtIndexPaths:arr  withRowAnimation:UITableViewRowAnimationRight];
+            }];
+
+        }else if ([[openArr objectAtIndex:section]isEqual:@"1"]){
+
+            [openArr setObject:@"0" atIndexedSubscript:section];
+
+            [UIView animateWithDuration:0.4 animations:^{
+
+                weakHeadView.rightImageView.transform = CGAffineTransformMakeRotation(0);
+
+            } completion:^(BOOL finished) {
+
+                //刷新某一组
+                [self.myTableView reloadSections:[NSIndexSet indexSetWithIndex:section] withRowAnimation:UITableViewRowAnimationLeft];
+            }];
+        }
+
+    };
+    return headView;
+}
+
+//处理删除逻辑
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath{
+
+    if (editingStyle != UITableViewCellEditingStyleDelete) {
+        //如果不是删除状态直接返回
+        return;
+    }
+    NSLog(@"你真的删除了我");
+    //将编辑状态置为NO,一定要设置为NO才会有那个动画效果
+    [_myTableView setEditing:NO animated:YES];
+}
+
+-(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    static NSString *CellIdentifier = @"HomeCell";
+    CustomerTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
+    if (!cell) {
+        cell = [[CustomerTableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
+    }
+     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;/
+     cell.layer.masksToBounds = YES;//设置超出父视图的部分不显示，不设置会有出现重叠的问题
+     cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    cell.nameLabel.text = _dataSource[indexPath.section][indexPath.row];
+    return cell;
+}
+
+-(UITableView *)myTableView
+{
+    if (_myTableView == nil) {
+        _myTableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 64,375,603) style:UITableViewStylePlain];
+        _myTableView.delegate = self;
+        _myTableView.dataSource = self;
+//        _myTableView.backgroundColor = COLOR_RGB(239, 239, 244, 1);
+        _myTableView.separatorColor = [UIColor redColor];
+        _myTableView.sectionFooterHeight = 0.0;
+        //设置为不显示分割线过后，组上的分割线也会不显示
+        _myTableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    }
+    return _myTableView;
+}
+
+}
+第二种方法：这种方法更为高大上，效率也更高，更规范，推荐使用这种。- (void)cellInsertOrDelete:(BOOL)insert是一个点击分组头部视图的响应事件，参数为一个bool值用于判断是展开还是收缩。
+
+// 表格视图的删除与插入，删除就是收缩，插入就是展开。
+
+- (void)cellInsertOrDelete:(BOOL)insert{
+
+//    1. 这个方法用于在调用插入，删除，选择方法时，同时有动画效果。
+//    2. 用endUpdate能动画改变行高，而无需relaod这个cell。
+//    3. beginUpdate和endUpdate成对使用，其包含的block里面，如果没有插入删除，选择的方法被使用。有可能导致这个table view的一些属性失效，例如行的数量。
+//    4. 不应该在这个block范围里调用 reloadData，或者reloadRowsAtIndexPaths。一旦使用，必须自己执行和管理自己的动画效果。
+//    第三点和第四点比较重要。也是导致闪退的原因。reloadData会引起，获取单元格高度，以及cell的重新加载。这会导致一些动画对应的行号产生变化。从而闪退。
+
+//    beginUpdates方法和endUpdates方法是什么呢？
+//
+//    这两个方法，是配合起来使用的，标记了一个tableView的动画块。
+//
+//    分别代表动画的开始开始和结束。
+//
+//    两者成对出现，可以嵌套使用。
+//
+//    一般，在添加，删除，选择 tableView中使用，并实现动画效果。
+//
+//    在动画块内，不建议使用reloadData方法，如果使用，会影响动画。
+
+//    一般在UITableView执行：删除行，插入行，删除分组，插入分组时，使用！用来协调UITableView的动画效果。
+    [self.listTable beginUpdates];
+    NSMutableArray *indexPaths = [NSMutableArray arrayWithCapacity:self.datas.count];
+    [self.datas enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        NSIndexPath *indexP = [NSIndexPath indexPathForRow:idx inSection:0];
+        [indexPaths addObject:indexP];
+    }]；
+    if (insert) {
+        [self.listTable insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationTop];
+    }else{
+        [self.listTable deleteRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationBottom];
+    }
+    [self.listTable endUpdates];
+}
+再次解释下： 
+/* 
+UITableView的 beginUpdates方法和endUpdates方法是什么呢？
+
+这两个方法，是配合起来使用的，标记了一个tableView的动画块。 
+分别代表动画的开始开始和结束。 
+两者成对出现，可以嵌套使用。 
+一般，在添加，删除，选择 tableView中使用，并实现动画效果。 
+在动画块内，不建议使用reloadData方法，如果使用，会影响动画。
+
+如果我们的UITableView是分组的时候，我们如果删除某个分组的最后一条记录时，相应的分组也将被删除。所以，必须保证UITableView的分组，和cell同时被删除。 
+所以，就需要使用beginUpdates方法和endUpdates方法，将要做的删除操作“包”起来。 
+*/
+
+
 80、html5学习
 
 框架：
@@ -8726,7 +8976,7 @@ input:focus{
  <div id="main">我是div标签</div>
  
 伪元素选择器：
-:first-letter 向文本的第一个字母添加特死样式
+:first-letter 向文本的第一个字母添加特殊样式
 :first-line  向文本的首行添加特殊样式
 :before 在元素之前添加内容
 :after  在元素之后添加内容
@@ -9501,3 +9751,5 @@ box-sizing: border-box;
     <input>
 </body>
 </html>
+
+    
