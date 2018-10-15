@@ -8656,7 +8656,7 @@ src是引入,是必需的,没有这个资源,标签就用不起来.(比如<img>,
 单标签(<img>,<meta>,<input>...)
 
 
-html5中新增标签
+day1-08 html5中新增标签
 
                    
 
@@ -8829,7 +8829,7 @@ css的三种书写形式：
 </body>
 </html>
 
-外部样式：在单独的CSS文件中书写，然后在网页中用link标签引用，可以共享使用css样式
+day1-10 外部样式：在单独的CSS文件中书写，然后在网页中用link标签引用，可以共享使用css样式
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9752,4 +9752,6 @@ box-sizing: border-box;
 </body>
 </html>
 
-    
+
+  day2-08  百度上部分
+  
