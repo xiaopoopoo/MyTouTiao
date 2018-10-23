@@ -55,3 +55,141 @@ src.zip  java的源代码，感兴趣可欣赏
 在环境变量中，用户变量和系统变量（所有用户都可以用），找到path路径，编辑输入javac的路径，即所在的位置
 建议在用户变量中新建path路径
 建议在sys32删除与java有关的文件，避免引起其它问题
+
+
+16.第一个java程序
+
+在控制台输出一句话
+1：在目录下新建文本文档，123.java
+2：写代码
+class Hello{
+	public static void main(String[] args){
+	    System.out.println("hello word");
+	}
+}
+3:打开命令窗口，进入文件目录，对	123.java进行编译
+javac 123.java
+执行成功后会生成Hello.class字节码文件
+启动java虚拟机运行Hello.class
+java Hello  //不是 java Hello.class  
+
+
+17.Java的编译和运行机制
+JAVA工具启动虚拟机，执行某一份class代码
+java 带有main方法的类名，main方法是程序的入口
+java是编译性及解释性语言，javac编译  java虚拟机解释
+给别人项目一般只给字节码class文件
+
+
+18.CLASSPATH环境变量
+因为class文件在d盘，后来剪切到c盘
+java虚拟机从哪里去找class文件
+默认是在当前路径下去找
+在我的电脑，高级，环境变量，新建名为CLASSPATH，把字节码路径拷过去
+java hello.class 执行就会去这个路径去找，不在再默认是当前路径下去找
+以后有工具不再需要注意这一点
+java_home是针对linux才需要配置
+java5之前都需要配CLASSPATH，之后不需要配置
+如果把java源文件和字节码文件放到不同文件夹
+javac -d path 123.java //编译到某个路径下
+java -classpath  path hello.class//执行某个文件下类文件
+
+19.Java基本语法
+1.严格区分大小写
+2.一个java文件可以定义多个类，如果有三个类，编译出来三个class文件
+class Hello{
+	public static void main(String[] args){
+	    System.out.println("hello word");
+	}
+}
+class a{
+	public static void main(String[] args){
+	    System.out.println("hello word");
+	}
+}
+class b{
+	public static void main(String[] args){
+	    System.out.println("hello word");
+	}
+}
+Hello.class a.class b.class 编译出的结果
+
+public 的类名必须与文件名相同
+但是一个文件中多个类，只有一个类可以用public修饰,且这个java文件名必须和public 的这个类名相同
+如：下面的代码不能放在123.java中，只能放到Hello.java中
+public class Hello{
+	public static void main(String[] args){
+	    System.out.println("hello word");
+	}
+}
+3.一个类必须运行，必须有main函数，main方法是程序入口
+
+编程建议，一个java文件中定义一个类，用public修饰起来，保证一个文件一个类
+
+
+20.Java的三大注释
+注释是给程序员看的，编译后就没了
+单行注释：//注释内容 
+多行注释：/*注释内容*/
+文档注释：/**注释内容*/
+文档注释可以生成api文档
+多行注释和文档注释彼此之间都不能多行嵌套
+xjad反编译工具可以查看字节码文件
+
+21.Java中的关键字和保留字
+关键字：一些事先定义的，有特殊含义和用途的单词
+保留字：一些事先定义好的，只是暂时没用，未来可能要用的一些单词  goto const
+关键字和保留字都是小写组成，边学边记
+注意：java无sizeof goto const关键字
+不纠结 true false null属于字面量，还是直接量
+
+22.Java中的语言分隔符
+汉语用符号断句
+java也一样，一句话结束用分号； 花括号开始花括号结束时不需要分号； 花括号已经很清楚的解释了是代码的分隔
+必须是半角下的英文符号
+
+23.Java的标识符规范
+为了增强代码可读性，程序员自己定义的符号
+标识符命名规则
+1。以字母，数字，下划线，$组成，但不能以数字开头
+2。大小写敏感
+3。不得使用java中的关键字和保留字
+4，不用java api的类名作为自己的类名
+
+
+24.Editplus工具
+这个工具能让我们知道哪个是关键字，保留字，api类名
+通过颜色进行区分
+
+25.今日小结
+
+
+day2
+
+1.字面量和常量
+常量就是一个值，不会变，如 123，45  整数 小数
+字面量常量（直接量）：直接给出的一个值，可以整数，小数，true false等
+final定义的变量：
+
+2.引出变量
+public class Hello{
+	public static void main(String[] args){
+	    System.out.println(6+3);//9
+	}
+}
+签合同用jia方 yi方
+
+3.变量的定义和基本使用
+表示存储空间，可以存放某一类型常量，没有固定值，并可以重复使用
+定义变量格式：
+数据类型 变量名称;
+变量必须初始化才能使用，初始化才是真正的在内存中分配一个空间
+public class Hello{
+	public static void main(String[] args){
+	   int age;
+	   age = 17;
+	   int age1 = 18;
+	}
+}
+
+
