@@ -253,10 +253,91 @@ public class Hello{
 4g功能
 4g信号覆盖广，流量多，快
 
-2_(了解)浅谈Android
+2_(了解)浅谈Android 
+
+
+
+3_(了解)Android 系统体系结构
+
 1。底层：linux kernel linux内核  使用c去操作代码，能够操作硬件的代码称之为驱动代码
 2。硬件抽象层：hareware abstraction layer 开源的安卓，各厂商可以定制，为了让别的厂商定制的功能代码保密，会在这个抽象层去开发
 3。libraries：用c语言对1，2层封装代码，便于程序员去操作。
 4。application framework:框架层，用java代码写的，java程序员直接用java操作，不用再去java调用libraries这一层，因为操作难度高
 5。applications：平时写代码主要在这一层去写
-java代码调用c代码，是因为runtime层，这个相当于java虚拟机。davlike虚拟机去作这个事
+java代码调用c代码，是因为runtime层，这个相当于java虚拟机（orace打官司）。davlike虚拟机去作这个事，两个虚拟机都可实现java和c调用，
+都使用了openjdk,
+jvm与dvm虚拟机区别
+编译：
+jvm: java->class_>jar
+dvm: java->class->dex//dex是压缩版的，把所有相同的方法放到一个常量池中，使用这个方法通过id去拿，比如a,b两个类都有一个相同的方法，就可以优化
+架构：
+jvm: 基于栈的结构
+dvm：基于寄存器的结构
+
+4_(掌握)开发工具介绍
+android standard develop kits 安卓sdk，安卓开发工具集
+两种工具集：
+1。android-adt-bundle 基础课基本上以这个工具为基准
+下载android-adt-bundle，打开文件夹，有一个sdk manager.exe
+配置环境变量，打开用户环境变量
+变量名ANDROID_SDK_HOME 变量值：d:\android-adt-bundle\sdk
+变量名path 变量值：;%ANDROID_SDK_HOME%\platform-tools;%ANDROID_SDK_HOME%\tools 两个路径引入
+cmd 找开输入adb，如果出现信息就成功了，adb命令这里比较重要，通过这样配置后，adb命令就可以使用了
+打开eclipse，会出现找不到path，是因为java环境变量没有配置好
+变量名：JAVA_HOME 变量值：d:\java\jkd1.1.0_79
+变量名path 变量值:;%JAVA_HOME%\bin
+打开sdk manager.exe，可以下载和安装更新skd，下载太慢一般不使用
+
+打开eclipse目录，eclipse.ini 配置eclipse内存等
+这个eclipse是自带了adt插件的eclipse，打开plugin目录，发现多了com.android.ide.eclipse.adt等一系列东西
+安装插件后打开eclipse，才会用一些新的图标出现
+
+打开sdk目录，包含以下目录 .android add-ons build-tools docs extras platforms platform-tools samples sources system-images tools
+.android打开，有个avd目录，存放的是你创建的模拟器
+add-ons 存的goole的一些api，实现一些非正式的api,gool map google play
+build-tools 把class 文件编译成android某个版本
+docs  一些api的文档 搜踏得安卓文档比较好，网快
+extras 写了一个app 4。0写的，想在手机2.3版本使用，需要把这个extras放到里面去，提供一些在2.3版本没有的新技术的婉转作法
+platforms android-8(代表第8套api，安卓2.2) android-10 android-14 android-16  对应的是android的版本 有用，相针对哪个版本开发
+platform-tools tools都是android常用工具，adb.exe 管理模拟器，启动模拟器等  有用
+samples 显示的android每个版本的示例
+source  android的源码，是有关java层的源码 application framework 有用
+system-images 镜像工具，android系统的备份
+
+2.android studio
+
+
+
+5_(掌握)安卓模拟器
+eclipse 自带模拟器 android virtual device manager，点击可以创建一个模拟器，机型很多
+app只能给大多尺寸使用，一般开发前几年选480*800  近几年选720*1280，选了以后会显示这种屏幕出现在
+android最主流的版本是哪一个，cpu/abi  相当于电脑的处理器， keyboard,skin都是默认打上构的
+memory options:ram 内存 vm heap 堆内存，程序员自己生成的，表示单个程序的最大内存
+internal storage:手机内部存储空间大小，点ok则创建一个模拟器成功
+点运行，选择scale display to real size 表示模拟器可缩放
+查看eclipse是否与模拟器连接，选eclipse - show view - other
+弹出框有个android 文件夹，点击device，这时在下方出现一个devices
+会显示当前连接的模拟器
+
+genymotion模拟器  每次更新需要登录网站下载，不是很方便
+夜神模拟器  游戏厂商用来推扩游戏用的
+
+
+6_(掌握)DDMS与安卓环境定制
+eclipe右上角有个java，叫工作区。每个工作区都有不同的窗口，debug也是一个工作区，一个工作区有多个切换的视图
+今天了解一下另外的工作区，windows - open perspective - ddms工作区
+ddms 全称：dalvik debug monitor service 是android开发环境中的dalvik虚氛机调试监控服务。
+ddms里面包含了：device（设备） file explorer(文件管理)  emulator control(模拟器管理) logcat（日志）
+
+device只要模拟器出现，这里就会显示一个设备，模拟器打开后显示很多包名，每个包名代表一个应用。不管你打没打开，每个应用都会显示到这里，android希望每个应用都打开，下次再打开这个应用更快
+
+file explorer(文件管理) 里面有很多文件，和linux文件系统相似，不分c,d盘。每安装一个应用，都会在data-data目录下生成一个应用文件包，这叫内存储。右上角有两个按钮，一个是导入，一个是导出文件
+
+emulator control(模拟器管理，控制器) 只对eclipse自带的模拟器有效，选中自带的模拟器，在incoming number 输入手机号，可以发短信，打电话，模拟手机当前坐标位置
+
+logcat（日志）打印android的日志
+
+在开发里，在java工作区写完代码，又得切换到ddms工作区看日志，不方便，这里可以优化，把ddms用到的窗口放到java区来
+windows - show view - android -device 
+windows - show view - android -locat 
+这样子一个一个的添加进来
