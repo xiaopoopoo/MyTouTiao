@@ -341,3 +341,87 @@ logcat（日志）打印android的日志
 windows - show view - android -device 
 windows - show view - android -locat 
 这样子一个一个的添加进来
+加进来以后为了保证这几个窗口重新打开还存在，windows - perspective as 保存工作区，取个名称。
+
+7_(掌握)Helloworld
+创建android应用程序，首先右上角选中android工作空间，然后左边工作区右键，new-android application project
+需要填三项：
+application name:应用的名称
+project name:eclipse里项目名称
+package name:包名 com.123.www  点后面只能是英文
+minimum required sdk:最低版本的sdk 最低能兼容的版本 如，app主流版本4.4  兼容版本2.3  如果手机是1.6版本是不能用的
+target sdk:选当前市场最流行的一个版本
+compile with:编译版本 一般和目标版本一样
+theme  主题
+点击下一步：
+create project in workspace:是否要创建工作空间
+下一步：
+configure launcher icon 项目图标
+下一步：
+blank activity 选项不用项，直接确认 这里可以填写程序类的名称  activity name :mainactivity  layout name:activity_main 布局文件
+activity name:
+layout name:
+navigation type:
+项目创建成功：
+选右键运行：提示no compatible targets were found.do you wish to add a new android virtual device?
+提示没有目标模拟器。
+打开夜神模拟器
+点一下上节课添加的ddms模块，devices，可以查看到模拟器是否关联
+点右键--run as -- android application
+项目创建成功后有activity_main.xml mainactivity.java //两个文件
+activity_main.xml 可以修改界面，左边form widgets 很多控件，可以拖一个进来
+下边选graphical layout视图工具区 activity_main.xml代码区
+
+8_(掌握)Eclipse工程目录结构
+ src:（常用） 展开在包名下的文件：mainactivity.java
+ mainactivity.java刚进来的时候会调用oncreate方法，该方法会调用activity_main.xml视图
+ setcontentview(r.layout.activity_main)//将这个类和布局相关联
+ 以后安卓程序，如果写代码的部份所有都放到src下
+ 
+ gen:gen[generated java files] 译：自动生成的java文件，buildconfig.java r.java   
+                                                                                                                                                                                                                                                                                       
+ android 4.3:  android.jar 主流版本api的文档
+ 
+ android private libraries:  android-support-v4.jar
+ 
+ assets:存放资源文件，如html，视频，音频文件 这里存放的文件不会产生id，数据库的初始化，html，比较轻量级的视频放这里
+ 
+ bin:
+ 
+ libs:  android-support-v4.jar  这个jar包和上面 android private libraries的jar包一样的，libs和 android private libraries
+ 是相关联的。libs右键 - bulid path -add to build path可以添加新jar包，添加后android private libraries会有一个关于这个jar包的引用 
+ 
+ res:（常用）  资源存放文件，这里存放的文件会在R.java中产生一个id
+   //放图片的地方，适配不同手机会准备多张图片
+   drawable-hdpi
+   drawable-ldpi
+   drawable-mdpi
+   drawable-xhdpi
+   drawable-xxhdpi
+   
+   //界面也相当于是资源，所以这里放的是ui界面
+   layout
+      activity_main.xml
+      my_layout.xml
+
+   //每个应用都可以定制菜单，特别是在老版本的时候
+   menu
+       main.xml//菜单的配置在这个文件中定义的
+       
+   values  
+       dimens.xml   配置在不同手机屏幕，类似按钮尺寸等
+       strings.xml  配置应用所有的文字的，类似hello word 文字
+       styles.xml   配置应用的样式
+       colors.xml   新建一个颜色配置，以后所有颜色都可在这里配
+   values-sw600dp
+   values-sw720dp-land
+   values-v11
+   values-v14
+ 
+ 
+ androidmanifest.xml 整个应用的配置文件，包括包名，版本号。最低兼容版本等
+ 
+ ic_launcher-web.png
+ 
+ proguard-project.txt
+ project.properties
