@@ -425,3 +425,134 @@ activity_main.xml 可以修改界面，左边form widgets 很多控件，可以�
  
  proguard-project.txt
  project.properties
+ 
+
+9_(掌握)简单点击事件
+创建一个新的android项目，因为我的模拟器是2.2,所以创建选择minimum required sdk 最低适配版本是2.2
+建好以后在资源布局文件拖放一个按钮进来，功能点击按钮打日志
+在布局文件中
+首先通过id找到button
+<button 
+      android:id="@+id/btn"  //如果想创建一个id，选@+id/  如果是引用别人的id则@id/
+
+在gen文件目录下r.java中
+public static final int bnt = 0x7f0909;//会增加刚创建的那个id
+
+在cliclactivity.java文件中，one oncreate()程序启动时会调用
+获取按钮，绑定事件
+Button view =  (Button)findviewbyid(R.id.btn);
+button 继承于view 
+btn.setOnclicklisenr(new onClicllistener(){
+    @verride
+     public void onclick(view age){
+         System.out.println("onclick");
+     }
+); 
+
+
+10_(掌握)应用程序编译安装的过程
+ 为什么应用一下载就布置到了模拟器上，平时网上下载的应用是.apk格式
+ 在bin目录下，会编译生成应用的apk文件
+ 怎么把代码，图片打包成apk的
+ 
+ 程序安装过程：
+ 1.把所有的.java文件编译成.class文件 使用jdk中的javac命令 
+ 
+ 2.把所有的.class字节码文件打包合成一个文件classes.dex，这个classes.dex文件在bin目录下 这是一个class的压缩文件，不压缩会很大，压缩一千个类的同一个方法会压成一个方法，
+ 使用\sdk\build-tools\android-4.4\dx.bat工具，因为eclipse工具安装了adt插件，所以能帮忙找到这个工具
+ 
+ 3.根据资源id（r.java），生成一个bin目录下resources.ap_ 保存所有的资源信息
+ 
+ 4.把.dex文件，res目录下的资源文件，resources.ap_文件 asset目录下的文件合成一起打包成一个apk压缩包
+ 使用\sdk\build-tools\android-4.4\aapt.exe
+ 
+ 5.adb.exe负责把生成好的apk文件上传安装到手机里面
+ android debug bridge 安装调试桥 负责上传安装apk
+ 
+ adb命令
+ 安装一个应用程序
+ adb install xxx.apk
+ 
+ 卸载一个应用程序
+ adb uninstall com.xx.xx.xx
+ 
+ 进入手机linux系统
+ adb shell 刚可以使用shell 里面的所有命令 如ls-l  pwd命令
+ 
+ 杀死adb的调试桥，当调试桥不稳定的时候
+ adb kill-server
+ 
+ 启动adb的调试桥
+ adb start-server
+ 
+ 查看连接到电脑上的手机设备
+ adb devices
+ 查看当前有哪些设置
+ adb -s 127.0.0.1:62001 指令使用这个模拟器
+ 
+ 11_(掌握)点击事件的几种写法
+ 关闭项目，选中，右键，delete后出现弹框，不要构delete project contents on disk,构了是把本地项目都删除掉了
+ 导入项目，右键，import，出现弹框，不要选android，选general-existing projects,选路径，点ok导入。
+ 创建一个应用程序，最好用英文项目名称，
+ 在mainactivity.java中拖入按钮
+ 在cliclactivity.java文件中
+ Button view =  (Button)findviewbyid(R.id.btn);
+ 生成两个方法
+ oncreate()   oncreateoptionsmenu();//这个方法和res下menu/main.xml配合使用，点击菜单就会有弹出效果，一般不用就删除掉，现在的app 一般不用菜单
+ 在activity_main.xml放入一个按钮
+ 
+ 在mainactivity.java
+   //第一种按钮点击方式
+   public class MainActivity extends Activity implements OnClickListener{
+   @Override
+	protected void onCreate(Bundle savedInstanceState) {
+	
+ 	Button btn=(Button) findViewById(R.id.button1);
+	btn.setOnClickListener(this);
+		
+	@Override
+	public void onClick(View arg0) {
+		//Toast 吐司
+		//duration 就是弹出的时间
+		Toast.makeText(this, "还真的点我?", 800).show();
+	}
+	
+	//第二种按钮方式 匿名对象方式
+		Button btn2=(Button) findViewById(R.id.button2);
+		btn2.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View arg0) {
+				Toast.makeText(MainActivity.this, "点击事件2", 800).show();
+			}
+		});
+		
+	//第三种按钮方式
+		Button btn3=(Button) findViewById(R.id.button3);
+		btn3.setOnClickListener(new MyClickListener());
+		
+	  class MyClickListener implements OnClickListener{
+		@Override
+		public void onClick(View arg0) {
+			Toast.makeText(MainActivity.this, "点击事件3", 800).show();
+		}
+		
+	}
+	
+	//第四种方式，不要id找按钮
+	activity_main.xml中
+	    <Button 
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/button3"
+        android:layout_marginLeft="15dp"
+        android:layout_marginTop="46dp"
+        android:layout_toRightOf="@+id/button3"
+        android:onClick="btn4Click"//增加了这个属性
+        android:text="按钮4" />
+        
+	MainActivity.java中
+		//一般不推荐 写法比较Low
+	public void btn4Click(View v){
+		Toast.makeText(this, "按钮4", 800).show();
+	}
