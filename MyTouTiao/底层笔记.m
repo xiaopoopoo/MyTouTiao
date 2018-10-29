@@ -10,13 +10,13 @@ https://www.agora.io/cn/?utm_source=baidu&utm_medium=cpc 声卡网 sbpdcfn@126.c
     
     2.#pragma 用法
     忽略编译器警告
-    #pragma clang diagnostic push
+    #pragma clang diagnostic push//diagnostic 诊断
     #pragma clang diagnostic ignored "-Wgnu"
     注解
     #pragma mark - NSURLSessionDataTaskDelegate
     
     3.全局变量定义
-    FOUNDATION_EXPORT NSString * const AFNetworkingTaskDidFinishNotification; .h中
+    FOUNDATION_EXPORT NSString * const AFNetworkingTaskDidFinishNotification; .h中//引用.m中定义的全局变量
     NSString * const AFNetworkingTaskDidFinishNotification = @"com.alamofire.networking.task.resume"; .m中
     
     4.strong weak的使用
@@ -146,6 +146,7 @@ https://www.agora.io/cn/?utm_source=baidu&utm_medium=cpc 声卡网 sbpdcfn@126.c
   NSClassFromString(@"NSURLSessionTask")
   
   9.获取方法的指针并判断地址是否相等
+      IMP就是Implementation的缩写，顾名思义，它是指向一个方法实现的指针，每一个方法都有一个对应的IMP，所以，我们可以直接调用方法的IMP指针，来避免方法调用死循环的问题。
       IMP classResumeIMP = method_getImplementation(class_getInstanceMethod(currentClass, @selector(resume)));
       IMP superclassResumeIMP = method_getImplementation(class_getInstanceMethod(superClass, @selector(resume)));
       if (classResumeIMP != superclassResumeIM)
@@ -5659,7 +5660,8 @@ UDID 被弃用后，广大开发者需要寻找一个可以替代的 UDID，并�
 
 UUID + 自己存储
 
-UUID（Universally Unique IDentifier），通用唯一标示符，是一个32位的十六进制序列，使用小横线来连接：8-4-4-4-12，通过 NSUUID（iOS 6 之后）[NSUUID UUID].UUIDString 或者 CFUUID（iOS 2 之后） CFBridgingRelease(CFUUIDCreateString(kCFAllocatorDefault, CFUUIDCreate(kCFAllocatorDefault))) 来获取，但是每次获取的值都不一样，需要自己存储。
+UUID（Universally Unique IDentifier），通用唯一标示符，是一个32位的十六进制序列，使用小横线来连接：8-4-4-4-12，通过 NSUUID（iOS 6 之后）[NSUUID UUID].UUIDString 或者 CFUUID（iOS 2 之后） CFBridgingRelease(CFUUIDCreateString(kCFAllocatorDefault, CFUUIDCreate(kCFAllocatorDefault))) 来获取，
+但是每次获取的值都不一样，需要自己存储。
 
 推送 token + bundleID
 
