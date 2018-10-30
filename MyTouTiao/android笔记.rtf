@@ -562,5 +562,34 @@ btn.setOnclicklisenr(new onClicllistener(){
 	
 day2
 
-	
+01_(重点)View的属性
+  view是所有控件的父类，子类有如下:
+	文本按钮输入框
+	是非选择框
+	进度条
+	图片控件
+	滑动控件
+	日期时间选择器
+	webview
+	togglebutton
+	progressbar
+	edittext
+	选中一个控件的类名，按f4，左边窗口就会显示这个控件的继承关系
+ view有很多的属性，是所有子控件都通用的
+	1. 控件的宽高：（固定值 与两种状态）
+    android:layout_width="30dp"  | android:layout_width="wrap_content" //里面内容多大字体就有多大  | android:layout_width="match_parent"//匹配父控件有多大，则显示有多大 
+    android:layout_height="30dp"
+
+    2. 控件的可见度：（3种状态）
+    android:visibility="visible" | gone/invisible是不可见的，gone是真实的不可见，也不占位置，invisible，不可见，占了位置
+
+    3. 控件的背景：（颜色 图片）
+    android:background="#F00"  |  android:background="R.drawable.ic_lanucher" (引用图片，代码里面写法) | android:background="@drawable/ic_lanucher" (引用图片，xml文件里面写法)
+    android:background="#FF00" （第一个f表示透明度                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ）
+    4. 盒子模型：用dp，针对不同屏幕自动缩放，如果用px，每个屏幕都不同的px
+    android:layout_margin="10dp"
+    android:padding="5dp"
+    创建盒子模型xml，选中layout文件夹，点击左上角创建一个xml文件的图标，在弹出框选择linerlayout，输入box_layout
+    margin主要是你的控件在外边距位置android:layout_marginLeft |right |top|bottom |start| end
+	padding 时，控件内部的子控件距离这个控件的位置
 	
