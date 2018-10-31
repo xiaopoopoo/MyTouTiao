@@ -593,3 +593,142 @@ day2
     margin主要是你的控件在外边距位置android:layout_marginLeft |right |top|bottom |start| end
 	padding 时，控件内部的子控件距离这个控件的位置
 	
+02_View的属性与ViewGroup关系
+    如果设置android:layout_width="wrap_content" ，必须是里面有内容的，或者有子控件的，如果什么都没有系统无法计算出宽高
+    
+    <!-- 报错：如果让一个View直接添加子控件 是不允许-->
+    <Vie
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:background="#F00" >
+
+        <View
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:background="#0F0" />
+    </Vie>
+
+    
+    
+	<!-- 报错：此时 应该直接使用ViewGroup控件 ，ViewGroup是view的子类，虽然ViewGroup可以包括子控件，但是这里面系统不知道子控件view具体应该怎么排放位置-->
+    <ViewGroup
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:background="#F00" >
+
+        <View
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:background="#0F0" />
+    </ViewGroup>
+
+    2011年的时候有5大布局，这5大布局其时是ViewGroup的子类
+    AbsoluteLayout  绝对布局
+    AdapeterView
+    DrawerLayout
+    FragmentBreadCrumbs
+    FrameLayout    帧布局
+    GridLayout
+    LinearLayout   线性布局  //使用比较多
+    TableLayout    表格布局
+    RelativeLayout 相对布局  //使用比较多
+    
+	<!-- 正确：此时 应该直接使用ViewGroup控件的子类控件，及五大布局 ，ViewGroup是view的子类，虽然ViewGroup可以包括子控件，但是这里面系统不知道子控件view具体应该怎么排放位置-->
+    <ViewGroup
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:background="#F00" >
+
+        <View
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:background="#0F0" />
+    </ViewGroup>
+
+03_LinearLayout
+    组视图
+    1.LinearLayout
+    线性布局，该布局下子布局列表为模线或者竖线排布
+    创建一个新项目，在包名中千万别出现下划线
+    创建一个linearlayout.xml，点击进入默认是RelativeLayout，这里改成LinearLayout
+    同时拖入多个textview，发现多个textview在linerlayout中默认是以横向布局
+    变成纵向布局android:orientation="vertical"  /horizontal横向布局
+    权重：android:layout_weight=""(只能在LinearLayout的子控件中使用)
+    例如有3个textview，需要横向占满，所以和子控件的宽度有关系
+    解决方式： 把3个textview的宽度设为0，android:layout_width="0dp",
+    同时把3个textview的权重设为android:layout_weight="1"，这个时候三个view就平均分配占满了屏幕的宽度，三个权重1,相当于把屏幕切分为三份
+    例如：希望垂直的屏幕平均占3份
+    解决方式： 把3个textview的宽度设为android:layout_width="match_parent",
+    把3个textview的高度设为0，android:layout_height="0dp",同时把3个textview的权重设为android:layout_weight="1"
+    这时，把第一个textview的高度设为200dp，则下面两个textview的高度，就是除去了整体带有实际宽高的控件后，进行平分布局
+    下面看一个有趣例子，电视没有信号的时候，可以模似来作
+    创建一个布局linearlayout.xml
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"//高度平分
+        android:layout_weight="1"
+        android:orientation="horizontal"  >
+        <View 
+            android:layout_width="0dp"//宽度平分
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:background="#FF0" />
+        <View 
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:background="#0FF" />
+	</LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical" >
+        <View 
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#08F" />
+        <View 
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#0F8" />
+	</LinearLayout>
+</LinearLayout>
+
+    
+    2.RelativeLayout
+    
+    3.FrameLayout
+    
+    4.其它视图
+    
+    一般视图
+    5.文本按钮输入框
+    6.是非选择框
+    7.进度条
+    8.图片控件
+    9.滑动控件
+    10.日期时间选择控件
+    11.WebView 
+    
+ 04_RelativeLayout
+   1.相对父控件布局
+   拖入一个按钮，不高设置坐标位置，按钮默认在左上角
+   设置按钮在横向居中的属性： android:layout_centerHorizontal="true"
+   再设置按钮纵向居中的属性： android:layout_centerVertical="true"
+   设置按钮在屏幕的正中间：   android:layout_centerInParent="true"
+   高置按钮在屏幕的最左边：   android:layout_alignParentLeft="true"//在父亲的最左边对齐  alignParentRight//右边 alignParentTop//最顶部 alignParentBottom//最底部
+   2.相对同个等级控件进行布局
+   相对中间这个按钮布局<Button android:id=@"+id/center_btn"
+   在中间按钮的上面，并与中间按钮左对齐android:layout_above="@id/center_btn"; android:layout_alignLeft="@id/center_btn"
+   android:layout_below="@id/center_btn"; //正下面对齐
+   android:layout_marginRight="10dp"; //微调 结合相对布局使用
+   android:layout_toLeftOf="@id/center_btn"; //在某个按钮的左边
+   android:layout_alignTop="@id/center_btn"; //并与这个按钮顶部对齐
+   
