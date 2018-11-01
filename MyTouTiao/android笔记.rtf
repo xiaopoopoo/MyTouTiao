@@ -732,3 +732,104 @@ day2
    android:layout_toLeftOf="@id/center_btn"; //在某个按钮的左边
    android:layout_alignTop="@id/center_btn"; //并与这个按钮顶部对齐
    
+05_其他组视图
+   在开发中用得最多的是RelativeLayout，LinearLayout，
+   FrameLayout偶尔会用一点
+   FrameLayout：
+   创建framelayout.xml
+   创建一个view 250dp 250dp
+   再创建一个view 200dp 200dp
+   如果这两个view是在LinearLayout布局中，那会出现view一个在上面，另一个在view的下方
+   如果这两个view是在FrameLayout布局中，那么两个view会重叠。FrameLayout越往后写的控件越放在最上层展示
+   
+   AbsoluteLayout绝对布局：
+   android:layout_x="30dp"; android:layout_x="30px";//写px,dp都可以，因为用这个布局一般是不用适配多机型的
+   例如网络电视选项，往左右滑的时候改变x,y的坐标，如果作网络电视，没有更多机型去适配，就用绝对布局
+   
+   TableLayout    表格布局：
+   TableLayout  代表一个表格
+   TableRow  代表一行 
+   创建一个登录的ui案例
+   创建用户名控件，和密码控件，
+   别然实现了，但对齐方式不对，所以这种布局很少使用
+   
+   06_文本按钮与输入框
+   new  android application 创建一个文本项目 
+   <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TextView"
+        android:ellipsize="end"//这个属性加上尾部会有省略号，如果没设lines是没有省略号的，因为没有显示全才会有省略号
+        android:lines="2"//限制两行，没有省略号
+        android:textStyle="bold" //加粗 italic斜体 
+        android:textSize="36sp"//字体大小，sp是字体的尺寸大小
+        android:textColor="#F0F"   />//字体颜色
+        
+        
+   <!-- singleLine 变成单行 附带省略号 -->
+	<TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="22sp"
+        android:layout_marginTop="5dp"//距顶部5dp
+        android:singleLine="true"//变成单行 附带省略号
+        android:text="sdfsfdsfsdfsdfdsfdsfsdfsfdsfsdfsdfdsfdsfsdfsf
+   
+   <!-- typeface 设置字体风格 -->     
+ 	<TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="22sp"
+        android:typeface="sans"//默认是sans  android:typeface="serif"  android:typeface="monospace" 展示的字体风格会有一些小小的变化
+        android:text="abc123" />
+        
+  button是继承textview的，button可点击，textview不可能点击
+  	<!-- 1.把Button变成TextView -->
+	<Button
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:background="@null"//把Button变成TextView
+	    android:text="Button" />
+	<!-- 2.把TextView变成Button -->
+	<TextView
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:clickable="true"//把TextView变成Button
+	    android:onClick="myClick" 
+	    android:text="Button" />
+	    
+  在MainActitity.java
+  	public void myClick(View v){
+		Toast.makeText(this, "click", Toast.LENGTH_SHORT).show();
+	}
+        
+    拖入一个editText,这个控件是继承textview的
+    	<!-- text输入的文本 -->
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="请输入xxx"
+        android:text="haha"  />
+    <!-- editable 决定用户能否输入 -->
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="请输入xxx"
+        android:editable="false"//输入不了
+        android:text="haha"  />
+    <!-- maxLength最大输入的数字长度 -->
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:lines="1"//最多一行
+        android:maxLength="10"//最大可输入数字
+        android:hint="请输入xxx"  />
+    <!-- inputType设置输入的风格  textPassword代表密码 -->
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:lines="1"
+        android:inputType="textEmailAddress"//设置是输入密码，还是eamil，输入的风格 numberpassword输入只带数字的密码 | number显示数字 如果是email 会多了@ . com这些符号
+        android:maxLength="10"
+        android:hint="请输入xxx"  />                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  
