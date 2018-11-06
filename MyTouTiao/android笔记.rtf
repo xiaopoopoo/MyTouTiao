@@ -831,5 +831,230 @@ day2
         android:lines="1"
         android:inputType="textEmailAddress"//设置是输入密码，还是eamil，输入的风格 numberpassword输入只带数字的密码 | number显示数字 如果是email 会多了@ . com这些符号
         android:maxLength="10"
-        android:hint="请输入xxx"  />                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+        android:hint="请输入xxx"  />   
+        
+   07_是非选择框 
+   都继承button          
+   ToggleButton 只能选是和否，相当于一个按钮点击有打开，关闭两种状态，这个控件很少用
+       <ToggleButton
+        android:id="@+id/toggleButton1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/hello_world"
+        android:textOff="关闭的"
+        android:textOn="打开的" />
+                                                                                                                                                                                                                                                                                                                               
+        
+   RadioButton 只能选一个的时候，必须放到RadioGroup 中，因RadioGroup继承RelativeLayout
+       <RadioGroup
+        android:id="@+id/sex_rg" 
+        android:layout_width="wrap_content"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <RadioButton
+            android:id="@+id/radioButton1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/male" />
+
+        <RadioButton
+            android:id="@+id/radioButton2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="女" />//这里报黄警告，因为字体按常规应该放到res/values/strings.xml中，如果不要报错，打开strings.xml 
+                         <String name="male">女</string>  引用android:text="@string/male"
+    </RadioGroup>
+    
+    
+   RadioButton的响应事件：
+        在MainActivity.java中
+   		RadioGroup radioGroup=(RadioGroup) findViewById(R.id.sex_rg);
+   		radioGroup.setOnCheckedChangeListener(new OnCheckedChangeListener() {		
+			@Override
+        //查看源代码，按ctrl,弹出中选open super implementation 点进去，弹窗选择external location 外部的位置，选源码，
+        在android-adt-bundle/sdk/sources/android18			
+			public void onCheckedChanged(RadioGroup group, int checkedId) {//checkedId,指补选中的id
+				if (checkedId==R.id.radioButton1) {
+					Toast.makeText(MainActivity.this, "男",0).show();
+				}else if (checkedId==R.id.radioButton2) {
+					Toast.makeText(MainActivity.this, "女",0).show();
+				}
+			}
+		});                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
   
+  checkbox多选，继承compoundbutton:
+      <CheckBox 
+        android:id="@+id/apple_cbx" //id，便于找到它
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="苹果" />
+      <CheckBox 
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="黄瓜" />
+ checkbox响应事件：
+   		CheckBox appleCbx=(CheckBox) findViewById(R.id.apple_cbx);
+		appleCbx.setOnCheckedChangeListener(
+				new CompoundButton.OnCheckedChangeListener() {
+			
+			@Override
+//			buttonView 当前的CheckBox
+//			isChecked 是否被选中
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				Toast.makeText(MainActivity.this, isChecked?"选中":"未选中",0).show();
+			}
+		});
+		
+  08_进度条
+  android的进度条种类很多
+  
+  一直在转的进度条，不能看到它当前是进度多少了，最小的进度条圆圈
+      <ProgressBar
+        style="?android:attr/progressBarStyleSmall"//按ctrl可以点进去，看到很多种样式
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+        
+     反方向转圆圈的进度条   
+     <ProgressBar
+        style="?android:attr/progressBarStyleInverse"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+   大的圆圈进度条
+    <ProgressBar
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+        
+  直条的进度条，可以看到当前多少进度
+  ?android:attr/progressBarStyleHorizontal 带进度的进度条的样式 
+      <ProgressBar
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="250"//总的进度有多少
+        android:progress="40" />//当前进度有多少
+  这个进度需要代码设置
+  
+  可拖动的进度条
+     <SeekBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="250"
+        android:progress="40" />
+    SeekBar继承了ProgressBar,max,progress即可以在布局文件中配置，也可以在代码中配置
+    
+    
+    <!-- 星星进度条   step步长-->
+    <RatingBar 
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:numStars="4"//设置显示最多只有这4颗星星，原本5颗星，当这里重新点击星星的时候，星星只亮了一半
+        android:rating="3"//默认的评分数
+        android:stepSize="0.3"  />//每次点星星，只照亮0.3
+        RatingBar 继承了ProgressBar，
+        
+        
+    09_图片控件
+    	<!-- src属性只能放静态的图片，只能放res/drawable下的图片 -->
+    <ImageView
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:src="@drawable/flower"
+        android:scaleType="fitEnd"//center图片居中 fitxy占满控件，拉伸了 matrix图片缩小左上角，一般图片是长方型，控件是正方形，就需要使用这个属性
+        android:background="#F00"  />
+   <View//这个也可以放图片，只是没有scaleType属性让它更清晰
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:src="@drawable/flower"
+        android:background="#F00"  />
+        
+        代码写：
+        		ImageView iv;
+//		设置静态项目资源文件
+//		iv.setImageResource(R.drawable.flower);
+//      设置位图，位图可以通过文件获取，也可以通过网络获取
+//		iv.setImageBitmap(bm)
+//		iv.setImageDrawable(drawable)//和上一个差不多，可相互转换
+
+
+10_滑动控件
+   上下滑动
+   ScrollView 这个控件不是用来展示的，是用来包含其它控件的，上下滑动的控件 这个控件不能直接包含2个子控件  在多个子控件外层嵌套一个容器控件 -->
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical" >
+
+            <TextView  //没有加scrollw控件时，这个时候这个控件占满了这个屏幕，这个控件不能滑动
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="hahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahaha"
+                android:textSize="40sp" />
+
+            <TextView//没有加LinearLayout布局时，运行报错，因为ScrollView不能直接包含2个子控件
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="hahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahaha"
+                android:textSize="40sp" />
+        </LinearLayout>
+    </ScrollView>
+    
+    左右滑动，也只能放一个子控件
+    <HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+	<!-- HorizontalScrollView 横向滑动控件 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="hahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahaha"
+        android:textSize="40sp" />
+    </HorizontalScrollView>
+    
+    11_日期时间选择器
+    //日历和滚动两种方式
+    <DatePicker
+        android:id="@+id/datePicker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"  />
+    //显示的是滚动的方式12小时制，上午，下午，几分，几点
+    <TimePicker
+        android:id="@+id/timePicker1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"   />
+        
+    在MainActivity.java
+    DatePicker datePicker = (DatePicker) findViewById(R.id.datePicker);
+		//year 年
+		//month 月减1，写5显示6月
+		//day 天 
+		datePicker.init(1979, 5, 1, new OnDateChangedListener() {//显示在某一天1979-6-1，每个月份加1，月的范围是0-11，如果不想监听最后一个参数传null
+			
+			@Override
+			public void onDateChanged(DatePicker view, int year, int monthOfYear,
+					int dayOfMonth) {
+				String text=year+"年"+(monthOfYear+1)+"月"+dayOfMonth+"日";
+				Toast.makeText(MainActivity.this,text , 0).show();
+			}
+		});
+		
+		TimePicker timePicker = (TimePicker) findViewById(R.id.timePicker1);
+		//设置24小时表示法，设置以后上午下午就没有了
+		timePicker.setIs24HourView(true);
+		//设置时间改变的监听器
+		timePicker.setOnTimeChangedListener(new OnTimeChangedListener() {
+			
+			@Override
+			public void onTimeChanged(TimePicker view, int hourOfDay, int minute) {
+				Toast.makeText(MainActivity.this,hourOfDay+":"+minute , 0).show();
+			}
+		});
