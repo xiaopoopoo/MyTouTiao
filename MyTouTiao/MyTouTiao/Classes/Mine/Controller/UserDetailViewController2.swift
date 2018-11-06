@@ -135,7 +135,7 @@ extension UserDetailViewController2: UserDetailBottomViewDelegate {
     
     /// 按钮点击
     private func selectedAction() {
-        // 返回按钮点击
+        // 返回按钮点击-+
         navigationBar.returnButton.rx.controlEvent(.touchUpInside)
             .subscribe(onNext: { [weak self] in // 需要加 [weak self] 防止循环引用
                 self!.navigationController?.popViewController(animated: true)

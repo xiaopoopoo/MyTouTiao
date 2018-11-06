@@ -1058,3 +1058,43 @@ day2
 				Toast.makeText(MainActivity.this,hourOfDay+":"+minute , 0).show();
 			}
 		});
+
+
+   12_WebView
+       <WebView
+        android:id="@+id/wv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+        
+       在MainActivity.java 
+        WebView wv = (WebView) findViewById(R.id.wv);
+//		1.加载这个网页
+		wv.loadUrl("http://www.520it.com/");
+		1a. 需要提示用户这个控件需要容量，找到项目中AndroidManifest.xml
+		告诉用户有上网的权限 ,当安装这个app的时候就会提示是否可上网，运行后发现加载这个控件后，网页没在当前控件上显示，而作了一个跳转到其它浏览器页显示，这个是因为该网址作了一个重定向技术
+	     <uses-permission android:name="android.permission.INTERNET" />
+        </manifest>
+        
+//		2.点击其中链接会跳转到其它浏览器，这里通过处理，让跳转页在当前控件中显示
+		wv.setWebViewClient(new WebViewClient(){
+			@Override
+//			url 是点击的时候新的网址
+			public boolean shouldOverrideUrlLoading(WebView view, String url) {
+				view.loadUrl(url);//新网址传进来
+//				3.告诉系统不要打开新的浏览器，true，告诉系统，我们自己处理，不跳转浏览器
+				return true;
+			}
+		});
+//		4.Õ 网页控件默认是不支持javascript的，需要手动代码打开这个开关
+		wv.getSettings().setJavaScriptEnabled(true);
+//		5.Õ 网页控件默认不支持弹出框，如javascript中的alert() prompt() confirm(),但是html5的弹出框是默认支持的
+		wv.setWebChromeClient(new WebChromeClient(){
+//			虽然不支持js弹出框，但会回调下面的方法
+			@Override
+			public boolean onJsAlert(WebView view, String url, String message,
+					JsResult result) {
+//				在这个方法里面可以使用原生的弹出框代替
+				return super.onJsAlert(view, url, message, result);
+			}
+			
+		});
