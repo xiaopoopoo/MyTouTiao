@@ -1098,3 +1098,157 @@ day2
 			}
 			
 		});
+		
+		13_ShapDrawable 画圆角
+		<EditText
+        android:layout_width="match_parent"
+        android:layout_height="35dp"
+        android:layout_margin="2dp"
+        android:paddingLeft="5dp"
+        android:background="@drawable/et_shap" />
+    
+        <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="2dp"
+        android:layout_margin="2dp" 
+        android:text="按钮"
+        android:background="@drawable/et_shap" />
+        我们平时写的按钮，没有背景图片，不够好看。
+        现在要作一个圆角按钮
+        首先在res下创建一个文件夹drawable，选中这个文件夹，
+        New Android XML File ,选shape,这里就创建了一个et_shap.xml
+        这个et_shap.xml文件，包含了所有的图片资源
+        
+        <?xml version="1.0" encoding="utf-8"?>
+        <shape xmlns:android="http://schemas.android.com/apk/res/android" >
+        <!-- stroke边框      color边框的颜色   width边框的粗细-->
+            <stroke android:color="#888" android:width="1dp"/>
+	     <!-- solid填充的颜色 -->
+         <solid android:color="#FFF"/>
+         <!-- 设置圆角 -->
+       <corners android:radius="5dp"/>
+       </shape>
+       
+       14_SelectorDrawable
+       让按钮点击的时候有背景
+       1。
+       准备两张.png的图片，把它拷贝到drawable-hdpi中，选中res,创建文件夹drawable，选中这个
+       文件夹，创建xml文件，选中selector，btn_bg_selector.xml创建成功，这里可以认为它就是一张
+       图片。
+       <?xml version="1.0" encoding="utf-8"?>
+        <selector xmlns:android="http://schemas.android.com/apk/res/android" >
+        <!-- 有两种状态 1:原来的状态 2:按下的状态 -->
+	    <item android:state_pressed="true" 
+	    android:drawable="@drawable/blue_btn_pressed"/>
+	    <!-- 默认的状态一定要写到最后 -->
+	     <item 
+	    android:drawable="@drawable/blue_btn_normal"/>
+        </selector>
+       2。
+       找到布局文件activity_main.xml
+        <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/btn_bg"//覆盖掉原来系统的图
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:textColor="@drawable/btn_txt_selector"//字体颜色的改变
+        android:text="@string/hello_world" />
+        
+       3。按钮点击图片的效果写出来了，但感觉不好看，我们可以自己画一个
+       同样，选中res，创建btn_bg.xml
+       <?xml version="1.0" encoding="utf-8"?>
+       <selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+       <!-- 两种状态 的图片都由我们自己去绘制 -->
+       <!-- 有两种状态 1:原来的状态 2:按下的状态 -->
+       <item android:state_pressed="true">
+          <shape>
+            <!-- stroke边框      color边框的颜色   width边框的粗细 -->
+            <stroke android:width="1dp" android:color="#888" />
+            <!-- solid填充的颜色 -->
+            <solid android:color="#888" />
+            <!-- 设置圆角 -->
+            <corners android:radius="5dp" />
+          </shape>
+      </item>
+      <!-- 默认的状态一定要写到最后 -->
+      <item>
+          <shape>
+            <!-- stroke边框      color边框的颜色   width边框的粗细 -->
+            <stroke android:width="1dp" android:color="#888" />
+            <!-- solid填充的颜色 -->
+            <solid android:color="#FFF" />
+            <!-- 设置圆角 -->
+            <corners android:radius="5dp" />
+          </shape>
+      </item>
+
+      </selector>
+      
+      4。实现checkbox
+      	<!-- CheckBox里面的选择框样式是由属性android:button决定的，它也就选中的状态 -->
+         <CheckBox
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:button="@drawable/cbx_slector"//这里不是用的android:background而是button属性决定
+        android:text="苹果" />
+        
+        找到两张圆形背景图，拷贝到drawable-hdpi文件夹中
+        创建一个资源xml文件
+        <?xml version="1.0" encoding="utf-8"?>
+         <selector xmlns:android="http://schemas.android.com/apk/res/android" >
+         <!-- 一种是选中的 一种是未选中 -->
+	     <item android:state_checked="true" 
+	        android:drawable="@drawable/more_radio_selected"/>
+	    <item 
+	        android:drawable="@drawable/more_radio_normal"/>
+         </selector>
+         
+      5。选中的时候字体颜色改变
+      <?xml version="1.0" encoding="utf-8"?>
+      <selector xmlns:android="http://schemas.android.com/apk/res/android">
+	  <!-- 如果设置的是字体的颜色 这里不应该使用android:drawable属性 而应该使用android:color -->
+      <item android:state_pressed="true" android:color="#FFF"/>
+      <item android:color="#F000"/>
+      </selector>
+
+
+      15_LayerlistDrawable 主要用于进度条中
+      改变进度条的样式
+      	<!-- 引用当前的进度条样式图 -->
+      <ProgressBar
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:progressDrawable="@drawable/pb_bg"
+        android:max="100"
+        android:progress="100"  />
+        
+        在drawable下选layer_list,创建pb_bg.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
+        <!-- 进度条:背景图 进度图 这里是有顺序的，顺序不能变-->
+	     <item android:drawable="@drawable/progress_bar_bg" 
+	    android:id="@android:id/background"/>//这个id告诉系统我想作为背影，这个id是安卓系统定义好的
+	    <item android:drawable="@drawable/progress_bar_selected_bg" 
+	    android:id="@android:id/progress"/>
+        </layer-list>
+
+       16_9patch图说明
+       按钮给固定大小，设置背影图片时，背影图片变形了，中间的字体被拉伸，有一种方式，只拉伸两边，不拉伸中间
+        <Button
+        android:layout_marginTop="10dp"
+        android:layout_width="260dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/pressed" />
+        找到android-adt-bundel/sdk/tools/draw9patch.bat 双击打开，把要处理的图片拖进来。
+        这时候会出现两个窗口，左窗口显示原图大小，右边显示三副图，分别是原图，横向拉伸，纵向拉伸三种效果
+        只希望拉伸两边，在左窗中点击从哪个部份拉伸，右窗口则会出现不同的效果，按shift+左键可以去掉之前的选择
+        好处在于，不用作和按钮一样大的图片，浪费空间。
+        使用该工具处理完后保存pressed.9.png,把该图拖到drawable-hdpi文件夹下。报了错，因为有一张图片pressed.png
+        重名，所以删除掉。这时候加载的图片还是有点字体变形
+        因为之前作点9图的时候，只是设的拉伸区域是一条线，必须在最左端再点一下，勾上show content。就可以看到被拉伸的区域
+        再保存一下，拉伸的区域像个井字，井字中间以上面，左边进行拉伸，最终就会显示出按钮的效果
+        
