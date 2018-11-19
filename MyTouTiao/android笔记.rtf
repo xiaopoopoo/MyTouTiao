@@ -1252,3 +1252,559 @@ day2
         因为之前作点9图的时候，只是设的拉伸区域是一条线，必须在最左端再点一下，勾上show content。就可以看到被拉伸的区域
         再保存一下，拉伸的区域像个井字，井字中间以上面，左边进行拉伸，最终就会显示出按钮的效果
         
+        
+        day3
+        
+        关于android的一些简单概念
+        01_(了解)尺寸单位
+        安卓常用单位是dp，文字常用是sp，很少使用px
+        为什么安卓不使用px?
+        px是电视电脑上分辨率，由多少个点组成就是多少分辨率,px相素是构成数码影像的基本单位
+        比如屏幕300*300分辨率，就表示水平或垂直方向每英寸长度上的像素是300*300,也可以说是一平方英寸有9万像素
+        在平时安卓手机尺寸很多，无法用px去适配所有手机
+        dp这个单位好处在于会根据手机屏幕自动缩放或增加尺寸大小
+        sp用来设置文字的大小
+        同一个按钮，在小手机上显示很好，在大手机上显示太小，用dp
+        如何去选择适配主流手机
+        120dip 240*320 2.7英寸
+        160mdip 320*480 3.2英寸
+        240hdip 480*800 4英寸
+        320xhdip 2760*1280,800*1280 4.7英寸
+        480xxhdip 1080*1920 5英寸
+        640xxxhdip 3840*2160 给4k电视用的
+        没有归并到上面的其它尺寸，都可以归并到相似的地方
+        把图片根据上面的尺寸放到res下对应要适配手机型号的drawable-ldpi或其它文件夹中
+        
+        02_(重点)LogCat的使用
+        在eclipse界面右下方窗体，有一个logCat窗口
+        查看logcat，在界面右下方选devices，里面有很多模拟手机设备，你要看哪个设备的locat，就选中那个模拟器
+        再切换到logca窗体。
+        在mainactivity.java中
+        system.out.println("haha");
+        这时候在LogCat就能看到打印的结果
+        这里会显示这个手机里面所有应用的日志，可找到当前应用的日志
+        在android中打印不用system.out，使用android.util包
+        Log.(verbose,debug,warn,error,assert,info)
+        Log.v("523","haha");最新的日志总是显示在最下面，这个打印是黑色的tag:"523" text:"haha" 
+        Log.d("523","debug");显示的是蓝色
+        Log.i("523","info");绿色
+        Log.w("523","warn");绿色
+        Log.e("523","error");红色
+        当log.e的时候，log.v log.d log.i log.w的日志没了 
+        当log.v的时候 log.d log.i log.w的日志没了
+        1。不同等级下显示不同的日志
+        2。从低到高verbose->debug->info->warn->error
+        3。等级拦截器中越高等级的拦截器不能拦截比它低等级的日志
+        4。只要进一个应用，就会把该应用的日志打印出来
+        对于真机，进入一个应用，一直在打日志
+        当系统打印日志占太多内存，系统会把最早的日志一条一条的清空
+        这个清空日志称为环行缓冲区，先进先出
+        5。过滤器，左下边窗口，点添加一个静态过滤器
+        name:我的过滤器
+        tag:xmg
+        这会log.v("xmg","haha");
+        选中这个过滤器，只会打印xmg，其它日志不会打印
+        如果没打印重启eclipse
+        动态监听拦截tag （如何只在logcat中看只看523的日志）
+        在logcat输入框中输了入：tag:523
+        
+        
+        03_(了解)测试相关的概念
+        测试的分类：
+        
+        1。根据是否知道源代码
+        白盒测试:测试人员知道源代码，根据源代码写测试用例 大公司
+        黑盒测试:不知道源代码，知道应用功能，根据功能测试应用
+        
+        2。根据测试的粒度（精细程度）
+        方法测试：只测试某个方法的功能是否正确
+        单元测试：测试一个或多个方法
+        集成测试：app需与后台交互，比如数据存到后台数据库，测试某一个功能，涉及到后台和前端
+        系统测试：不同软件之间可以交互，测试不同软件交互是否正确
+        
+        3。测试的暴力程度
+        压力测试：重复点击万次，或写程序不断往后台发数据，这是后台的测试，app在某个时间点内，作重复单一频繁操作，如果后台不好，app也闪退
+        冒烟测试：在某一个时间断内，作一个重复的不确定性的频繁操作。随机点各个按钮，无规律操作，直到点到出错收集bug
+        
+        04_(掌握)Android下的单元测试
+        首先了解一下web的架构
+        jsp  前端jsp
+        action severlet是action层的，主要作页面的跳转
+        service 带有业务逻辑的增删查看数据库操作，有业务性
+        dao 保证数据库写入数据的正确性，dao只对数据库操作 增删查改简单操作
+        数据库db 存储数据库
+        
+        junitTest单纯的对某一层进行测试，不用跑整个程序
+        
+        android也一样，也有数据库，也有dao层，所以也可以使用junittest测试
+        在app中的juittest是不一样的测试，需代码跑模拟器上
+        创建一个 MockCalculator.java模拟一个计算器
+        
+        package com.m520it.juint;
+
+        public class MockCalculator {
+	
+	    /**
+	     * 模拟的业务方法，可以认为当前就是对数据库进行操作
+	     */
+	    public static int add(int x,int y){
+		    return x+y;
+	    }
+	
+	    /**
+	     * 方法2
+	     */
+    	public static int multi(int x,int y){
+	    	return x+y;
+	    }
+	
+        }
+        再创建一个类CalculatorTest.java
+        package com.m520it.juint;
+
+        import android.test.AndroidTestCase;
+
+        /**
+         * 写一个类继程AndroidTestCase
+         *
+         * */
+        public class CalculatorTest extends AndroidTestCase{
+	
+	        /**
+	         * 1.写一个方法 用来测试其它业务方法，这里测试上一个类add方法的
+	         * 测试的时候可能会报错，所以要把错误告诉系统
+	         * */
+	    public void testAdd()throws Exception{//把错误告诉系统
+		    int result = MockCalculator.add(3, 5);//返回了一个值
+		    //expected 期望的值和实际得到的结果是否一致
+		    assertEquals(8, result);//判断结果是不是等于8
+	    }
+	
+	    //2. 写完以后，选中当前项目，点右键，run as-> android junit test
+        这会报了一个错,没有选择一个instrumentation，所以应该是在配置文件AndroidManifest.xml中
+        以一个标签的形式出现，或者没有申明uses-library
+	    //android.test.InstrumentationTestRunner instrumentation 
+	    // or does not declare uses-library android.test.runner 
+	    //in its AndroidManifest.xml
+	    
+	    增加方法二，只是证明junittest能同时测多个方法，只测一个方法，只需选这个方法的名称右键运行，如果测多个方法，只需在空白处选右键运行
+	    public void testMulti()throws Exception{
+		    int result = MockCalculator.multi(3, 5);
+		    //
+		    assertEquals(15, result);
+	       }
+        }
+
+        修改报错，在AndroidManifest.xml中添加这段代码
+        <!-- 告诉手机系统 我们想做一个单元测试 到底要测试哪些类 -->
+         <instrumentation android:name="android.test.InstrumentationTestRunner" 
+        android:targetPackage="com.m520it.juint" />
+    
+         <!-- 单元测试需要导包 -->
+        <uses-library android:name="android.test.runner" />
+        
+        以下是修改报错AndroidManifest.xml中的所有代码
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+        package="com.m520it.juint"
+        android:versionCode="1"
+        android:versionName="1.0" >
+
+        <uses-sdk
+        android:minSdkVersion="8"
+        android:targetSdkVersion="18" />
+        <application
+            android:allowBackup="true"
+            android:icon="@drawable/ic_launcher"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme" >
+        <activity
+            android:name="com.m520it.juint.MainActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- 单元测试需要导包 在application范围导包-->
+        <uses-library android:name="android.test.runner" />
+        </application>
+	    <!-- 告诉手机系统 我们想做一个单元测试 到底要测试哪些类 -->
+        <instrumentation android:name="android.test.InstrumentationTestRunner" 
+            android:targetPackage="com.m520it.juint" />
+        </manifest>
+        选中方法名，右键运行后，如果窗口左边出现绿色表示正确
+         
+       05_(掌握)QQ登陆的界面  06_(重点)Android下的数据读写
+       数据存储  作一个qq登陆界面
+       头像 用户名 密码 登陆按钮
+       分析：界面布局肯定是线性的，用linearlayout布局  方向orientation="vertical"
+       图片一定是拷贝到res下drawable文件夹里面，因为不作适配，所以随便拷贝到drawable文件夹中任何一个位置
+       
+       附言：xml布局容器在工具内显示的和运行在手机上的差别还是有点大，这时候找到顶部类似nexus one下拉，选择尺寸720*1280，这时候
+       显示就会差别不大了，再选择app theme->theme.light->theme.light.no titlebar则把导航头部去掉了，但并不代表运行的时候导航没有了
+       
+       
+       <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >//水平布局方向垂直
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"//控件居中
+        android:layout_marginTop="100dp"//距离顶部100
+        android:src="@drawable/qq" />//图片用src
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"//横向布局
+        android:paddingLeft="20dp"//内部控件的左边
+        android:paddingRight="20dp"//内部控件的右边距离
+        android:layout_marginTop="30dp" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="账号:" />
+        
+        <EditText
+            android:id="@+id/passport_et"//命名规则，业务名称加控件的缩写
+            android:layout_width="match_parent"//占满除textview以外的位置
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:hint="请输入账号" />
+        
+    </LinearLayout>
+	
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"//横向布局
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:layout_marginTop="10dp" >//密码与用户名上下之间距离
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="密码:" />
+        
+        <EditText
+            android:id="@+id/password_et"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:inputType="textPassword"//密码
+            android:hint="请输入密码" />
+        
+    </LinearLayout>
+    
+    <Button 
+        android:layout_width="120dp"
+        android:layout_height="45dp"
+        android:layout_gravity="center_horizontal"//居中
+        android:layout_marginTop="20dp"
+        android:textSize="22sp"
+        android:onClick="loginClick"//增加点击方法
+        android:text="登录" /></LinearLayout>
+        
+    2。在mainActivity.java中
+    public class MainActivity extends Activity {
+
+	private EditText mPassportEt;
+	private EditText mPasswordEt;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+
+		mPassportEt = (EditText) findViewById(R.id.passport_et);
+		mPasswordEt = (EditText) findViewById(R.id.password_et);
+		
+		readData();
+	}
+      
+    /**
+	 * 读取文件里面的数据，显示在界面上
+	 */
+	private void readData() {
+		try {
+			//1.读取帐号密码
+//			File file = new File("/data/data/com.m520it.qqlogin/qqinfo.txt");
+//			File file = new File(getCacheDir(), "/qqinfo.txt");
+			File file = new File(getFilesDir(), "/qqinfo.txt");
+			if (file.exists()&&file.length()>0) {//判断文件是否存在
+				//2.显示到控件里面去 读取字符串操作
+				BufferedReader reader=new BufferedReader(new FileReader(file));
+				String line=reader.readLine();//读一行
+				if (line.contains("#")) {//如果包含这个字符
+					String[] datas = line.split("#");//分隔成数组
+					mPassportEt.setText(datas[0]);
+					mPasswordEt.setText(datas[1]);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 1.获取两个输入框中的值，并判断不为空
+	 */
+	public void loginClick(View v) {
+		String passport = mPassportEt.getText().toString();
+		String password = mPasswordEt.getText().toString();
+		// passport==null||passport.equals("")//类似的写法，下面是简化的写法
+		// TextUtils.isEmpty()
+		if (TextUtils.isEmpty(passport) || TextUtils.isEmpty(password)) {
+			Toast.makeText(this, "«ÎÃÓ–¥ÕÍ’˚µƒ–≈œ¢", 0).show();
+			return;
+		}
+		// 保存到手机的文件夹中
+		saveData(passport, password);
+	}
+
+	/**
+	 * 将数据保存到手机里面--》将帐号密码写到文件系统中，开发工具下方file explorer可以看到文件系统的结构
+	 * 定义"帐号#密码"这种格式，
+	 */
+	private void saveData(String passport, String password) {
+		try {
+//		    File file = new File(qqinfo.txt");//这个文件没有创建成功，因为不能在根目录写文件，需在应用里面写文件，应用都在data目录下的
+//			File file = new File("/data/data/com.m520it.qqlogin/qqinfo.txt");//创建文件对象
+//			替代上面的getCacheDir()得到应用的目录
+			//  /data/data/com.m520it.qqlogin/cache
+//			File file = new File(getCacheDir(), "/qqinfo.txt");//放到cache目录下是标准方法。这个目录下文件在设置中点清除缓存会清除掉catch下的文件
+			File file = new File(getFilesDir(), "/qqinfo.txt");//放到files目录下也是标准方法  在设置中点击清除数据会清掉catch 和files两个文件夹
+			// 字符流，当将一个字符串写进文件里面的时候会考虑使用它
+			BufferedWriter writer = 
+					new BufferedWriter(new FileWriter(file));//将一个文件丢进来，第一种创建方式
+//			BufferedWriter writer =
+//					new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));//第二种创建方式
+			writer.write(passport+"#"+password);//传的是一个字符串
+			writer.close();//关闭流才能写进去
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+    
+    
+    07_(重点)手机存储目录的划分
+    存储一般在data/data/程序包名下储存
+    在根目录上存储会报错，因为保存到根目录别的应用也可以读取
+    一般保存比较重要的数据，用户信息，应用配置保存到files文件夹
+    如果图片什么的保存在cache文件夹下
+    
+    存储划分：
+    1。内部存储 data目录下所有东西都是内部存储
+		File dataFile = Environment.getDataDirectory();
+		Log.v("520it", dataFile.getAbsolutePath());
+    2。外部存储 手机卡的存储
+        // /storage/emulated/0  外部存储的路径
+		// /mnt/sdcard  再创建一个模拟器后，外部存储路径变了，因为版本不一样，手机型号不一样，这是谷歌标准目录,外部存储太多路径
+		// /mnt/starage01
+		// /mnt/starage02
+		File extralFile = Environment.getExternalStorageDirectory();
+		Log.v("520it", extralFile.getAbsolutePath());  
+		有些手机卡是连到手机里面的
+		
+		
+	08_(重点)SD卡读写的操作
+	 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context=".MainActivity" >
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="downloadClick"//真实项目不这样写，因为不规范
+        android:text="下载到SD卡" />
+
+    </RelativeLayout>
+    
+    在MainActivity.java中
+    public class MainActivity extends Activity {
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+	}
+
+	public void downloadClick(View v){
+		try {
+			//下载一个空的文件 1024*1024*10 这个大小到sd卡上
+			//1.SD卡是可以插取的，拿到这个卡的状态
+			String externalState = Environment.getExternalStorageState();
+			if (externalState.equals(Environment.MEDIA_MOUNTED)) {//判断sd卡是否装载
+				//2.创建一个空文件
+				File parentFile = Environment.getExternalStorageDirectory();//拿到sd卡的父路么
+				File file=new File(parentFile, "one.avi");
+				FileOutputStream fos=new FileOutputStream(file);//创建了文件
+				byte[] buff=new byte[1024*1024];
+				for (int i = 0; i < 10; i++) {//循环10次，每次写1m
+					fos.write(buff);
+				}
+				fos.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+    }
+    
+    	执行的时候报错，因为权限出问题，因为其它手机也可以读，不安全。
+    		<!-- 因为操作外部存储是一个比较敏感的操作 所以需要告诉用户 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    在androidmainifext.xml配置文件中加上上面这句话避免权限问题
+    代码如下：
+    <?xml version="1.0" encoding="utf-8"?>
+    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.m520it.sdcard"
+    android:versionCode="1"
+    android:versionName="1.0" >
+    <uses-sdk
+        android:minSdkVersion="8"
+        android:targetSdkVersion="18" />
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name="com.m520it.sdcard.MainActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+	<!-- 因为操作外部存储是一个比较敏感的操作 所以需要告诉用户 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    </manifest>
+    
+    找到mnt/sdcard可以看到下载好的文件
+    如果是其它模拟器sd卡的路径是哪里呢
+    首先run as 然后选择其它模似器
+    然后在开发工具底部的devices选择当前模拟器，选择file explorer就选到了当前模拟器目录
+    storage/sdcard0 可看到文件，有的时候会因为限权原因看不到下载的文件
+    这时可以在手机系统存储空间中找到。
+    
+    09_(掌握)内部存储目录文件的访问模式
+    尝试创建一个黑客应用，试图访问一下其它应用的内部文件
+    布局文件：
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context=".MainActivity" >
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="readDataClick"
+        android:text="窃取其他应用的数据" />
+
+   </RelativeLayout>
+   
+   java代码文件：
+   import java.io.BufferedReader;
+   import java.io.File;
+   import java.io.FileNotFoundException;
+   import java.io.FileReader;
+
+   import android.app.Activity;
+   import android.os.Bundle;
+   import android.util.Log;
+   import android.view.View;
+   	public void readDataClick(View v) {
+		try {
+			String path = "/data/data/com.m520it.qqlogin/files/qqinfo.txt";
+			File file = new File(path);
+			// 字符流
+			BufferedReader reader = new BufferedReader(new FileReader(file));
+			String line=reader.readLine();
+			Log.v("520it", line);
+			reader.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+	运行后找不到这个文件，因为权限问题
+	可以看到下载的这个文件的权限 -rw------
+	正常情况下：
+	1：- or d 文件 文件夹
+	2-4 :rwx 用户权限
+	5-7: rwx 组权限
+	8-10 rwx 其它权限
+	为什么这么多权限：
+	一个应用就是一个用户
+	组权限：多个应用相如果在一个组，如果组的权限可读可写，那同组的其它应用可以访问这个应用
+	其它权限：如果一个应用和另一个应用不在一个组，想访问另一个应用 
+	在linux中分group id  user id；
+	
+	把qq这个项目拷贝一份，运行会替换掉原有版本
+	这个时候在res/values/strings.xml
+	<string name="app_name">qqlogin</string>//修改应用名称
+	运行也会替换掉之前应用
+	结论：只要包命相同就会替换掉其它文件
+	
+	需求：提供两个应用之间的数据能共享读写
+	
+		private void saveData(String passport, String password) {
+		try {
+//			File file = new File("/data/data/com.m520it.qqlogin/qqinfo.txt");
+//			把文件保存在cache目录下
+			//  /data/data/com.m520it.qqlogin/cache
+//			File file = new File(getCacheDir(), "/qqinfo.txt");
+//			File file = new File(getFilesDir(), "/qqinfo.txt");
+			
+//			name 文件名
+//			mode 文件权限
+//			MODE_APPEND 比如一个文件已经有内容了，再次写文件就是在文件后面追加
+//			MODE_PRIVATE 对其它文件应用私有化，本应用可读可写的
+//			MODE_WORLD_READABLE  任何应用都能读取
+//			MODE_WORLD_WRITEABLE  任何应用都能写入
+			FileOutputStream fos=openFileOutput("qqinfo.txt",
+					MODE_WORLD_READABLE+MODE_WORLD_WRITEABLE);//代码会有一个划线，因为觉得应用数据危险
+//			OutputStreamWriter 转换流，转换对接字符流与字节流
+			BufferedWriter writer = 
+					new BufferedWriter(new OutputStreamWriter(fos));
+//			BufferedWriter writer =
+//					new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
+			writer.write(passport+"#"+password);
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	再次运行
+	查看文件目录权限-rw-rw-rw-
+	代码一般创建不了可执行权限的，因为怕安全风险
+	虽代码不能，可用命令改可执行权限
+	adb devices 查看当前正在使用的模拟器
+	adb -s emulator-5554 shell 进入模拟器
+	cd /data/data/com.m520.qqlogin/files
+	chmod  777 qqinfo.text可修复用户权限  
+	7是三个权限相加得到的 2的0次方 2的1次方 2的2次方相加
+	
+	
+	
+	
