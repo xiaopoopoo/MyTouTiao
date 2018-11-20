@@ -1805,6 +1805,55 @@ day2
 	chmod  777 qqinfo.text可修复用户权限  
 	7是三个权限相加得到的 2的0次方 2的1次方 2的2次方相加
 	
+	10_(掌握)SharedPreference的使用
+	键值存储
+	平时在开发中，小的值,不重要的数据进行存储，用键值对的方式
+	不使用 用户名#密码的方式，因为这种方式如果有人在注册时写snrifk#444,密码123,这种有可能会冲突
+	
+	import android.content.SharedPreferences;
+    import android.content.SharedPreferences.Editor;
+    private EditText mPassportEt;
+	private EditText mPasswordEt;
+
+
 	
 	
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+
+		mPassportEt = (EditText) findViewById(R.id.passport_et);
+		mPasswordEt = (EditText) findViewById(R.id.password_et);
+		
+		readData();
+	}
+		/**
+	 * 读取文件里面的数据 回显文本
+	 */
+	private void readData() {
+		SharedPreferences sp=getSharedPreferences("qqinfo", MODE_PRIVATE);
+		String passport = sp.getString("username", "");
+		mPassportEt.setText(passport);
+		String password = sp.getString("pwd", "");
+		mPasswordEt.setText(password);
+	}
+
+	/**
+	 * 将数据保存到文件中
+	 * 
+	 */
+	private void saveData(String passport, String password) {
+		SharedPreferences sp=getSharedPreferences("qqinfo", MODE_PRIVATE);//参数：文件名 模式（复杂，只传mode_private）
+		//2.Õ 往sp中存键值对，有可能存储过多值会报错，这里使用事物的存储方式，因为有原子性，要么一次性成功，要么一次性全不成功
+		Editor edit = sp.edit();
+		edit.putString("username", passport);
+		edit.putString("pwd", password);
+		edit.commit();//当提交的时候在com.m520it.qqlogin目录下自动增加了shared_prefs目录，qqinfo.xml在此目录下
+	}
+	qqinfo.xml内容如下：
+	<map>
+	  <string name="username">abc</string>
+	  <string name="pwd">123</string>
+	<map>
 	
