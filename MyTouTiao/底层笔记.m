@@ -8529,8 +8529,12 @@ UITableView的 beginUpdates方法和endUpdates方法是什么呢？
 所以，就需要使用beginUpdates方法和endUpdates方法，将要做的删除操作“包”起来。 
 */
 
+81、新xcode10 运行老项目报错 Error: Multiple commands produce
+解决方法可以有两种，一种是不使用New Build System，在File > Project/Workspace Settings中的Share Project/Workspace Settings 里build system 将New Build System(Default)切换成Legacy build system。
+https://www.jianshu.com/p/fdb1421f3c8b
 
-80、html5学习
+
+82、html5学习
 
 框架：
 sencha-touch
