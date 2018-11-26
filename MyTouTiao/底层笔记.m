@@ -8533,8 +8533,15 @@ UITableView的 beginUpdates方法和endUpdates方法是什么呢？
 解决方法可以有两种，一种是不使用New Build System，在File > Project/Workspace Settings中的Share Project/Workspace Settings 里build system 将New Build System(Default)切换成Legacy build system。
 https://www.jianshu.com/p/fdb1421f3c8b
 
+82、给xcode老项目改名称，改工程名
+1。打开一个老工程，选中左边蓝色的工程名称，直接修改工程名，这时xcode会提示是否重命名其它文件为此名，这时点击是
+2。打开这个工程，找到KingiPhone.xcodeproj这个项目文件，右键，显示包，用工具打开project.pbxproj，搜索原项目名称替换成新的名称
+3。打开项目，修改根目录下KingiPhone的文件名
+4。打开项目，删除pods podfile.lock  保留podfile并修改该文件中的项目名，修改完成后pod install安装
 
-82、html5学习
+
+
+83、html5学习
 
 框架：
 sencha-touch
