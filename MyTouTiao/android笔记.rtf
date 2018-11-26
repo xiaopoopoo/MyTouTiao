@@ -1857,3 +1857,147 @@ day2
 	  <string name="pwd">123</string>
 	<map>
 	
+   
+   
+   
+   
+   day 4
+   
+   
+   01_(了解)数据存储的几种方式
+   1。保存成一般file格式
+   2。sharedperference 自动增加了shared_prefs目录，.xml文件在此目录下
+   3. 数据库 当有大量相似结构的数据，并想实现增删查改，使用数据库
+   4. 通过内容提供者， 保存到别的应用的数据库里面 提供访问方式
+   5. 网络
+   
+   例：保存xml文件，点按钮时把用户名密码保存起来
+   <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context=".MainActivity" >
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+       	android:onClick="saveXmlClick"
+        android:text="保存Xml文件" />
+
+    </RelativeLayout>
+    
+    在MainActivity.java
+    
+    package com.m520it.xmlsave;
+
+    import android.app.Activity;
+    import android.os.Bundle;
+    import android.view.View;
+
+    public class MainActivity extends Activity {
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		
+	}
+
+	public void saveXmlClick(View v){
+		try {
+			//  有异常应该抛出异常
+			String passport="zhangsan";
+			String password="123";
+//			XmlUtil.saveXmlByStringBuilder(this,passport, password);
+			XmlUtil.saveXmlByXmlSerializer(this, passport, password);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+    }
+    
+    在XmlUtil.java帮助类
+    
+    package com.m520it.xmlsave;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+
+import org.xmlpull.v1.XmlSerializer;
+
+import android.content.Context;
+import android.util.Xml;
+
+public class XmlUtil {
+
+	/**
+	 * 通过将字符串进行拼接并且写到/files目录下
+	 * 
+	 * @throws Exception
+	 */
+
+	public static void saveXmlByStringBuilder(Context c, String passport,
+			String password) throws Exception {
+		// <map>
+		// <string name="pwd">123</string>
+		// <string name="username">5abc#12345</string>
+		// </map>
+		// 1.保存上面注释的内容，通过这个对象拼接
+		StringBuilder sb = new StringBuilder();
+		sb.append("<map>");
+		sb.append("<string name=\"pwd\">" + passport + "</string>");//遇到"转义  连接符"++"
+		sb.append("<string name=\"username\">" + password + "</string>");
+		sb.append("</map>");
+		String result = sb.toString();
+		// 2.创建一个文件的对象
+		//放到file目录下 activty继承自Context，Context是一个帮助类，可以拿到如手机型号等信息，所以传入this
+		File file = new File(c.getFilesDir(), "qqinfo.xml");
+		// 3.创建一个输出流，然后是一个字符流buggerewriter
+		BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+		// 4.开始写入这个字符串
+		writer.write(result);
+		writer.close();
+	}
+    
+    //实现第一个方法同想的功能，但使用xmlSerializer帮助类去实现
+	public static void saveXmlByXmlSerializer(Context c, String passport,
+			String password) throws Exception {//往外执出异常
+		// xmlSerializer xml的序列器，创建xml文档的一个类，好处在于不用拼接字符串
+		XmlSerializer xmlSerializer = Xml.newSerializer();
+		// 1.告诉这个序列化，文件应该存到什么地方 android默认编码utf-8
+		// 创建一个outputstream-->创建一个文件转换流，这里用另一个方法openFileOutput创建，这个方法在context中创建
+		FileOutputStream fos = c.openFileOutput("qqinfo.xml",
+				Context.MODE_PRIVATE);
+		xmlSerializer.setOutput(fos, "utf-8");
+		// <map>
+		// <pwd>123</pwd>
+		// <username>zhangsan</username>
+		// </map>
+		// 3.写入文件
+		
+		// 告诉序列器开始写文档了,并会自动加上// <?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+		xmlSerializer.startDocument("utf-8", true);
+
+		xmlSerializer.startTag(null, "map");//null是一个命名空间，因为如果两个xml文件合并一起可能会有重复标签，所以运用命名空羊<h:table>//h是命名空间
+		
+		xmlSerializer.startTag(null, "pwd");
+		xmlSerializer.text(password);
+		xmlSerializer.endTag(null, "pwd");
+		
+		xmlSerializer.startTag(null, "username");
+		xmlSerializer.text(passport);
+		xmlSerializer.endTag(null, "username");
+
+		xmlSerializer.endTag(null, "map");
+		//4.告诉文档写完了，可以将内存中数据写到硬盘中
+		xmlSerializer.endDocument();
+	}
+
+}
