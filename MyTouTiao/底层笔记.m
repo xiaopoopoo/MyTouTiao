@@ -8539,6 +8539,10 @@ https://www.jianshu.com/p/fdb1421f3c8b
 3。打开项目，修改根目录下KingiPhone的文件名
 4。打开项目，删除pods podfile.lock  保留podfile并修改该文件中的项目名，修改完成后pod install安装
 
+83、检测崩溃日志
+pod 'AvoidCrash', '~> 2.5.2'
+https://github.com/chenfanfang/AvoidCrash
+https://www.jianshu.com/p/b7a7ae0c9243
 
 
 83、html5学习
