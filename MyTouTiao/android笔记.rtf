@@ -1966,6 +1966,9 @@ public class XmlUtil {
 		writer.close();
 	}
     
+    
+    02_(掌握)Xml序列化器生成xml文件
+    
     //实现第一个方法同想的功能，但使用xmlSerializer帮助类去实现
 	public static void saveXmlByXmlSerializer(Context c, String passport,
 			String password) throws Exception {//往外执出异常
@@ -2001,3 +2004,623 @@ public class XmlUtil {
 	}
 
 }
+
+03_(掌握)Pull解析器工作的过程
+xml文件怎么读取的
+解析xml的几种方式:
+1. Dom解析
+DOM(文档对象模型)是W3C标准，提供了标准的解析Xml方式，但其解析效率一直不 尽如人意，这是因为DOM解析XML文档时，把所有内容一次性的装载入内存，并构建 一个驻留在内存中的树状结构(节点数)
+。如果需要解析的XML文档过大，或者我们只 对该文档中的一部分感兴趣，这样就会引起性能问题。
+特性:基于树状的xml的结构
+支持:Dom4j dom4j是一个Java的XML API，它也是一个开放源代码的软件，是jdom的 升级品，用来读写XML文件的。
+2. SAX解析
+SAX(Simple API for XML)是一种XML解析的替代方法。相比于DOM，SAX是一种速 度更快，更有效的方法，它既是一个接口，也是一个软件包.但作为接口，SAX是事件驱 
+动型XML解析的一个标准接口不会改变 SAX的工作原理简单地说就是对文档进行顺序扫 描，当扫描到文档(document)开始与结束、元素(element)开始与结束、
+文档 (document)结束等地方时通知事件处理函数，由事件处理函数做相应动作，然后继 续同样的扫描，直至文档结束。读到每个标签，每个属性都是一个事件
+3. Pull解析
+Pull是Android内置的xml解析器。Pull解析器的运行方式与SAX 解析器相似。它提供了 类似的事件，如:开始元素和结束元素事件，
+使用parser.next()可以进入下一个元素并 触发相应事件。事件将作为数值代码被发送。前面两种解析没有内置在android，这个是android自带的解析器
+
+例：
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="parseXmlClick"
+        android:text="解析Xml文件" />
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>
+
+
+MainActivity.java
+
+
+public class MainActivity extends Activity {
+
+	private TextView mXmlTv;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		
+		mXmlTv = (TextView) findViewById(R.id.textView1);
+	}
+
+	public void parseXmlClick(View v){
+		try {
+			String reslut = XmlUtil.parseXmlFile(this);
+			mXmlTv.setText(reslut);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+}
+
+qqinfo.xml
+
+<map>
+  <pwd>123</pwd>
+  <username>zhangsan</username>
+</map>
+
+XmlUtil.java
+
+
+public class XmlUtil {
+
+	/**
+	 * 解析xml文件，返回字符串，打印出username="" pwd=""
+	 * 
+	 * @throws Exception
+	 */
+	public static String parseXmlFile(Context c) throws Exception {
+		String result="";
+		// 1.创建pull解析器，这是一个接口，不能直接new 一个对象
+		XmlPullParser pullParser = Xml.newPullParser();
+		// 2。把xml文件进行关联
+		// openFileInput方法会在包/files/找到这个文件
+		FileInputStream fis = c.openFileInput("qqinfo.xml");
+		pullParser.setInput(fis, "utf-8");
+		// 3.解析文件
+		// 3.1 获取事件类型，开标签，闭标签，文本，属性，开始文档类型，结束文档类型
+		int eventType = pullParser.getEventType();
+		//Log.v("520it", eventType + " ");打印查看一个是什么类型，为0,表标最开始
+		// 3.2pullParser.next() 转到下一个标签
+		//eventType = pullParser.next();返回下一个事件的类型 2 表标starttag
+		// 3.3 pullParser.getName() 获取这个标签名称
+		//Log.v("520it", pullParser.getName() + " ");
+		// 3.4 再往下走一行，
+		// 3.5 pullParser.nextText()//显示的是pwd
+		//如果再往下走，如果是text事件，getName只会返回空
+		
+		//下面是优化版，
+		while (eventType!=XmlPullParser.END_DOCUMENT) {//如果没有到达结束标签，
+			//  <map>  <pwd>   <username>
+			if (eventType==XmlPullParser.START_TAG) {//如果是开标签
+				if (pullParser.getName().equals("username")) {//如果开标签是pwd
+					result+=("   username="+pullParser.nextText());//拿到开标签里面的text内容，pullParser.nextText()找到标签后面的文本
+				}else if (pullParser.getName().equals("pwd")) {
+					result+=("   pwd="+pullParser.nextText());
+				}
+			}
+			eventType = pullParser.next();//移动到下一个事件，事件有可能是标签，有可能是文本
+		}
+		
+		return result;
+	}
+
+}
+
+04_(掌握)解析xml的应用场景
+
+例如天气预报的解析
+解析assets/weather.xml
+
+weather.xml内容如下
+<ArrayOfString xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://WebXml.com.cn/">
+    <string>北京</string>
+    <string>2015-9-7 15:22:46</string>
+    <string>17℃/29℃</string>
+    <string>无持续风向微风</string>
+    <string>今日天气实况：气温：28℃；风向/风力：西南风 2级；湿度：44%；空气质量：暂无；紫外线强度：强</string>
+</ArrayOfString>
+
+实现效果：当点击按钮时把weather.xml加载到textview中
+activity_main.xml 布局文件内容
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/weather_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="parseXmlClick"
+        android:text="解析天气预报文件" />
+
+</LinearLayout>
+
+在MainActivity.java中
+
+import org.xmlpull.v1.XmlPullParser;
+
+	private TextView mWeatherTv;
+
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		mWeatherTv = (TextView) findViewById(R.id.weather_tv);
+	}
+	
+	
+	public void parseXmlClick(View v) throws Exception{
+		String result="";//用这个string来存储
+		//1.找到这个文件 AssetManager资源管理器
+		AssetManager assets = getAssets();
+		//assets.open("weather.xml");返回一个输入流，把这个文件读入内存中
+		InputStream fis = assets.open("weather.xml");
+		//2.创建一个pull解析器
+		XmlPullParser pullParser=Xml.newPullParser();
+		//3.绑定这个流，读这个流到pull解析器中
+		pullParser.setInput(fis, "utf-8");
+		//4.开始解析这个文档，这是事件解析，获取事件解析类型
+		int eventType = pullParser.getEventType();
+		//5.循环，结束条件，XmlPullParser.END_DOCUMENT读到文档结束
+		while (eventType!=XmlPullParser.END_DOCUMENT) {
+			//7.读取一行数据之后存到result变量中，如果是开始标签，标签名为string
+			if (eventType==XmlPullParser.START_TAG
+					&&pullParser.getName().equals("string")) {
+				result+=pullParser.nextText()+"\n";//拿到这个标签后面的文本
+			}
+			//6.读下一个标签
+			eventType=pullParser.next();
+		}
+		mWeatherTv.setText(result);//把读到的文本放到控件中
+	}
+	
+	需求：改一下app名称，改为可换行
+	找到res/values/strings.xml
+	<string name="app_name">天气\n文件</string>
+	
+	
+	05_(重点)如何创建数据库
+	当一系列数据中，数据多，数据有一定规则格式，就使用数据库
+	是一个可嵌入式的数据库，sqlite，文件小，是c代码写的
+	占用的资源非常小，只几百k就ok
+	linux,unix都支持
+	现在创建一个数据库，数据库文件后缀是db
+	首先了解创建文件
+	
+	MainActivity.java中
+	private ContactDao mDao;
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		try {
+			// 1./files/haha.txt
+			File file = new File(getFilesDir(), "haha.txt");
+			// 2.1 创建一个文件，这是第一种方式
+			file.createNewFile();
+			// 2.2 创建一个输出流，写内容进去，也能创建文件，第二种方式创建文件
+			FileOutputStream fos = new FileOutputStream(file);
+			// 3.如果创建数据库文件需要 SQLiteOpenHelper这个类，它是一个帮助类
+			DbOpenHelper helper = new DbOpenHelper(this);
+			// 4.1 getReadableDatabase 产生数据库文件
+			// helper.getReadableDatabase();
+			// 4.2 getWritableDatabase() 产生数据库文件4.2 4.1都可以产生数据库文件
+			// SQLiteDatabase db = helper.getWritableDatabase();
+			// db.execSQL(sql)
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		mDao=new ContactDao(this);
+	}
+
+	public void insertContact(View v) {
+		mDao.insertContact("zhangsan", "150122222");
+	}
+
+	public void updateContact(View v) {
+		mDao.updateContact("zhangsan", "1501111111");
+	}
+
+	public void deleteContact(View v) {
+		mDao.deleteContact("zhangsan");
+	}
+
+	public void queryContact(View v) {
+		mDao.queryContact("15018888888");
+	}
+	
+DbOpenHelper.java
+package com.m520it.sqlite3;
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.provider.BaseColumns;
+import android.util.Log;
+
+public class DbOpenHelper extends SQLiteOpenHelper implements BaseColumns{//继承这个帮助类
+
+	//1. 数据库文件名
+	public static final String DB_NAME="contact.db";
+	//2. 数据库版本
+	public static final int DB_VERSION=1;
+	//3. 数据库表名，表字段名
+	public static final String TABLE_NAME="contactinfo";
+	public static final String _USERNAME="username";
+	public static final String _PHONE="phone";
+	
+	//factory参数，用于创建cursor游标工厂类 需要一个构造器，创建数据库需数据库名，数据库版本，
+	public DbOpenHelper(Context context) {
+		super(context, DB_NAME, null, DB_VERSION);
+	}
+
+	@Override
+        //当数据库创建的时候会调用onCreate方法，这时在这个方法中可以创建数据库表了，需要sql语句 当创建一个数据库文件之后，接下来创建数据库表
+		//在软件中写sql语句，如果成功再把语句放入代码中
+		//long int short --integer
+		//string 大文本 varchar(20)-- text
+		//如何写sql语句，首先安装sqlite软件new database, 创建表，create table contactinfo (_id integer primary key autoinccrement,username text,phone text)
+	public void onCreate(SQLiteDatabase db) {
+		Log.v("520it", "onCreate");
+		db.execSQL("create table "+TABLE_NAME+" ("+_ID+" integer primary key autoincrement," +
+				_USERNAME+" text,"+_PHONE+" text);");
+		
+	}
+	@Override
+//	Update 升级数据库，当版本号DB_VERSION=2 ，发生变化时会调用这个方法，可以在方法中修改 数据库字段等，
+//  app需要更改数据库表，删除某个字段，增加一张新表，就需要这个方法
+	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+		Log.v("520it", "onUpgrade"+"  oldVersion="
+					+oldVersion+" newVersion="+newVersion);
+	}
+
+}
+
+
+06_(掌握)数据库增删改查的SQL语句
+07_(重点)数据库增删改查代码实现
+08_(重点)Sqlite3工具的使用 增删查改需要返回值
+09_(重点)数据库增删改查的Google实现 可以知道增删查改是否成功 goolge提供了一种面向对象的增删查改
+	MainActivity.java中
+	private ContactDao mDao;
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		try {
+			// 1./files/haha.txt
+			File file = new File(getFilesDir(), "haha.txt");
+			// 2.1 创建一个文件，这是第一种方式
+			file.createNewFile();
+			// 2.2 创建一个输出流，写内容进去，也能创建文件，第二种方式创建文件
+			FileOutputStream fos = new FileOutputStream(file);
+			// 3.如果创建数据库文件需要 SQLiteOpenHelper这个类，它是一个帮助类
+			DbOpenHelper helper = new DbOpenHelper(this);
+			// 4.1 getReadableDatabase 产生数据库文件
+			// helper.getReadableDatabase();
+			// 4.2 getWritableDatabase() 产生数据库文件4.2 4.1都可以产生数据库文件
+			// SQLiteDatabase db = helper.getWritableDatabase();产生数据扣对象，这个对象可对数据库增删改查
+			// db.execSQL(sql)执行一个sql语句
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		mDao=new ContactDao(this);
+	}
+
+	public void insertContact(View v) {
+		mDao.insertContact("zhangsan", "150122222");
+	}
+
+	public void updateContact(View v) {
+		mDao.updateContact("zhangsan", "1501111111");
+	}
+
+	public void deleteContact(View v) {
+		mDao.deleteContact("zhangsan");
+	}
+
+	public void queryContact(View v) {
+		mDao.queryContact("15018888888");
+	}
+	
+ContactDao.java中
+package com.m520it.sqlite3;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+ 
+/**
+ *	 实现一个dao层，实现增删查改，dao与数据库直接打交道
+ */
+public class ContactDao {
+	
+	private DbOpenHelper mHelper;
+	
+	public ContactDao(Context c) {
+		mHelper=new DbOpenHelper(c);//创建一个dbhelper对象
+	}
+
+	/**
+	 * 
+	 * @param username
+	 * @param phone
+	 */
+	 // insert into contactinfo(username,phone) values('zhangsan','123232')
+	public boolean insertContact(String username,String phone){
+		SQLiteDatabase db = mHelper.getWritableDatabase();//返回了一个可写的数据库
+		// bindArgs占位符所对应的值
+		// db.execSQL("insert into contactinfo(username,phone) values(?,?);", new String[]{username,phone});
+		// 进化db.execSQL("insert into + DbOpenHelper.TABLE_NAME+"("+DbOpenHelper._USERNAME+",+DbOpenHelper.+_PHONE") values(?,?);", new String[]{username,phone});
+		//ContentValues 占位参数，是一个键值对，key代表你要插入的那个字段名
+		ContentValues values=new ContentValues();
+		//key 使用第二种方法写sql语句  goolge提供了一种面向对象的增删查改
+		values.put(DbOpenHelper._USERNAME, username);
+		values.put(DbOpenHelper._PHONE, phone);
+		//@return 第二个参数，如果写的是username，则插入的values值中username不能为空
+		//如果第二个参数为空，则插入的值中有些字段可以为空，返回-1表示错误发生
+		long rowId = db.insert(DbOpenHelper.TABLE_NAME, null , values);
+		return rowId!=-1;
+	}
+	//update contactinfo set phone='' where username='zhangsan'; 
+	public boolean updateContact(String username,String newPhone){
+		SQLiteDatabase db = mHelper.getWritableDatabase();//拿到可写的数据库
+		//db.execSQL("update contactinfo set phone=？ where username=?;",update contactinfo set phone='
+		ContentValues values=new ContentValues();
+		values.put(DbOpenHelper._PHONE, newPhone);
+		//whereClause  第三个参数就是where语句
+		//whereArgs where语句参数绑定值
+		//@return int >0表示更新成功，成功几行就返回几
+		//db.update(table,values,whereClause,whereArgs)
+		int updateRows = db.update(DbOpenHelper.TABLE_NAME,
+				values, DbOpenHelper._USERNAME+"=?", new String[]{username});
+		return updateRows>0;
+	}
+	//delete from contactinfo where username='lishi'
+	public boolean deleteContact(String username){
+		SQLiteDatabase db = mHelper.getWritableDatabase();
+		//db.execSQL("delete from contactinfo where username=?",new String[]{username}
+		//whereClause  第三个参数就是where语句
+		//whereArgs where语句参数绑定值
+		int deleteRows = db.delete(DbOpenHelper.TABLE_NAME, "username=?", new String[]{username});                                     
+		return deleteRows>0;
+	}
+	
+	//select username from contactinfo where phone='12354556'
+	public String queryContact(String searchPhone){
+		
+		String result="";
+		
+		SQLiteDatabase db = mHelper.getReadableDatabase();//没用到修改，只是查询，所以使用read
+    	//db.rawQuery("select username from contactinfo where phone='?'",new String[]{phone}
+    	
+    	//whereClause  第三个参数就是where语句
+		//whereArgs where语句参数绑定值
+		Cursor cursor = db.query(DbOpenHelper.TABLE_NAME, 
+				new String[]{DbOpenHelper._USERNAME,DbOpenHelper._PHONE},
+				"phone=?", new String[]{searchPhone}, //返回一个游标 
+				null, null, null);
+		while (cursor.moveToNext()) {
+			//拿到该字段的列数
+			int columnIndex = cursor.getColumnIndex(DbOpenHelper._USERNAME);
+			//取出该字段的值
+			String username = cursor.getString(columnIndex);
+			
+			//拿到该字段的列数
+			int phoneColumnIndex = cursor.getColumnIndex(DbOpenHelper._PHONE);
+			//取出该字段的值
+			String phone = cursor.getString(phoneColumnIndex);
+			
+			result+=(username+"  "+phone+" \n");
+		}
+		return result;
+	}
+	
+	
+}
+DbOpenHelper.java
+package com.m520it.sqlite3;
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.provider.BaseColumns;
+import android.util.Log;
+
+public class DbOpenHelper extends SQLiteOpenHelper implements BaseColumns{//继承这个帮助类
+
+	//1. 数据库文件名
+	public static final String DB_NAME="contact.db";
+	//2. 数据库版本
+	public static final int DB_VERSION=1;
+	//3. 数据库表名，表字段名
+	public static final String TABLE_NAME="contactinfo";
+	public static final String _USERNAME="username";
+	public static final String _PHONE="phone";
+	
+	//factory参数，用于创建cursor游标工厂类 需要一个构造器，创建数据库需数据库名，数据库版本，
+	public DbOpenHelper(Context context) {
+		super(context, DB_NAME, null, DB_VERSION);
+	}
+
+	@Override
+        //当数据库创建的时候会调用onCreate方法，这时在这个方法中可以创建数据库表了，需要sql语句 当创建一个数据库文件之后，接下来创建数据库表
+		//在软件中写sql语句，如果成功再把语句放入代码中
+		//long int short --integer
+		//string 大文本 varchar(20)-- text
+		//如何写sql语句，首先安装sqlite软件new database, 创建表，create table contactinfo (_id integer primary key autoinccrement,username text,phone text)
+	public void onCreate(SQLiteDatabase db) {
+		Log.v("520it", "onCreate");
+		db.execSQL("create table "+TABLE_NAME+" ("+_ID+" integer primary key autoincrement," +
+				_USERNAME+" text,"+_PHONE+" text);");
+		
+	}
+	@Override
+//	Update 升级数据库，当版本号DB_VERSION=2 ，发生变化时会调用这个方法，可以在方法中修改 数据库字段等，
+//  app需要更改数据库表，删除某个字段，增加一张新表，就需要这个方法
+	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+		Log.v("520it", "onUpgrade"+"  oldVersion="
+					+oldVersion+" newVersion="+newVersion);
+	}
+
+}
+ 
+ 用sqlite3查看数据库的表
+//在下载的软件包中找到android-adt-bundle/sdk/tools/sqlite3.exe
+adb devices显示当前连接设备
+adb shell进shell命令
+cd /data/data/com.m520.sqlit3/database/
+ls contact.db
+sqlite3 contact.db//用命令查看这个数据库表
+.quit 退出命令
+
+
+10_(掌握)初识ListView 
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    <!-- 想在容器里面(通过代码)动态添加TextView -->
+	<LinearLayout 
+	    android:id="@+id/container_ll"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:orientation="vertical"
+	    android:visibility="gone" />
+	
+	<!-- ListView -->
+	
+	<ListView 
+	    android:id="@+id/lv"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent" />
+	
+</LinearLayout>
+
+
+MainActivity.java
+
+public class MainActivity extends Activity {
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		//1.拿到listview
+		ListView lv = (ListView) findViewById(R.id.lv);
+		//2.创建一个字符数组的数据
+		ArrayList<String> datas=new ArrayList<String>();
+		for (int i = 0; i < 300; i++) {
+			datas.add("测试"+i);
+		}
+		//3.控件与数据怎么绑定， BaseAdapter是把数据与视图绑定
+		MyAdapter adapter=new MyAdapter(this,datas);
+		lv.setAdapter(adapter);
+	}
+    //会卡顿，因创建了300次，选中代码，ALT SHIFT N 抽取成一个方法
+	private void normalMethod() {
+		LinearLayout containerLl = (LinearLayout) findViewById(R.id.container_ll);
+		//添加TextView  300个
+		int MAX_CHILD_COUNT=300;
+		for (int i = 0; i < MAX_CHILD_COUNT; i++) {
+			TextView tv=new TextView(this);//创建textview
+			//LinearLayout设置布局参数，textview需要添加到哪个容器下就使用那个容器的layoutparams
+			tv.setLayoutParams(
+					new LinearLayout.LayoutParams(
+							LinearLayout.LayoutParams.MATCH_PARENT, //宽度
+							LinearLayout.LayoutParams.WRAP_CONTENT));//高度
+			//TextView设置一下字体大小
+			tv.setTextSize(30);//px
+			tv.setTextColor(0xFFFF0000);
+			tv.setText("测试"+i);
+			//把textview添加到这个容器中
+			containerLl.addView(tv);
+		}
+	}
+
+
+}
+
+
+MyAdapter.java
+public class MyAdapter extends BaseAdapter {
+	
+	private ArrayList<String> mDatas;
+	private Context mContext;
+	
+	public MyAdapter(Context c,ArrayList<String> datas) {
+		mDatas=datas;
+		mContext=c;
+	}
+
+	//1.有多少个显示
+	@Override
+	public int getCount() {
+		return mDatas.size();
+	}
+
+	/**
+	 * @param position µ±«∞œÓµƒÀ˜“˝
+	 * @return View æÕ «“™’π æµƒƒ≥“ªœÓµƒøÿº˛≤ºæ÷
+	 * */
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent) {
+		Log.v("520it", "getView"+position);
+		//显示的是第几项position
+		String text = mDatas.get(position);
+		TextView tv=new TextView(mContext);
+		tv.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.MATCH_PARENT,
+				AbsListView.LayoutParams.WRAP_CONTENT));//设置宽高，没有会报错
+		tv.setTextSize(20);
+		tv.setText(text);
+		return tv;
+	}
+
+	@Override
+	public Object getItem(int position) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public long getItemId(int position) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+
+}
+
+
+云润金融(安装前先删掉国王期货)：
+1.增加区分不同交易所
+2.去掉交易汇总
+3.下单确认页挪到系统设置里
