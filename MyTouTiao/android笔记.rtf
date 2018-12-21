@@ -2620,7 +2620,178 @@ public class MyAdapter extends BaseAdapter {
 }
 
 
-云润金融(安装前先删掉国王期货)：
-1.增加区分不同交易所
-2.去掉交易汇总
-3.下单确认页挪到系统设置里
+
+
+day 5
+
+01_(掌握)常见的列表界面&原理
+
+一个listview是没有办法把数据放进去
+需要常用适配器BaseAdapter把数据放进去
+用Adapter来管理数据
+
+在activity_main.xml
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"  >
+
+    <ListView
+        android:id="@+id/lv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"  />
+
+</RelativeLayout>
+
+在MainActivity.java
+public class MainActivity extends Activity {
+
+	private ListView mListView ;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		//1.创建列表
+		mListView = (ListView) findViewById(R.id.lv);
+		//2.创建数据
+		ArrayList<String> datas=new ArrayList<String>();
+		for (int i = 0; i < 150; i++) {
+			datas.add("测试:"+i);
+		}
+		//3.放入数据
+		MyAdapter adapter=new MyAdapter(datas);
+		mListView.setAdapter(adapter);
+	}
+
+
+}
+
+
+在 MyAdapter.java中
+public class MyAdapter extends BaseAdapter {
+
+	private ArrayList<String> mDatas;
+	
+	public MyAdapter(ArrayList<String> datas) {
+		mDatas=datas;
+	}
+
+	@Override
+	public int getCount() {  //调用顺序1
+		Log.v("520it", "getCount");//会多次调用，系统要反复知道共有多少项
+		return mDatas.size();
+	}
+	
+	
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent) {//调用顺序2  parent相当于容器，return 的view都放到这个容器中
+		Log.v("520it", "getView position="+position);
+		需求1。显示的listview每一行只有一个textviw控件
+//		TextView tv=new TextView(parent.getContext());//每一个view都可以获取一个上下文context，调用方式是view.getContext()
+//		tv.setLayoutParams(new AbsListView.LayoutParams(//设置宽是与父窗体，高度包括文字的高度
+//				AbsListView.LayoutParams.MATCH_PARENT,//fill_PARENT（2。3以前使用）和MATCH_PARENT一样
+//				AbsListView.LayoutParams.WRAP_CONTENT));
+//		tv.setTextSize(30);
+//		tv.setText(mDatas.get(position));//设置数据
+		需求1。显示的listview每一行有多个控件，这样的好处是以后一个cell中的子控件只在一个布局文件中修改
+//		LayoutInflater可以将一个布局xml文件转换成一个类 
+		LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
+//		把lv_item_layout.xml布局文件转换为类
+		View view = layoutInflater.inflate(R.layout.lv_item_layout, null);//null(root)询问view是否添加到某个容器中，如果不想放入传null 
+		TextView tv=(TextView) view.findViewById(R.id.tv);
+		tv.setText(mDatas.get(position));
+		return view;
+	}
+
+	@Override
+	public Object getItem(int position) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public long getItemId(int position) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+
+}
+
+lv_item_layout.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:textSize="24sp"
+    android:textColor="#F00"
+    android:gravity="center"
+    android:id="@+id/tv" />
+    
+    
+    
+02_(重点)常用适配器BaseAdapter方法详解 （个人理解，ios的内存复用）
+
+在日常应用中，有些cell只有一个text，像这样的android为了使用简单，android已经实现这种cell布局
+以前：
+View view = layoutInflater.inflate(R.layout.lv_item_layout, null);//null(root)询问view是否添加到某个容器中，如果不想放入传null 
+现在：直接使用android的布局，这种布局就是一个cell有一个textview
+View view = layoutInflater.inflate(android.R.layout.simple_list_item_1,
+					null);
+同样：android还定义了另外一个布局，这个布局是一个cell中有两个textview，位置是在左边一向一下，一个大标题，一个小标题
+View view = layoutInflater.inflate(android.R.layout.simple_list_item_2,
+					null);
+public View getView(int position, View convertView, ViewGroup parent) {}
+					
+position相当于cell的索引，parent相当于cell容器，每个itemview里面的容器，返回的view直接添加到容器中
+convertView 有的时候打印是null，每一次创建的时候界面上的cell，打印出convertView为空，滚动的时候打印出convertView不为容，相当于ios
+cell复用，缓存的cell
+这个类似ios的tableview,界面上先创建能显示的cell内存，然后再去复用
+
+
+之间未复用时：
+	public View getView(int position, View convertView, ViewGroup parent) {//调用顺序2  parent相当于容器，return 的view都放到这个容器中
+		Log.v("520it", "getView position="+position);
+		需求1。显示的listview每一行只有一个textviw控件
+//		TextView tv=new TextView(parent.getContext());//每一个view都可以获取一个上下文context，调用方式是view.getContext()
+//		tv.setLayoutParams(new AbsListView.LayoutParams(//设置宽是与父窗体，高度包括文字的高度
+//				AbsListView.LayoutParams.MATCH_PARENT,//fill_PARENT（2。3以前使用）和MATCH_PARENT一样
+//				AbsListView.LayoutParams.WRAP_CONTENT));
+//		tv.setTextSize(30);
+//		tv.setText(mDatas.get(position));//设置数据
+		需求1。显示的listview每一行有多个控件，这样的好处是以后一个cell中的子控件只在一个布局文件中修改
+//		LayoutInflater可以将一个布局xml文件转换成一个类 
+		LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
+//		把lv_item_layout.xml布局文件转换为类
+		View view = layoutInflater.inflate(R.layout.lv_item_layout, null);//null(root)询问view是否添加到某个容器中，如果不想放入传null 
+		TextView tv=(TextView) view.findViewById(R.id.tv);
+		tv.setText(mDatas.get(position));
+		return view;
+	}
+
+复用的写法：
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent) {
+		
+		if (convertView==null) {
+			LayoutInflater layoutInflater = LayoutInflater
+					.from(parent.getContext());
+			View view = layoutInflater.inflate(android.R.layout.simple_list_item_2,
+					null);
+			convertView=view;
+			
+		}else {
+			
+		}
+		//不管是老的converView还是新的，下面都会设置数据为最新，这里只会显示android.R.layout.simple_list_item_2，因为converview为空的时候创建的simple_list_item_2
+		TextView tv = (TextView) convertView.findViewById(android.R.id.text1);
+		TextView tv2 = (TextView) convertView.findViewById(android.R.id.text2);
+		tv.setText(mDatas.get(position));
+		tv2.setText(mDatas.get(position));
+
+//		Log.v("520it", "getView view=" + view + "   convertView=" + convertView);
+		return convertView;
+	}
