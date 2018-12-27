@@ -2795,3 +2795,92 @@ cell复用，缓存的cell
 //		Log.v("520it", "getView view=" + view + "   convertView=" + convertView);
 		return convertView;
 	}
+	
+	
+	03_(重点)常用适配器BaseAdapter方法详解v2
+	
+	发现的问题：如果一个cell里多个控件，则如下，每个控件都需要findViewById去查找，这个很耗性能
+		TextView tv = (TextView) convertView.findViewById(android.R.id.text1);
+		TextView tv2 = (TextView) convertView.findViewById(android.R.id.text2);
+		tv.setText(mDatas.get(position));
+		tv2.setText(mDatas.get(position));
+		
+	先看tag属性，每个view都有tag属性
+	activity_max.xml中：
+	<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"  >
+
+    <Button
+        android:id="@+id/btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" 
+        android:text="按钮" />
+
+    </RelativeLayout>
+    
+    MainActivity.java
+    
+public class MainActivity extends Activity implements OnClickListener {
+
+	private Button mBtn;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		mBtn =(Button) findViewById(R.id.btn);
+		mBtn.setOnClickListener(this);
+		//设置tag，这个tag不是int类型，而是一个对象，绑定了一个对象
+		mBtn.setTag("haha");
+	}
+
+	//setOnClickListener的实现方法
+	@Override
+	public void onClick(View v) {
+		//获取tag
+		String tag = (String) v.getTag();
+		Toast.makeText(this, tag, 0).show();
+	}
+
+}
+
+
+频繁的findviewbind不太好，这里作一下改进：
+
+	class ViewHolder{
+		TextView tv1;
+		TextView tv2;
+	}
+
+	/**
+	 * position   这样实现的只会findViewById 调用7次，而不是滑动多少个cell调用多少次
+	* */
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent) {
+		ViewHolder holder=null;
+		if (convertView==null) {//一个屏幕显示7个cell，这里就创建7次，滚动到第八个的时候不会再走到这方法里面
+			LayoutInflater layoutInflater = LayoutInflater
+					.from(parent.getContext());
+			convertView = layoutInflater.inflate(android.R.layout.simple_list_item_2,
+					null);//总共创建7个convertView
+			//new ViewHolder(),会出现tv1,tv2对象
+			holder=new ViewHolder();
+			
+			holder.tv1 = (TextView) convertView.findViewById(android.R.id.text1);//ViewHolder对象中两个属性是两个textview，这里是把两个textview赋值了
+			holder.tv2 = (TextView) convertView.findViewById(android.R.id.text2);
+			
+			convertView.setTag(holder);//把ViewHolder设为convertView的tag
+			Log.v("520it", "getView");
+		}else {
+			holder=(ViewHolder) convertView.getTag();//获取到ViewHolder
+		}
+		
+		holder.tv1.setText(mDatas.get(position));//设置holder的两个控件的值
+		holder.tv2.setText(mDatas.get(position));
+
+//		Log.v("520it", "getView view=" + view + "   convertView=" + convertView);
+		return convertView;
+	}
+    
