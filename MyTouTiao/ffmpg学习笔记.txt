@@ -1,0 +1,483 @@
+011.ffmpeg编译
+搜ffmpeg百度，下载
+找到bulid-x86.sh，改一下ios的编译sdk版本
+或bulid-arm.sh进行编译 最后通过lipo -creat 可以把所有文件编译到一个.a的库里面
+cd ffmpeg_ios
+./bulid-x86.sh 
+编译的i386用于模拟器，x86用于手机 ，arm64,armv7,armv7s是iphone的过渡版本，精简版本
+最终输出到output-lib中会有很多.a的库文件
+如果编译出错，可以make clean 清掉之前编译错误的文件
+编译出错，去苹果官网，底部，xcode，再往下找到tool，下载command line tools  for xocde找到对应的mac系统以及xcode版本下载，因为找不到编译器会出错
+可以通过cat命令把所有平台的库文件合并到一起
+所有编译完成output会有四个文件夹，arm64,armv7,armv7s,i386
+lipo -info armv7/lib/libavcodec.a 可以查看这个库支持哪个平台,lipo是合并静态库的意思
+最后把编译好的拷到xcode直接就可以用了
+ 
+012.编译的补充01
+linux编译工具
+automake autoconf autogen makefile cmake qmake(qt) shell 脚本
+先安装
+commandlinetoolsforxcode7.8
+xcode7.8
+windows上是已经编译好的动态库
+下载ffmpeg,
+cat configure是查看configure内容，可以看到这个是编译makefile的文件
+直接./configure就可以编译，然后这个可以告诉你比如gcc库在哪个位置可以编译，
+支持哪些解码，支持哪些编码./configure --help 就可以列出编译指令
+1.比如 ./configure --prefix==$pwd/output -enable-static可以把编译的输出到这里
+可以编译静态库
+交叉编译：怎么在x86-64平台编译arm库让arm平台能跑arm库
+./configure 会生成makefile文件，不用再写makefile脚本了，
+makefile是用来怎么组织编译源代码的
+./configure后
+2.make -j8  //开启8个线程去编译
+3.生成库 make install 这一步以后才会生成output文件，生成在x86架构下的bin文件里的命令工具
+ffmepg ffplay ffprobe ffserver
+生成lib、include文件夹下的库用于开发
+生成share文件夹，下面是动态库，
+1,2,3三条命令搞定编译mac os 下的x86_64库，这些库在lib下可以看到
+4. lipo -info libavcode.a 查看这个库的信息
+5.把lib、include拷到xocde中可以开发mac os的程序
+
+
+013。编译补充02
+LIBS+=如何用
+语法是 LIBS+= -L直接打地址 -l直接打库名
+注意点：-L后面没有空格，直接跟着地址，然后空格，-l后面是去掉lib之后的文件名。(真TMDSB！）
+一个例子：如我们有E:CLibrariesNewmatLdebuglibNewmatL.a这个文件，则：
+LIBS += -LE:CLibrariesNewmatLdebug -lNewmatL
+或者如果需要编译的pro在E:CLibrariesTEST-build-desktop下，则可以：
+NEWMAT_ROOT = ..NewmatL
+LIBS += -L$${NEWMAT_ROOT}debug -lNewmatL
+
+创建一个qt工程，把ffmpeg拷到文件夹下
+在tostFFmpeg文件中,把ffmpeg的静态库和头文件都包含进来
+macx{
+  INCLUDEPATH += $$PWD/libffmpeg/include//头文件
+  LIBS +=-L$$PWD/libffmpeg/lib -lavcodec -lavformat -lavutil -lavdevice -lavfilter -lswscale -lswresample／／库
+  QMAKE_LFLAGS += -framework QuartzCore//苹果的api加进来使用指定的QMAKE_LFLAGS的好处在于,能够根据当前编译的不同配置(例如debug/release)选择不同路径下的依赖库(这些库也可能 分为debug/releaseea..
+  LIBS +=-L/usr/local/lib -lSDL2 -lz -lbz2-llzma//加入系统装的lsdl
+  LIBS +=-L/usr/local/lib -liconv
+}
+在mainwidow.cpp中
+#include <QDebug>
+extern "C"
+{
+  #include <libavcodec/avcodec.h>
+  #inclue <libavformat/avformat.h>
+}
+然后可以调用api
+
+qDebug()<<"version"<<avcodec_version();
+运行出问题，因为调了mac的一些api,framwork，需加到macx中，
+还报错，因为系统装了lsdl，所以需要加入
+
+编译的问题是因为在编译过程会自动去探测系统的一些库
+如果你装的库和ffmpeg中的库相同，又没在configure中禁用，那最终编译出错
+在configure命令窗口中会显示哪些库编过，哪些库没有编过
+把qt项目转成xcode项目
+进入到项目目录，qmake -$pec max-xcode testFFMPEG.pro
+
+编译后的xcode有错，因qt装了两个版本，建的时候使用低版本，编译xcoode生成用了高版本
+把xcode项目蓝色文件删除，删除bulid文件，
+which qmake查看qt版本
+vi .bash_profile
+把版本换一下
+
+
+014。编译补充03
+bulid-ffmepg.ssh用这个文件进行编译,会自动下载ffmepg,会生成x86,armv7,i386
+ls /usr/local/bin/gas-preprocessor.pl 查看是否有这个文件，如果有，删除掉
+sudo rm /usr/local/bin/gas-preprocessor.pl
+cd FFMPEG_New
+./bulid-ffmepg.ssh 报158行错了
+vi bulid-ffmepg.ssh
+:set nu
+查看少了一个\
+
+练习作一个ios的ffmepg
+刚编好库进去查看
+cd ffmpeg-ios/lib/
+lipo -info libavcode.a 查看这个库支持的平台
+arm7 i386 x86_64 arm64
+把include lib编好的文件拷贝到xcode中libffmpeg目录下
+选择xcode的sdk对应版本
+把lib加到xcode库中
+在xcode中bulid setting 中找到header search paths 加入include头文件
+
+在appdelegate.h
+  #include <libavcodec/avcode.h>
+  #include <libavformat/avformat.h>
+ printf("version%d",avcode_version());
+ 
+ 015。开发环境的搭建
+ 主要在linux上ubuntu 14.04搭环境
+ embeded linux嵌入式linux上搭环境，嵌入式linux用得很多
+ 芯片不一样，大部份用的arm处理器，是arm指令集，一般有图像传感器，类似摄像头，也有网络模块，像一个小电脑
+ network网络模块可以跑一个服务器，可以放代码通过手机去访问交互，数据的传输等，使用tcp/udp等网络协议交互
+ 今天用桌面linux模拟，其实都一样，就是换了一个交叉编译的链而已。
+ 用虚拟机，网络选桥接模式
+ 启动以后需安装vmware tools，会弹出一个光盘，然后copy 到一个目录
+ tar 这个文件，解压，解压后 sudo ./vmware-install.pl 把vmware tools安装上
+ 安装好后可作一个目录共享，让虚拟机和电脑的目录可以共享一些文件。
+ 安装vmware-tools
+ 安装开发环境，gcc
+ sudo apt-get update 更新一些软件源
+ sudo apt-get install vim vi编缉器
+ sudo apt-get install build-essential 安装gcc开发环境
+ 如果vi编缉器不熟悉，去安装qtcreator eclipse codeblocks等编缉器
+ www.qt.io下载了安装
+ 方便查找一些关键词
+ 选opensource 开源的，然后下载qtcreator2.5.2是开发环境，与qt是分开的
+ http://download.qt.io/archive/去下载
+ qt下载4.8.6，把源代码下载后通过linux编译
+ 把下载好的共享一下到虚拟机中
+ 
+ 需要用到的库
+ x264库，采集的图相需要作编码
+ v4l(video for linux)采集yuv的图像。
+ 
+ sudo apt-get install libv4l-dev
+ sudu apt-get install libx264-dev
+ sudo apt-get install libqt4-* libqml* 把qt相关的下载下来
+ 
+ sudo apt-get update 更新一些软件源完成后
+ sudo apt-get install build-essential 安装gcc开发环境
+ sudo ./qt 去安装qt
+ sudo apt-get install libqt4-* 把qt的库安装好
+ 
+ 016。h264数据的接收  ios接收linux连摄像头采集的数据
+ v4l x264 以后会重点讲解
+ 先查看看安装好的环境。
+ 比如ubuntu下qt安装好以后，需查看设置里面的bulid 6 run 下的qt versions,
+ 查看qmake是否安装好的，安装好才可以用at
+ 先更新重要的库
+ sudo apt-get install libv4l 查看到这个库下有几个可选安装
+ 安装其中的一个
+ sudo apt-get install libv4l
+ 安装另一个重要的
+ sudu apt-get install libx264-dev
+ 
+ 编写代码：
+ cd ~/Downloads/IOTCamera
+ ls 查看到该目录下有很多c语言编写的代码
+ 用vi编辑器打开任何一个代码文件
+ 或用qt编辑
+ 在该目录下通过qmake -project 会自动生成一个qt工程
+ 还需要自己写Makefile文件，对代码进行编译
+ 内容如下：
+ EXEC = IOTCamera
+ 
+ CFLAGS = -g
+ LDLIBS += -lpthread -lx264 -lm    //包含用到的线程库
+ 
+ SRCS = main.c \
+         h264capture.c \
+         h264encoder.c \
+         MessageDefine.h \
+         SocketServer.h \
+         SocketServer.c \
+         
+ $(EXEC): $(SRCS)
+       $(cc) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
+ 
+ clean:
+     rm -f $(EXEC) *.o *.h264
+     
+生成可执行的文件：
+make clean
+make 
+
+生成一个可执行文件 IOTCamera
+./IOTCamera 执行，它的功能是监听socket
+
+ifconfig 查看ip，然后端口号
+
+写一个ios 的socket程序去访问它，写好后会连接到这个服务器
+服务器通过摄像头采集的视频会发到这个ios端，发送的是h.264的数据，还需要解码成图象通过
+OpenGL ES显示
+
+虚拟机模拟摄像头，虚拟机有个摄像头选项
+linux的摄像头采集yuv数据，yuv数据会很大，需用h264编码后传输
+通过写tcp/ip 来实现传输
+
+
+ 
+ 017。解码H.264视频数据1  讲述上节课原理
+  linux作的事情
+  1.Embeded Linux嵌入式linux  linux中有摄像头驱动，
+  2.有v4l库，vedio for linux这个库可以编写程序，用于采集yuv的图像。
+  3.采集yuv的图像，采集后作编码，但是真正的嵌入式linux不能用软编码，需要硬编码，用x264 把yuv编码成h.264数据。嵌入式linux是通过硬件编码h.264的，
+  4.作一个协议用于传输，这里用的是tcp/ip协议
+  iphone作的事情
+  1.通过tcp/ip建立一个通讯获取到h.264数据，通讯是双向的
+  2.解码h.264 ，使用ffmpeg软解码
+  3.用opengl对解码后的h.264作显示
+  
+  今天开始解码部份的课程
+  ffmpeg编译，解码
+  xocde打开inteldev项目
+  创建一个h264decoder解码类，继承自NSObjet
+  lipo -info libavcodec.a可以查看到库支持如armv7 armv7s i386 x86-64  arm64架构的
+  把ffmpeg中的libavcodec.a库拷贝到xcode中
+  xcode中有个选项bulid phases可以添加.a的库，有8个.a库，加进以后
+  xcode中的bulid settings 下library search paths 会自动添加这个库路径
+  找到header search paths 拷贝路径 换成include，包含所有的头文件库
+  头文件的库拷贝到frameworks下
+  在这h264decoder.m中
+  #include <libavcodec/avcodec.h>//解码库
+  #include <libavformat/avformat.h>//格式化
+  @interface h264decoder :NSObject
+  {
+    AVCodec * pCodec;//解码的结构体 重要：AVCodecID id: 不重复  AVMediaType type:是音频 视频 字幕
+    AVCodecContext * pCodecCtx;//解码上下文结构体 包括一些解码需要的参数，视频宽高 通道 采样率
+    AVFrame * pVideoFrame;//解码视频以后  会从这个中去取数据
+    AVPacket pAvPackage;//解码前 把yux或h264数据放到这个里面去调用解码api
+  }
+  -（id）init;
+  -(init)DecodeH264Frames:(unsigned char*)inputBuffer withLength:(int)alength;
+  
+  
+  详细：
+  typedef struct AVCodec {
+
+    const char *name; // codec的名字，保持全局唯一，标识名
+
+    const char *long_name; // codec的名字，全名
+    enum AVMediaType type; // Media类型，是视频，音频，还是字幕
+    enum AVCodecID id;
+
+    int capabilities; //  codec的容量，参考 AV_CODEC_CAP_*
+    const AVRational *supported_framerates; //支持的帧率,如果是null，返回是{0，0}
+    const enum AVPixelFormat *pix_fmts;  //支持的像素格式,如果是null或unknown，返回-1
+    const int *supported_samplerates;     //支持的采样率，如果是null或unknown，返回0  
+    const enum AVSampleFormat *sample_fmts;  //支持的采样率，如果是null，返回-1 
+    const uint64_t *channel_layouts;     //支持的声道数， 如果是null，返回0 
+    uint8_t max_lowres;                  //解码器支持的最大lowres  
+    const AVClass *priv_class;    //定义AVClass 成员变量   
+    const AVProfile *profiles;    //定义AVProfile 成员变量          
+}
+  
+  typedef struct AVCodecContext  //描述编解码器上下文数据结构，包括编码需要的参数信息，如视频宽高，采样数，信道数，音频原如格式，编码信息等
+
+{
+
+int bit_rate;
+
+int frame_number;
+
+//扩展数据，如mov格式中audio trak中aac格式中esds的附加解码信息。
+
+unsigned char *extradata;
+
+//扩展数据的size
+
+int extradata_size;
+
+//视频的原始的宽度与高度
+
+int width, height; // 此逻辑段仅针对视频
+
+//视频一帧图像的格式，如YUV420
+
+enum PixelFormat pix_fmt;
+
+//音频的采样率
+
+int sample_rate;
+
+//音频的声道的数目
+
+int channels;
+
+int bits_per_sample;
+
+int block_align;
+
+// 指向相应的解码器，如：ff_h264_decoder
+
+struct AVCodec *codec;
+
+//指向具体相应的解码器的context，如H264Context
+
+void *priv_data;
+
+//公共操作函数
+
+int(*get_buffer)(struct AVCodecContext *c, AVFrame *pic);
+
+void(*release_buffer)(struct AVCodecContext *c, AVFrame *pic);
+
+int(*reget_buffer)(struct AVCodecContext *c, AVFrame *pic);
+
+}AVCodecContext;
+
+
+
+
+018. 06 解码H.264数据2
+
+
+H264Decoder.h 解码类用于解码
+  #include <libavcodec/avcodec.h>//解码库
+  #include <libavformat/avformat.h>//格式化
+  @interface h264decoder :NSObject
+  {
+    AVCodec * pCodec;//解码的结构体 重要：AVCodecID id: 不重复  AVMediaType type:是音频 视频 字幕
+    AVCodecContext * pCodecCtx;//解码上下文结构体 包括一些解码需要的参数，视频宽高 通道 采样率
+    AVFrame * pVideoFrame;//解码视频以后  会从这个中去取数据
+    AVPacket pAvPackage;//解码前 把yux或h264数据放到这个里面去调用解码api
+  }
+  -（id）init;
+  -(init)DecodeH264Frames:(unsigned char*)inputBuffer withLength:(int)alength;
+
+
+
+H264Decoder.m  解码实现
+
+#import "H264Decoder.h"
+@implementation H254Decoder
+
+-(id)init
+{
+  if(self =[super init])
+  {
+      pCodec = NULL;
+      PCodecCtx = NULL;
+      PVideoFrame = NULL;
+      pictureWidth=0;
+      //注册一些解码器
+      av_register_all();
+      avcodec_register_all();
+      //去找h.264这种解码器
+      pCodec= avcodec_find_decoder(CODEC_ID_H264);
+      if(!pCodec){
+        printf("Codec not find\n");
+      }
+      //去获得这个解码器的上下文，主要得到视频宽度高度，音频采样率，通道等
+      pCodecCtx=avcodec_alloc_context3(pCodec);
+      if(!pCodecCtx){
+        printf("allocate codec context error\n");
+      }
+      //打开一个解码器
+      avcodec_open2(pCodecCtx,pCodec,NULL);
+      //解码以后的数据存到这里面
+      pVideoFrame=avcodec_alloc_frame();
+  }
+  return self;
+}
+
+-(void)dealloc
+{
+//释放
+  if(!pCodecCtx){
+     avcode_close(pCodecCtx);
+     pCodeCtx = NULL;
+  }
+  if(!pVideoFrame){
+     avcodec_free_frame(&pVideoFrame):
+     pVideoFrame=NULL;
+  }
+  [super dealloc];
+}
+ 
+ //把解码的数据传进来  h264数据 解码成yuv420数据
+-(init)DecodeH264Frames:(unsigned char*)inputBuffer withLength:(int)alength
+{
+int gotPicPtr =0;
+int result = 0;
+
+av_int_packet(&pAvPackage);
+pAvPackage.data=(unsigned char*)inputBuffer;//传入的数据给avpackage
+pAvPackage.size=aLength;//长度给avpackage
+//解码
+result = avcodec_decode_video2(pCodecCtx,pVideoFrame,&gotPicPtr,&pAvPackage);//把avpackage传入解码，解码后保存到pVideoFrame
+//如果视频尺寸更改，丢掉这个frame
+if((pictureWidth!=0)&&(pictureWidth!=pCodecCtx->width)){
+    setRecordResolveState=0;
+    pictureWidth=pCodecCtx->width;
+    return -1;
+} 
+if(gotPicPtr)
+{
+  //yuv进行分量，拷贝的长度,linesize很多时候大于pCodecCtx的，这里比较取一个最小的值，因为视频:1280*720 linesize[0]如果是1365，大于pCodecCtx->width1280，则取1280 linesize[1] 655小于pCodecCtx->width720就取655 linesize[2] 655,有点像栽剪
+  unsigned int lumaLength = (pCodecCtx->height)*(MIN(pVideoFrame->linesize[0],pCodecCtx->width));
+  unsigned int chromBLength = ((pCodecCtx->height)/2)*(MIN(pVideoFrame->linesize[1],(pCodecCtx->width)/2));
+  unsigned int chromRLength = ((pCodecCtx->height)/2)*(MIN(pVideoFrame->linesize[2],(pCodecCtx->width)/2));
+   
+  H264YUV_Frame yuvFrame;
+  memset(&yuvFrame,0,sizeof(H264YUV_FRAME));
+  
+  yuvFrame.luma.length = lumaLength;
+  yuvFrame.chromaB.length = chromBLength;
+  yuvFrame.chromaR.length = chromRLength;
+  
+  yumFrame.luma.dataBuffer = (unsigned char*)malloc(lumLength);
+  yumFrame.chromaB.dataBuffer=(unsigned char*)malloc(chromBLength);
+  yumFrame.chromaR.dataBuffer=(unsigned char*)malloc(chromRLength);
+  
+  //拷贝提时候也是根据较小值去拷贝的
+  copyDecodedFrame(pVideoFrame->data[0],yuvFrame.luma.dataBuffer,pVideoFrame->linesize[0],pCodecCtx->width,pCodecCtx->height);
+  copyDecodedFrame(pVideoFrame->data[1],yuvFrame.chromaB.dataBuffer,pVideoFrame->linesize[1],pCodecCtx->width/2,pCodecCtx->height/2);
+  copyDecodedFrame(pVideoFrame->data[2],yuvFrame.chromaR.dataBuffer,pVideoFrame->linesize[2],pCodecCtx->width/2,pCodecCtx->height/2);
+
+  yumFrame.width=pCodecCtx->width;
+  yumFrame.height=pCodecCtx->height;
+  
+  if(setRecordResolveState==0){
+      setRecordResolveState=1;
+  }
+  dispatch_sync(dispatch_get_main_queue(),^{
+     [self updateYUNFrameOnMainThread:(H264YUV_Frame*)&yuvFrame];
+  });
+  free(yuvFrame.luma.dataBuffer);
+  free(yumFrame.chromB.dataBuffer);
+  free(yumFrame.chromR.dataBuffer);
+}
+    av_free_packet(&pAvPackage);//每次释放掉pAvPackage
+    return 0;
+}
+
+void copyDecodedFrame(unsigned char*src,unsigned char*dist,int linesize,int width, int height){
+    width = MIN(linesize,width);
+    for (NSUInteger i=0 ;i<height;++i){
+        memcpy(dist,src,width);
+        dist +=width;
+        src+=linsize;
+    }
+}
+
+-(void)updateYUNFrameOnMainThread:(H264YUV_Frame*)yuvFrame
+{
+    if(yuvFrame){//交给opengl显示出来，opengl可直接显示yuv
+    //opengl也可以直接把h264转rgb的 ，sw_scale()这个函数也可以转rgb，效率低，yuv是不用转rgb的，交给opengl直接显示出来，转rgb的方式用硬件转比较好
+    
+    }
+}
+
+
+}
+  
+H264DecodeDefine.h  解码后用自定义的结构体存到H264YUVDef中
+
+#ifndef H264DecodeDefine_h
+#define H264DecodeDefine_h
+pragma pack(push,1)
+
+typedef struct H264FrameDef
+{
+    unsigned int length;
+    unsigned char * dataBuffer:
+}H264Frame;
+
+typedef  struct H264YUVDef
+{
+    unsigned int width;
+    unsigned int height;
+    H264Frame luma;
+    H264Frame chromaB;
+    H264Frame chromaR;
+}H264YUV_Frame;
+
+#pragma pack(pop)
+#endif
