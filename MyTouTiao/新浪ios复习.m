@@ -717,9 +717,9 @@ ViewController.m
 @end
 
 
-视图响应链的传递
+视图响应链的传递，如果这个过程中传到uiapplicationdelegate也没有响应，则当这个事件没有发生
 
-uivewa-uicontrolview的view-uiwindow-uiapplication
+uivewa-uicontrolview的view-uiwindow-uiapplication-uiapplicationdelegate
 
 
 uiview继承自UIResponder，UIResponder视图响应方法：
