@@ -715,3 +715,43 @@ ViewController.m
 
 
 @end
+
+
+视图响应链的传递
+
+uivewa-uicontrolview的view-uiwindow-uiapplication
+
+
+uiview继承自UIResponder，UIResponder视图响应方法：
+
+//当手指触摸屏幕时触发(刚开始接触
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(nullable UIEvent *)event;
+
+//当手指触摸屏幕, 并且在视图内移动时触发(此时手指不离开屏幕
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
+
+//当手指离开屏幕时触发(接触结束)
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
+
+
+其它方法
+//当触摸被取消时, 前提是手指必须触摸屏幕(例如, 电话进入时)
+- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event
+
+//修改自身视图颜色
+- (void)changeSelfColor
+{
+    self.backgroundColor = [UIColor randomColor];
+}
+ 
+//修该父视图颜色
+- (void)changeSuperviewColor
+{
+    self.superview.backgroundColor = [UIColor randomColor];
+}
+
+//改变自身视图位置
+- (void)changeSelfLocation
+{
+    self.center = CGPointMake(arc4random() % (270 - 50 + 1) + 50, arc4random() % (518 - 50 + 1) + 50 );
+}
