@@ -1858,8 +1858,345 @@ struct objc_super{
 方法1与方法2的区别：
 调用方法-查找缓存-有方法实现-invoke函数指针调用函数实现一次消息传递
 调用方法-查找缓存-没有方法实现-根据当前实例的isa指针查找当前类对象方法列表-找到后-invoke函数指针调用函数实现一次消息传递
-调用方法-查找缓存-没有方法实现-根据当前实例的isa指针查找当前类对象方法列表-未找到-向父类一级级方法列表查找，通过当前类对象superclass指针去查找父类方法列表，一直往向查指到nil为止
+调用方法-查找缓存-没有方法实现-根据当前实例的isa指针查找当前类对象方法列表-未找到-向父类一级级方法列表查找，通过当前类对象superclass
+指针去查找父类方法列表，一直往向查指到nil为止
 -未找到-会进入消息转发流程
+
+消息转发流程的回答？
+
+
+
+5-4 方法缓存查找相关面试问题
+消息传递机制重要的一个流程，消息缓存查找。它的流程和步骤：
+
+步骤1缓存查找：
+例：给定的方法选择器sel，来查找是对应bucket_t中的方法实现imp，bucket_t数据结构是方法选择器和实现的一个封装体。
+实际上是在objc_class中cache_t这个结构体，通过方法选择器sel，通过一个hash函数，算出它以及mask，作位与操作，求出函数的实现在数组中的一个索引位置，
+从bucket_t数据结构中找出来函数的实现，通过函数指针返回给调用方，mask也是bucket_t的一个成员，这是一个hash查找，解决查找效率的问题。
+
+频聚2当前类查找
+消息传递中每一步骤，在消息缓存中查找，第二步骤在当前类中查找：
+当前类实际上是有对应的方法列表的，对于已排序好的方法列表，采用二分查找算法查找方法对应的执行函数实现。
+对于没有排序的列表，采用一般遍历查找方法对应执行函数实现。
+
+频聚3 父类逐级查找
+
+通过当前类的superclass成员变理，去查找它的父类，到父类后判断父类是否为nil，如果有父类，在父类缓存中查到方法实现，就结束，如果缓存中没找到，需到当前父类的方法
+列表查找，如果有把函数实现返给调用方，如果还未查找到，再到父类的父类查找，直到查到nsobject的父类为nil是，没找到，就结束父类的查找，进入到消息转发流程，这是关于父类逐级查找过程。
+
+
+
+5-5 消息转发相关面试问题
+
+消息转发流程是怎样的：
+对于实例消息转发流程，系统会回调：resolveInstanceMethod:
+对于类方法消息转发流程，系统会回调：resolveClassMethod:
+主要研究实例消息转发流程：
+类方法resolveInstanceMethod有一个参数sel消息选择器，返回值是bool，告诉系统要不要解决当前实例方法的实现，返回yes，
+通知系统消息已经处理，结束消息转发流程，如果说返回no，系统会回调forwardingTargetForSelector:这个方法，给每二次机会
+处理消息。、
+第二次处理机会：
+forwardingTargetForSelector:参数也是sel，返回值id,告诉系统这次系统实例的方法调用应该由哪个对象来处理，如果指定转发目标，系统
+会把这条消息指定给此转发目标，系统结束消息转发流程，如果每二次机会返回nil，未给转发目标，系统会给我们第三次处理消息的机会，系统会调用
+methodSignatureForSelector:
+第三次处理机会：
+methodSignatureForSelector:参数也是sel，返回是一个类或一个对象，这个对象是对于方法这个方法选择器sel返回值的类型，以及参数个数，类型的封装，
+些时如果返回了方法签名，那系统会调用forwardInvocation:如果forwardInvocation:方法能处理这条消息，那消息转发流程结束，如果methodSignatureForSelector返
+回nil，或者forwardInvocation:没有办法处理这条消息，被标记为消息无法处理，常见的carsh未识别消息选择器，实际上就是走到这里所产生的打印结果。
+
+代码感受系统消息转发流程顺序。
+
+RuntimeObject.h
+
+#import <Foundation/Foundation.h>
+
+@interface RuntimeObject : NSObject
+
+- (void)test;
+
+@end
+
+
+RuntimeObject.m
+
+//
+//  RuntimeObject.m
+//  RuntimeTest
+//
+//  Created by yangyang38 on 2018/2/25.
+//  Copyright © 2018年 yangyang. All rights reserved.
+//
+
+#import "RuntimeObject.h"
+#import <objc/runtime.h>
+@implementation RuntimeObject
+
+void testImp (void)
+{
+    NSLog(@"test invoke");
+}
+
++ (BOOL)resolveInstanceMethod:(SEL)sel
+{
+    // 如果调用的是当前类对象的test方法 打印日志
+    
+    if (sel == @selector(test)) {
+        NSLog(@"resolveInstanceMethod:");
+
+        // 动态添加test方法的实现
+        class_addMethod(self, @selector(test), testImp, "v@:");
+        
+        return YES;//如果返回no，会到forwardingTargetForSelector中
+    }
+    else{
+        // 返回父类的默认调用
+        return [super resolveInstanceMethod:sel];
+    }
+}
+
+- (id)forwardingTargetForSelector:(SEL)aSelector
+{
+    NSLog(@"forwardingTargetForSelector:");
+    return nil;//返回nil，回到methodSignatureForSelector
+}
+
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector
+{
+    if (aSelector == @selector(test)) {//如果是test方法，返回方法签名 
+        NSLog(@"methodSignatureForSelector:");
+        // v 代表返回值是void类型的  @代表第一个参数类型时id，即self
+        // : 代表第二个参数是SEL类型的  即@selector(test)
+        return [NSMethodSignature signatureWithObjCTypes:"v@:"];//void self sel
+    }
+    else{
+        return [super methodSignatureForSelector:aSelector];//否则返回父类调用，这会调用forwardInvocation:(NSInvocation *)anInvocation
+    }
+}
+
+//打印这条方法命称日志
+- (void)forwardInvocation:(NSInvocation *)anInvocation
+{
+    NSLog(@"forwardInvocation:");
+}
+
+@end
+
+AppDelegate.m
+
+#import "AppDelegate.h"
+#import "RuntimeObject.h"
+#import "Account.h"
+@interface AppDelegate ()
+
+@end
+
+@implementation AppDelegate
+
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    // Override point for customization after application launch.
+    
+    RuntimeObject *obj = [[RuntimeObject alloc] init];
+    // 调用test方法，只有声明，没有实现,这会看到消息转发流程的实现
+    [obj test];
+    
+    return YES;
+}
+
+
+
+
+
+
+
+
+
+
+
+5-6 Method-Swizzling相关面试问题
+
+在现有的类中有两个方法：
+方法slelector1   对应的实现  imp1 
+方法slelector2   对应的实现  imp2
+当经过Method-Swizzling之后，实际上就是修改slelector1所对应的方法实现
+slelector1 此时对应实现imp2， slelector2此时对应实现imp1
+当给对象发送消息时，会对应修改后的实现
+
+通过代码来了解：Method-Swizzling
+
+
+RuntimeObject.h
+
+#import <Foundation/Foundation.h>
+
+@interface RuntimeObject : NSObject
+
+- (void)test;
+- (void)otherTest;
+
+@end
+
+
+
+
+
+RuntimeObject.m
+
+#import "RuntimeObject.h"
+#import <objc/runtime.h>
+@implementation RuntimeObject
+
++(void)load
+{
+    //获取test方法的结构体
+    Method test = class_getInstanceMethod(self,@selector(test));
+    //获取otherTest方法的结构体
+    Method otherTest = class_getInstanceMethod(self,@selector(otherTest));
+    //交换两个方法的实现
+    method_exchangeImplementations(test,otherTest);
+}
+
+-(void) test
+{
+    NSLog(@"test");
+}
+
+-(void) otherTest
+{
+    [self otherTest];//这里会产生死循环吗？不会，因为作了方法替换，在向该对向发送otherTest消息的时候，实际上是向test的实现发送了消息
+    NSLog(@"otherTest");
+}
+//打印结果，选打印test,再打印了otherTest，当执行test方法时，执行的是[self otherTest],这个又相当于执行了test的实现打印了test,然后再打印NSLog(@"otherTest");
+
+@end
+
+//主要用在开发中我们打印一些系统日志，如在viewdidload中打印日志，不用在每个viewcontrol的viewdidload中写上打印的代码，只需要写一些替换方法，这个时候
+//把打印的代码放到替换的方法中能看到日志信息，而不用每个类去添加这样的打印日志代码。
+
+
+
+
+
+5-7 动态添加方法相关面试问题
+
+你是否有使用过performSelector:方法？
+主要考runtime动态添加方法的特性
+
+performSelector应用场景：
+可能一个类在编译时没有这个方法实现，在运行时才产生了这个方法。在此场景下要调用这个方法，需要使用
+performSelector
+
+代码实现为一个类动态添加方法：
+
+AppDelegate.m
+@implementation AppDelegate
+
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    // Override point for customization after application launch.
+    
+    RuntimeObject *obj = [[RuntimeObject alloc] init];
+    // 调用test方法，只有声明，没有实现
+    [obj test];
+    
+    return YES;
+}
+
+
+
+ RuntimeObject.h
+
+#import <Foundation/Foundation.h>
+
+@interface RuntimeObject : NSObject
+
+- (void)test;
+
+@end
+
+
+
+ RuntimeObject.m
+ 
+#import "RuntimeObject.h"
+#import <objc/runtime.h>
+@implementation RuntimeObject
+
+//test方法执行体，是一个函数指针
+void testImp (void)
+{
+    NSLog(@"test invoke");
+}
+
+//对象的方法只声明未实现会走到这个方法
++ (BOOL)resolveInstanceMethod:(SEL)sel
+{
+    // 如果是test方法 打印日志
+    
+    if (sel == @selector(test)) {
+        NSLog(@"resolveInstanceMethod:");
+
+        // 动态添加test方法的实现  参数1：为该类对象添加方法 参数2：方法名称 参数3：方法实现 参数4:v，返回类型，@当前对象self，：方法的返回值类型 @selector(test)，对应的参数个数，参数类型，后面三个参数其实是method_t的成员变量
+        class_addMethod(self, @selector(test), testImp, "v@:");
+        //会打印resolveInstanceMethod  test invoke
+        return YES;//告诉系统我们处理了
+    }
+    else{
+        // 返回父类的默认调用
+        return [super resolveInstanceMethod:sel];
+    }
+}
+
+- (id)forwardingTargetForSelector:(SEL)aSelector
+{
+    NSLog(@"forwardingTargetForSelector:");
+    return nil;
+}
+
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector
+{
+    if (aSelector == @selector(test)) {
+        NSLog(@"methodSignatureForSelector:");
+        // v 代表返回值是void类型的  @代表第一个参数类型时id，即self
+        // : 代表第二个参数是SEL类型的  即@selector(test)
+        return [NSMethodSignature signatureWithObjCTypes:"v@:"];
+    }
+    else{
+        return [super methodSignatureForSelector:aSelector];
+    }
+}
+
+- (void)forwardInvocation:(NSInvocation *)anInvocation
+{
+    NSLog(@"forwardInvocation:");
+}
+
+@end
+
+
+
+
+5-8 动态方法解析相关面试问题&面试总结
+
+你使用过@dynamic这个编译器关键字吗？
+声明的属性用@dynamic这个关键字修饰的时候，实际上对应的set,get方法不是在编译时去声明好实现的，而是运行时添加的。
+考察编译时语言和动态时语言的区别。
+动态运行时语言将函数决议推迟到运行时。把一个属性设为@dynamic时，代表在编译时不需要生成get ,set方法实现，而是在
+运行时调用get,set方法时再为它添加get,set方法的实现，这只有运行时语言才支持的功能。
+编译时语言编译期决译，在编译期执行函数是哪个，运行时是无法进行修改的。
+
+runtime实战问题：
+1。[obj foo]向obj对象发送foo这个消息和objc_msgsend()函数之间有什么关系？
+在编译器的处理过程之后，objc_msgsend第一个参数obj ，第二个参数为foo的选择器，编译后就转化为函数调用了，然后进行runtime的消息传递流程ru
+
+2。runtime如何通过selector找到对应的imp地址的？
+消息传递机制是查找当前实例对象缓存是否有imp实现，没命中，查当前类方法列表，
+如果未找到实现，找当前类父类方法列表的实现，找到就返回方法实现的指针。
+
+3。能否向编译后的类中增加实例变量？
+编译后的类，由于runtime支持运行时动态添加类的。
+编译后的类，它已经完成了实例变量的布局，class_ro_t已经代表了readonly，所以编译后的类是不能增加实例变量的，
+如果是动态添加的类，是可以添加实例变量的。分类中可以添加实例变量，因为分类是在运行时中进行的。
 
 
 
