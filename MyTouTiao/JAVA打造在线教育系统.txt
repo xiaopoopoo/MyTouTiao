@@ -1,0 +1,112 @@
+
+1——Eclipse、Maven、JDK介绍# 工具介绍 以及eclipse集成maven
+
+一，所用软件下载地址：
+	链接：http://pan.baidu.com/s/1dEDfbB7 
+	密码：fmfd
+	
+二，软件版本：
+	Eclipse Indigo
+	JDK 1.7
+	Tomcat 7
+	Maven 3.0.5
+	MySql 5.5
+	
+tomcat7 主要本地布蜀  linux远程一般有nginx
+beyond compare  常用的比对文件，在java当中经常会有两个文件去比对
+Eclipse Indigo 这个版本的eclipse已经集成了maven插件，maven构件互联网项目巳经很普遍了
+gd-gui  返编译一些java的源文件
+JDK 1.7
+jsonview  项目中有一个报表，将后端数据作一个展示，当数据量大的时候，在这个软件中会显示很清晰
+maven  windows安装的maven
+memcached 缓存技术，如redis，但memcached相对比较稳定，相当于服务端
+MySql 5.5
+navicat premium  数据库访问的
+
+三，Eclipse 中集成 maven 插件
+	1）setting.xml
+	2）命令
+windows中打开	Eclipse，windows-preferences
+mac中eclipse-preferences
+搜索maven，如果安装了，可见maven，选user settings，可看到user settings可以配置settingsxml，这个xml包括了
+maven远程仓库和本地仓库的地址，及用户密码都有，当settings配好后，会在local repository中看到的路径是本
+地仓库，打开就可以看到maven所依赖的哪些jar包都会先放到本地仓库，远程服务器下载的包也在本地仓库，自己项目打成的包也会放在本地仓库当中。
+一个eclipse项目打包的时候，可以右键run as，选maven clean ,maven packget，这时在控制台打印输出工具，它会把不同的包如jar包，放到eclipse工程左边不同
+的模块中，左边模块有occommon对应jar包，放到target目录下 ocoperation,ocportal对应war包，放到target目录下 ocproject,ocservice,ocwechat,servers
+可以到它们目录中看到jar包，项目就可使用这个jar包
+	
+	
+	
+四，windows 终端 mvn 命令
+	1）命令
+	2）环境变量
+下载的软件安装配置后，在终端就可以有maven命令了，maven -version可以看到maven是否安装好,在终端操作一定得有pom.xml文件才能操作
+maven，所以这会可以选cd到项目工程下，工程下是有这个文件的，maven -clean会把maven打包后分到其它几个模块target目录下的jar包，war包都
+清掉
+	
+	
+五，mvn命令
+	mvn clean 	清理 targe
+	mvn package	打包
+	mvn install    把打的包安装到本地仓库，这样其它项目也可以引用这个occommon文件夹下的jar包
+	mvn deploy  发布到远程仓库（如Nexus）其它公网上的项目可以访问你的包
+	
+六， eclipse中构建maven project原理
+
+    maven的继承与组合
+    可以复用父类的特性，子类再发挥更多特性，但两个不同类型之前的是没有继承，如发动机和汽车，如果用到其中功
+    能会组合，同一个类型继承，不同类型用组合，maven中它的项目和子项目之间也有这种关系，比如创建了ocproject
+    项目，这个就是基面项目，会把所有的依赖都放到这个项目中，这里总共有五个子项目，ocCommon(jar)
+    ocService(jar),ocportal(war), ocoperator(war),ocwechat(war),这里5个子项目都有对spring的依赖，
+    这里spring依赖的东西放到ocproject网校项目中，所以这个项目中会有很多的jar包，这就是继承，下面谈一下依赖
+    ocService(jar)依赖，ocCommon(jar)，很多jar包都是通过对ocCommon(jar)依赖来使用的，ocportal(war), ocoperator(war),ocwechat(war)
+    又对 ocCommon(jar)，ocService(jar)进行依赖，所以这种关系属于组合。
+    几个jar包的作用：
+    ocCommon(jar) 就是一个基础的包，没有任合业务在里面，如七牛云存储的封装,分页
+    ocService(jar) 对数据库基础访问的业务逻辑如dao，service封装，以及配置文件都放这里，它依赖ococCommon(jar)，如用到分面
+    ocportal(war), 相当于pc的前端，输入网址会访问到pc前端的这个项目
+    ocoperator(war),运营端，相当于网站后端
+    ocwechat(war), 微信端前端
+    分成三个项目，一个项目升级，坏了不影响其它项目，分开后单独访问项目。
+    使用七牛云图片服务器，使网站访问快。
+    
+    maven构建的ocproject依赖关系，ocproject是我们网校项目，它的子项目之间有依赖关系，比如jar包
+    war包的关系
+    关系之后创建ocproject，实战
+    
+    
+    
+2——Eclipse构建maven project实战
+
+  1。打开eclipse，file - new - project-maven-manve project
+  弹出界面-create a simple project勾选 next -  
+  2.弹出界面 
+  group id: com.online  
+  artifact id: ocProject(这是父项目名)
+  packaging: pom(这里不打jar包，不打war包,pom.xml用于描述项目如何构建，声明项目依赖，等等)
+  3.next finsh
+  4.eclipse左边出现ocProjec工程文件
+  5.创建ocCommon（就是一个基础的包，没有任合业务在里面，如七牛云存储的封装,分页）
+  6.项目选中右键new-other-maven-maven module -next 
+  7.不用勾create a simple project, module name:ocCommon (可以看到parent project父项目是ocProject)
+  8.选maven-archetype-quickstart   next
+  9.finsh
+  10.可以看到在ocProject-pom.xml多了以下描述，描述了它有一个模块子项目叫ocCommon
+    <modules>
+  	<module>ocCommon</module>
+    </modules>
+  11.ocCommon项目下pom.xml打开，可看到它的父项目就是ocProject
+    <parent>
+    <groupId>com.online</groupId>
+    <artifactId>ocProject</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  12.选中ocCommon右键-properties-选utf-8
+     选中project facets - convert to faceted from (因为这个项目要打成jar包)
+     弹出界面选java 选utility module - apply -  ok (如果打成war包，这里选dynamic web module)
+  
+	
+	
+
+	
+	
