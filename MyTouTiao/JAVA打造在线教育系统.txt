@@ -59,14 +59,14 @@ maven，所以这会可以选cd到项目工程下，工程下是有这个文件�
     项目，这个就是基面项目，会把所有的依赖都放到这个项目中，这里总共有五个子项目，ocCommon(jar)
     ocService(jar),ocportal(war), ocoperator(war),ocwechat(war),这里5个子项目都有对spring的依赖，
     这里spring依赖的东西放到ocproject网校项目中，所以这个项目中会有很多的jar包，这就是继承，下面谈一下依赖
-    ocService(jar)依赖，ocCommon(jar)，很多jar包都是通过对ocCommon(jar)依赖来使用的，ocportal(war), ocoperator(war),ocwechat(war)
+    ocService(jar)依赖于ocCommon(jar)，很多jar包都是通过对ocCommon(jar)依赖来使用的，ocportal(war), ocoperator(war),ocwechat(war)
     又对 ocCommon(jar)，ocService(jar)进行依赖，所以这种关系属于组合。
     几个jar包的作用：
     ocCommon(jar) 就是一个基础的包，没有任合业务在里面，如七牛云存储的封装,分页
     ocService(jar) 对数据库基础访问的业务逻辑如dao，service封装，以及配置文件都放这里，它依赖ococCommon(jar)，如用到分面
     ocportal(war), 相当于pc的前端，输入网址会访问到pc前端的这个项目
-    ocoperator(war),运营端，相当于网站后端
-    ocwechat(war), 微信端前端
+    ocOperator(war),运营端，相当于网站后端
+    ocWechat(war), 微信端前端
     分成三个项目，一个项目升级，坏了不影响其它项目，分开后单独访问项目。
     使用七牛云图片服务器，使网站访问快。
     
@@ -104,6 +104,358 @@ maven，所以这会可以选cd到项目工程下，工程下是有这个文件�
   12.选中ocCommon右键-properties-选utf-8
      选中project facets - convert to faceted from (因为这个项目要打成jar包)
      弹出界面选java 选utility module - apply -  ok (如果打成war包，这里选dynamic web module)
+  13.再建一个ocportal的war项目，ocProjec工程右键，new-other-maven-maven module -next 
+  14.不用勾create a simple project, module name:ocPortal 
+  15.选maven-archetype-webapp(因为是个web项目)   next - finsh
+  16.可以看到在ocProject-pom.xml多一个模块子项目叫ocPortal
+  17.报错了  Invalid package name，
+  18。解决报错：删除所有项目重新来一遍
+  19.ocPortal项目报错 The superclass "javax.servlet.http.HttpServlet" was not found on the Java Build Path
+  20.是因这这个项目的库没有添加tomcat
+  21.解决方案如下eclipse集成tomcat ，项目库再添加tomcat
+  
+  tomcat的安装:
+  http://tomcat.apache.org/download-70.cgi 下载tomcat   tar.gz 
+  下载好后解压  command+shift+g /Library  拷贝tomcat到这里
+  进入到tomcat／bin 
+  命令 sudo sh startup.sh
+  如果显示以下则表示成功
+  
+  Using CATALINA_BASE:   /Library/apache-tomcat-7.0.93
+  Using CATALINA_HOME:   /Library/apache-tomcat-7.0.93
+  Using CATALINA_TMPDIR: /Library/apache-tomcat-7.0.93/temp
+  Using JRE_HOME:        /Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home
+  Using CLASSPATH:       /Library/apache-tomcat-7.0.93/bin/bootstrap.jar:/Library/apache-tomcat-7.0.93/bin/tomcat-juli.jar
+  Tomcat started.
+  
+  打开Safari，在地址栏输入localhost:8080可访问
+  关闭呢？如果不关闭的话再次启动会报端口被占用，如果刚才启动tomcat的终端没有被关掉的话，在上面输入sudo sh shutdown.sh
+  
+  
+  tomcat集成到eclipse：
+  首先打开eclipse，选择eclipse的偏好设置，选择server--Runtime Environments
+  然后点击Add,由于我下载的是Tomcat7版本，所以我选择tomcat8，根据自己下载的版本选择，选择后点击next。
+  勾上create a new local server
+  tomcat installation direct 输入：/Library/apache-tomcat-7.0.93
+  
+  ocPortal项目库中添加tomcat
+  选中项目ocPortal右键-build path -configure build path
+  java build path 中选libraries - addlibraries - 选server runtime-选刚添加的apach tomcat7
+  选order and export 勾上apache tomcatv7.0
+  
+  21.报错解决后，点击ocProject项目的pom.xml ，可以看到多了刚安装的ocPortal子项目模块描述
+    <modules>
+    <module>ocCommon</module>
+    <module>ocPortal</module>
+  </modules>
+  22.配置ocProject项目只打jar包，选中此项目，右键properties-project faces-勾选dynamic web module-apply -ok
+  23.此时在ocProject的下会多一个webcontent文件夹，因为我在作的时候没有多这个文件夹，所以不用处理，如果多了这个文件夹，maven
+  发布项目会把它发布到这目录下而不是发布到/src/main/webapp下，同时maven dependencies依赖关系也会不会发布进去，如果有这个文件夹，需要
+  删除掉，在项目中选右键属性 deplyment assembly -add - folder-添加/src/main/webapp,同时添加maven dependencise库
+  24.此时 ocPortal,ocCommon都继承了ocProject，接着要组合ocPortal,ocCommon两个项目
+  25.打开ocPortal项目pom.xml,在<dependencies>子项复制<dependency>节点，打开ocCommon查看pom.xml的 <groupId>com.online</groupId>，
+  <artifactId>ocCommon</artifactId>，<version>0.0.1-SNAPSHOT</version>放到下面节点标签中如下，这个时候ocPortal就组合了ocCommon
+    <dependencies>
+    <dependency>
+      <groupId>com.online</groupId>
+      <artifactId>ocCommon</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  24.打包试一下，选中ocProject右键run as - maven package 发现有问题我们的eclipse没有maven package这个选项，如果有
+  运行后可以看到在ocPortal项目的target／ocPortal/WEB-INF/lib/OC  ocCommon的jar包集成进来了，target下其时就是ocProject项目
+  发布的war包,这个war包中就包含了ocCommon的jar包
+  25.run as - maven package没有这个选项命令，暂时未解决？？？？？？？？？？？？？？
+  26.解决缺少命令：选中ocProject，右键run as- Maven build或Run Configurations,   一个是Maven build... (这个是用来添加maven命令)    另一个是Maven build 这个是选择执行你所创建的maven 命令
+  在user-core为你的项目名字。 在goals输入package 因为maven的命令 maven package省掉maven
+  27.因为这个项目写得比较多，先把它删除掉，其它项自己可以去建，选中ocCommon,ocPortal,ocProject 删除，eclipse中file-import
+  maven/existing maven project/ok 
+  打开ocPortal的pom.xml中可看到依赖了ocCommon,ocService(对数据库基础访问)
+    		<dependency>
+			<groupId>com.online.college</groupId>
+			<artifactId>ocCommon</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.online.college</groupId>
+			<artifactId>ocService</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency> 
+  28. 五个项目关系重讲一下
+  ocProject的子项目有ocCommon(jar),ocService(jar)，ocportal(war), ocoperator(war),ocwechat(war)，
+  ocportal(war)依赖于ocCommon(jar)，ocService(jar)
+  ocoperator(war),ocwechat(war)依赖于ocService(jar)
+  29. 导入的项目后报错，具体在项目的maven配置文件，pom.xml有提示报错missing artifact fakepath:dobbo:jar
+  30.解决方案，右键项目，run as／maven-update project（本地仓库确实没有jar包，更新jar包） 如果不行，那说明
+  本地仓库已经有了，往往是之前没有下完整的jar包，那直接删除jar包（请查看一键清除maven仓库中下载失败的jar包），再次点击项目run as -maven install或者clean install进行再次编译安装，
+  然后maven-update project更新下项目，红叉就会消失。 最终解决方案 :eclipse项目右键，maven update （勾选强制更新）force update
+  31.再报错：html文件中Unknown tag (#if) 解决方案：由于freemarker标签造成的,eclipse未安装freemarker
+  安装freemarker插件，eclipse-Help –> Install New Software-add
+  对话框中的Location中输入：
+  http://download.jboss.org/jbosstools/updates/development/indigo/，name随便取一个即可。然后会列出来所有可用的插件
+  安装FreeMarker IDE，可以在  JBoss Application Development 下找到并选中它，然后根据向导即可安装成功。
+  eclipse选择preferences
+  General->Editors->File Association
+  点击file types 右边的add按钮，出现如下图的对话框，输入*.ftl
+  点击Associated editors右边的add按钮，出现文件关联类型，选择JSP Editor和Freemarker Editor
+  然后General->content Types中关联一下，content types中选jsp/jsp fragment点add
+  输入*.ftl   Default encoding 输入utf-8,update,ok 
+  ？？？？？？？？？？？？？？？？？？还是没解决，  
+
+   8：29
+  新浪sae服务器介绍
+  发布java项目ocPotal到上面
+
+  14:36 ocportal静态网页代码 发布到本地应用服务器，启动，访问 打war包，上传到公网用务器（sae）  作个静态网页传上去
+ 
+ 20:20秒打war包
+ 21:32秒上传war包
+
+
+
+
+
+2.1-2.4  平台业务结构概览
+在线网校背景
+在线网校业务结构概览
+5:30 在线网校业务结构介绍
+
+7:20 平台角色化分
+8:21 平台角色概览 ocPortal  ocWechat cooperator
+
+11:52 平台技术结构概览
+maven构建  nginx+tomcat分布式部署
+14:08
+客户端 pc站 m 站
+服务端 三层 要、service层 dao层 db层  本来还会有bussiness层，如登录，pc用用户名登录 m站用微信号登录，处理这个逻辑 service层只统一处理登录状态写入数据库 ，dao层（memcache），图片服务器分开的，分布式布置，七牛云
+18:03
+nginx+tomcat布署 3个tomcat oc.com opt.oc.com m.oc.com 一个主域名 两个二级域名
+
+21:02  平台项目结构概览 在eclipse中讲解一遍
+ pom: ocProject
+ war:ocOperator(后台) ocPotal(pc)  ocWechat(微信)
+ jar: ocService ocCommon 
+ 讲解pom.xml 
+25:04 看代码结构简介 每个项目包下面代码包负责的功能 最后只打成三个项目war包
+
+
+
+
+3.1-3.3    
+
+00:00:47:代码实战前的准备工作概要
+	1，了解企业开发项目的流程
+	2，我们这门实战课的 实战开发流程 介绍（提供模板）
+	3，平台的一些约定
+	4，java代码规范
+	5，数据库设计规范
+	6，数据库设计
+00:02:54 项目流程
+	需求：产品经理或者需求人员，整理出需求文档，讨论 （产出：wiki或者文档）；
+		需求确认讨论：需求人员、开发人员、测试人员；（产出：wiki，评估时间周期）；
+	设计：前端&后端参与设计（产出：ui设计，开发详细设计）；
+		数据库设计、代码设计、业务逻辑流程、项目构建划分 （产出：各种wiki或者文档）
+	开发：实现功能（产出：代码）；
+	测试：进行功能测试（产出：测试用例，bug修复）；
+	上线：发布上线；
+	
+	WIKI：通过 jira、禅道等工具记录（需求文档、变更文档、设计文档、测试用例文档、运维文档等）
+  
+00:09:15 大版本控制（开发&测试）
+	1）SST（局部测试）：测试版本；
+	2）SIT（内部集成测试）： 测试版本；
+	3）UAT（预发布平台)
+	4）Master（stable）发布版本； 
+	5）当然也可能会有紧急上线版本，这样就不会影响开发和测试；
+	
+	测试平台的多少取决于产品的量级；
+
+00:14:15  在线网校平台的一些约定#
+
+i）系统关键字，以 OC_业务模块_变量命名；比如memcache 的分类关键字 OC_COURSE_MEMCACHE_CLASSIFY 
+i）前端 js 中的关键字 ，以 _oc变量名开始：比如弹出层提示信息div 的id  _ocDialogModal 
+i）目录结构按照业务模块划分，比如 course 模块、college 模块；方便以后拆分；
+i）类、函数设计，遵从 设计模式中的 单一职责原则
+i）敢于重构
+
+
+
+3.4-3.6   java代码规范&数据库设计规范
+
+00:00:10
+ i）禁止以 _ 或者$ 开始或者结尾
+i）禁止使用半英文、半拼音
+i）类名：类名使用UpperCamelCase；
+i）方法名、参数名、成员变量、局部变量都统一使用 lowerCamelCase 风格，必须遵从驼峰形式。
+i）领域模型结尾： DO / DTO / VO  等
+
+i）枚举以Enum结尾；
+
+i）接口以I开头，抽象类命名使用 Abstract或Base 开头；异常类命名使用 Exception结尾；测试类命名以它要测试的类的名称开始，以 Test结尾
+
+i）Controller 类：必须以Controller结尾；
+     Service：接口以I开头 ，Service结尾；实现以ServiceImpl结尾；
+     Dao：接口，以Dao结尾
+
+i）包名一律小写
+
+i）减少缩写，如果有缩写请加注释；
+
+i） if、for 等格式规约，左 { 不换行；加空格等；
+
+i）所有覆盖方法加 @Override
+
+i）不使用过时的类或方法 （@Deprecatedi）
+
+i）类、类属性、类方法的注释，比如domain中属性注释，这样在生成 Javadoc 的时候，会将注释输出出来，方便阅读； 
+     /**注释**/
+
+i）类注释：说明类的用途；
+    方法注释：说明做了什么事情，实现了什么功能；入参类型，作用；返回值；异常；
+
+i）好的命名、代码结构是自解释的。注释力求精简准确、表达到位。
+
+i）Map的key、value注意点：
+     集合类                            Key                             Value                       说明 
+     Hashtable                      不允许为 null           不允许为 null         线程安全 
+     ConcurrentHashMap     不允许为 null           不允许为 null        线程局部安全 
+     TreeMap                        不允许为 null           允许为 null            线程不安全 
+     HashMap                        允许为 null               允许为 null            线程不安全 
+
+i）工具类加 Util结尾 或者 Helper结尾；
+
+i）设计模式类，请用设计模式名称结尾，比如 WindowSingleton
+
+
+
+
+
+
+
+
+00:02:37  数据库设计规范：
+
+i）避免中文拼音，比如 dengluming ，可以用 username
+i）主键id自增
+i）不设置外键
+i）所有字段非空、并且有默认值
+i）所有字段必须有注释，表必须有注释；
+i）字段小写，单词间用 _ ，比如 college_name ；对应java 的domain就是 collegeName
+i）表明以 t_开头，并且安装模块区分；比如 课程模块：以 t_course 开头；
+
+i）视图以 v_ 开头，函数以 fn_ 开头，等；
+
+i）sql语句中，sql关键字要大写，如 SELECT，UPDATE，FROM，WHERE，ORDER BY
+
+i）注意sql的美化，（通常sql 关键字前换行）
+     如：
+     SELECT id , username 
+     FROM t_auth_user
+     WHERE id = 1
+     AND del = 0
+     ORDER BY  time  DESC
+     LIMIT 0 , 10
+
+i）对应Mybatis 的 xml 的写法（详解 AuthUserMapper.xml 文件）
+	ii）类名，字段名小写
+	ii）sql关键字大写，并换行美化
+	
+i）参考 install.sql 建表语句
+
+
+
+00:04:22 数据库设计
+
+00:05:40数据库表之间关系说明
+用户表
+t_auth_user
+课程分类表
+t_consts_classify
+用户学习表
+t_user_course_section
+课程表
+t_course
+课程章节表
+t_course_section
+课程评论表
+t_course_comment
+
+
+建表语句，install.sql
+执行语句，配置jdbc.properties
+
+
+
+00:08:31   install.sql讲解  讲解doc/install.sql文件
+00:09:16  数据库在开发工具中的展示  概述每张表作什么用的
+00:15:58   jdbc.properties配置  讲解jdbc.properties文件
+00:16:12  如何使用在线网校教程的源代码
+00:17:23 如何导入源代码
+00:19:04 如果项目有报错解决
+在项目的 xxxx\.settings 目录下有一个文件叫 org.eclipse.wst.common.project.facet.core.xml
+如ocCommon项目打开这个文件，删除  <installed facet="jst.utility" version="1.0"/>
+再eclipse中右键这个项目，找到project facets,取消勾选应用后再勾选重新生成
+
+00:22:32 sql安装 
+00:23:30  jdbc.properties数据库连接配置
+00:24:50  运行时网页显示有问题，改spring.ftl
+
+
+
+
+
+
+4.1-4.4   第四章知识点概览#
+	
+	从本章开始，进入编码阶段；主要是做一些基础代码编写；
+	知识点主要包括：
+	
+	1）整合 Spring、Freemarker；
+	2）整合 Mybatis；
+	3）前端整合：bootstrap，jquery等；
+	4）整合七牛图片云存储：接口代码；
+	5）整合shiro，实现用户登录；
+	6）完成一个业务流程：注册；
+	7）专注于一个表的开发：CRUD，分页实现；
+	
+	00：06：16  整合spring,freemarker
+	需求-设计-开发-发布（测试）-产出
+
+一、需求（要实现的功能点）；
+	1）实现spring对bean进行管理；
+	2）使用freemarker引擎实现后台数据在页面的展示；
+	3）成功启动，访问正常
+	
+二、设计（思路）；
+	在ocPortal项目中实现
+	web.xml 加载 applicationContext.xml
+	web.xml 加载 app-servlet.xml
+	
+三、开发（实战）；
+	配置文件代码实战讲解；
+	
+四、发布（验证）；
+	预期：ocPortal项目正常启动
+	
+五、产出（结果驱动）；
+	wiki：4-02——整合 Spring、Freemarker.txt
+	源码：ocProject_V402
+	
+	
+	
+	00:07:32  代码讲解  添加maven
+	
+	
+
+领课网项目搭建：
+1.https://github.com/roncoo/roncoo-education
+进入后git clone 代码
+2、从Eclipse中选择Window -> Show View -> Other，打开界面搜索git并选择红色框内的选项：
+
+	
+
   
 	
 	
