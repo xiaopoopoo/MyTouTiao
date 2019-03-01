@@ -2202,7 +2202,9 @@ runtime实战问题：
 
 
 
-第六章   内存布局相关
+第六章   内存相关
+
+6-1 内存布局相关面试问题
 内存布局
 内存管理方案
 数据结构
@@ -2222,3 +2224,333 @@ arc & mrc
 已初始化数据(.data) 已初始化静态变量 全局变量
 代码段(.text) 
 保留
+
+
+
+6-2 内存管理方案相关面试问题
+
+问题：ios是怎样对内存进行管理的？
+分析：ios会根据不同的场景提供内存管理方案：
+答：
+比如对一些小对象如nsnumber这种，采用的是taggedpointer管理方案
+
+对于64位架构下的ios程序，采用的是nonpointer_isa管理方案，在这种架构下，isa指针是是这个比特位的
+其实有32个bit位就够用了，其它是浪费的，苹果为了提高这内存的利用率，isa余下的bit位中存储了内存管理相关的内容
+所以这叫非指针型isa管理方案
+
+散列表内存管理方案 散列表是一个复杂的数据结构，其中包括了引用计数表和弱引用表
+
+
+在后面的小节中关于内存管理源码分析都是基于objc-runtime-680版本讲解
+
+
+
+nonpointer_isa（非指针型）管理方案：
+
+在arm64位架构中，一共有64个bit位，
+
+前内存管理存储的前16位：
+
+0  0  0 0  0  0  0  0  0  0  0  0            0                        0                                 0
+（            shifcls            ）    （has_cxx_dtor）          （第1位has_assoc）                    （第0位）
+如果这里第0位是0，表示此isa指针是一个纯的isa指针，那它其它16位的地址内容就代表了当前纯对象的ios地址
+如果第0位是1,就表示它不仅是一个对象地址，里面还包含了一些类对象的管理数据，第1位表示当前对象是否有关联对象，0代理没有，1代表有
+第2位has_cxx_dtor表示当前对象是否有使用c++方面的代码或c++方面的内容，也可表示有些对象是通过arc管理的
+第3-15位 shifcls 表示当前对象类对象的指针地址
+  
+前内存管理存储的后16位：
+
+0  0  0 0  0  0  0  0  0  0  0  0            0                        0 
+（            shifcls                                                 ）  
+shifcls  表示当前对象类对象的指针地址
+
+前内存管理存储的47位往前：
+47位
+0  0  0 0  0  0  0  0  0  0  0  0            0                        0 
+（extra_rc 引用计数未上限存到散列表中）   
+（has_sidetable_rc当前isa指针当中引用计数如果达上线，需外挂一个sidetable数据结构去存相关引用计数，也就是闪列表）       
+（  deallocating标志当前对象是否在进行dealloc操作  ）     
+（  weakly_referenced范围的位数表示对象是否有弱引用指针    ）   
+ （  magic位段不作解释    ）
+ 
+ 前内存管理存储的63位往前：
+ （extra_rc 引用计数未上限存到散列表中） 
+ 0  0  0 0  0  0  0  0  0  0  0  0            0                        0
+ 
+ 
+ sideTables()结构 散列表面试相关的问题：
+ 
+ sideTables()是一个hash面，在非嵌入式系统中，里面包括了64个sideTable数据结构
+ 可以根据对象指针找到它的引用计数表在哪一个sideTable当中，
+ 
+ 
+sideTable结构：
+
+自旋锁（spinlock_t多线程资源竞争相关）    引用计数表（refcountmap）   弱引用计数表(weak_table_t)
+
+思考；为什么不是一个sideTable呢，而是64个？
+
+  如果只有一张表，所有的对象引用计数在这张表中，如果某些对象的操作是在多线程下进行的，这时就需要给对象加锁处理保证线程安全，
+  这就存在效率问题，一个对象在操作这张表，下一个对象去操作就得等前一个对象操作完了把锁释放掉后才能操作。
+  
+系统引用分离锁，把表分成8个，不同的表加锁，可并发操作，提高访问效率。
+
+
+怎样实现快速分流呢？
+sidetables的本质是一张hash表，有64张sideTable存储
+hash表的概念讲解一下：
+
+对象指针（key）经过hash函数计算出是哪张sidetable(value)，索引是哪个
+
+hash查找： 给一个内存指针地址prt 用函数f(ptr)计算  得到index索引
+f(ptr) = (uintptr_t)ptr % array.count 取余计算
+
+为什么hash查找，是因为存储通过hash函数存的，比如内存地址是8，与数组总数取余
+得到一个数组的index存进去，访问的时候也通过这种hash函数方式去访问题高效率。
+
+
+
+
+6-3 自旋锁，引用计数表，弱引用计数表数据结构相关面试问题 
+
+spinlock_t自旋锁（spinlock_t多线程资源竞争相关）
+是忙等的锁，如果当前锁已被其它线程获取，当前线程会不断探寻锁是否被释放
+其它锁，如信号量，当获取不到锁会把这个线程阻塞休眠，等到其它线程释放锁唤醒线程
+自旋锁比较适合轻量访问，也就是加1减1  
+面试题：你是否使用过自旋锁，自旋锁和普通锁有什么区别，适用于什么场景，这样的面试题应该有答案了
+
+引用计数表（refcountmap） 
+是一个hash表，通过指针找到对应对象引用计算，对传入对象指针用函数来计算存储位置的，获取也是
+通过函数计算位置的，提高效率。
+引用计数表的内存分析：
+
+0  0  0 0  0  0  0  0  0  0      0      0            0 
+            （deallocating是不是正在dealloc）     （weakly_reference是否有引用计数）
+  
+
+弱引用计数表(weak_table_t)
+也是一张hash表，通过hash函数，传入指针，计算出一个弱引用指针的位置（weak_entry_t）
+
+
+
+6-4 MRC&ARC相关面试问题
+
+mrc是手动引用计数进行管理内存
+alloc分配一个内存空间  retain 引用计数加1  release引用计数减1
+retaincount获取对象的引用计数值   autorelease 这个对象会在autoreleasepool结束的时候调用它的release操作，引用计数减1
+dealloc 在mac当中调用这个需要显示调用 super dealloc来释放父类的相关成员变量
+
+
+arc是自动引用计数进行管理内存
+编译器会自动在相应的位置插入reatin,release操作，这样的回答不足
+还需要runtime和编译器共同协作才能组成arc的结果
+在arc中调用retain release retaincount autorelease dealloc会引起编译报错 ,但可重写某个对象的
+dealloc方法，但不能调用super dealloc
+arc中新增weak,strong属性关键字
+
+arc和mrc有什么区别？
+arc是由编译器和runtime协作实现的自动引用计数管理
+mrc是手动引用计数管理，同是可以调用一些引用计数相关的方法
+arc中禁止调用retain/release/retaincount/dealloc
+arc中新增weak,strong属性关键字
+
+
+
+6-5 引用计数管理相关面试问题
+实现原理分析：
+
+alloc实现：
+经过一系列调用，最终调用了c函数calloc。此时并没有设置引用计数为1，
+但retaincount获取的引用计数为1，我们可以看retaincount的实现
+
+retain实现：
+    sidetable & table = sidetables()[this];
+这是objc680原码，这里是通过当前对象的指针到sidetables中获取它所属的sidetable，关于sidetables是由多个sidetable组成的hash表，可通过hash函数指针
+通过hash函数计算，可快速找到对应的sidetable。
+size_t& refcntstorage = table.refcnts[this];
+在sidetable结构中获取引用计数map的成员变量，通过当前对象的指针在这个sidetable引用计数表中去获取当前对象的引用计数人土目土
+这个查找过程也是一次hash查找
+refcntstorage += side_table_rc_one;
+size_t是一个无符号的引用计数值，我们对这个值进行引用计数加1操作,这里加的是一个宏定义，而不是1，因为在存引用计数的时候前两位
+不是存引用计数的，后62位才是存引用计数的。这里实际是加上了一个偏移量的操作。反应后的结果是加1
+面试题产生：我们在进行加1操作的时候系统是怎样查找它的引用计数的？
+经过两次hash查找，查找到对应的引用计数值进行加1操作
+
+release实现：
+sidetable & table = sidetables()[this];
+通过hash算法找到sidetable，
+refcountmap::iterator it = table.refcnts.find(this);
+通过当前对象指针访问当前table的引用计数表去查找它对应的引用计数表，
+it->send -= side_table_rc_one;
+查找到之后对引用计数减1操作
+
+retaincount实现：
+sidetable & table = sidetables()[this];
+通过hash算法找到sidetable，
+size_t refcn_result = 1;
+声名它的局部变量，指定它的值是1
+refcountmap::iterator it = table.refcnts.find(this);
+通过对象指针去引用计数表查找
+refcnt_result+= it->second >>side_table_rc_shift;
+查找结果作一个向右偏移操作，再结合局部变量refcn_result，进行加操作。
+所以刚alloc出来的对象，是没有引用计数为1的，因为这个refcn_result = 1，当
+去调用retaincount时才能获取到它的值为1.
+
+
+dealloc实现：重要
+
+调用_objc_rootdealloc()函数，该函数会调用一个rootdealloc()函数，这个函数会判断
+
+当前对象是否可以直接释放，直接释放的判断条件依据于右侧的这个列表：
+nonpointer_isa  判断当前对象是否使用非指针型的isa
+weakly_referenced 当前对象是否有weak指针指向它
+has_assoc  判断当前对象是否有关联对象
+has_cxx_dtor  判断当前对象内部实现是否有c++涉及内容，以及当前对象是否有arc来管理内存，如果使用arc管理内存，或涉及c++内容就会yes
+has_sidetable_rc 当前对象的引用计数是否是通过sidetable表来维护的，因为如果是非指针型的指针时，它内部是存储了关于引用计数指针的值，当超出上限的时候，
+会使用sidetable进行存储引用计数
+
+只有上面5个内容同时符合时，才能调用c函数free()进行释放
+否则会调用object_dispose()对象作后续的清理。这个函数会对有弱引用的对象先进行一些处理，以及关联对象，引用计数，c++相关处理
+
+ object_dispose()作了哪些事情？
+ 首先调用objc_destructinstance() 消毁实例的函数
+ 再调用c函数free();
+ 
+ objc_destructinstance()具体实现：
+ 首先判断当前对象是否有c++相关内容，是否采用的arc，如果有相关内容调用object_cxxdesturt()方法对c++语言处理
+ 如果没有相关c++内容，调用hasassociatedobjects判断当前对象是否有关联对象
+ 如果有调用_object_remove_assocations()关联对象移除，这里有一个面试题：
+ 通过关联对象技术为类添加一些实例变量，我们在deacoll中是否需要对关联对象移除呢？这里已经知道不需要，系统内部已经作了处理
+ 如果没有关联对象，系统继续调用一个函数cleardeallocating()，结束调用
+ 
+ cleardeallocating()具本实现：
+ 调用sidetable_cleardeallocating()这个函数调完又会调用weak_clear_no_lock()将指向该对象的弱引用指针置为nil
+ 如果weak指针指向对象，当对象deacoll后为什么被置为nil了，这里可作回答。
+ weak_clear_no_lock()调用之后又会调用table.refcnts.erase()清除掉当前对象在引用计数表中的一些存储数据，然后结束调用。
+ 
+ 
+ 
+ 6-6 弱引用管理相关面试问题
+ 一个weak变量是怎样添加到弱引用表中的？
+ id __weak obj1 = obj;此时产生了一个弱引用指针，经过编译后会生成下面代码：
+ id obj1;
+ objc_initweak(&obj1,obj);//&obj1弱引用变量，obj是弱引用的修饰对象，
+ objc_initweak会调用storeweak();
+ storeweak()会调用weak_register_no_lock()进行弱引用变量的添加，具体通过hash算法查找弱引用表，再找到弱引用数组，把新弱引用指针加入弱引用表
+ 打开xcode分析一个弱引用变量是怎样添加到弱引用表中的：
+ 
+ weak_register_no_lock(对象所属的sidetable的弱引用表，被弱引用指向的原对象，弱引用指针，对象在弃用的时候crash的标志位)
+ 产生一个newobj，新对象，这个新对象如果有值
+ 调用newobj->setweaklyreference_nolock();产生一个弱引用标志位
+ 
+  weak_register_no_lock(对象所属的sidetable的弱引用表，被弱引用指向的原对象，弱引用指针，对象在弃用的时候crash的标志位)的具体实现：
+  if(entry = weak_entry_for_referent(weak_table,referent)){//通过原对象指针去查找它在弱引用表的数组，涉及到弱引用对hash算法查到弱引用表
+      append_referrer(entry,referrer)//把新产生的指针添加到弱引用表
+  }
+  
+  当一个对象被释放时，weak变量是怎样被处理的？
+  会被自动设为nil
+  内部会调用weak_clear_no_lock()弱引用清除函数函数，这个函数源码分析：
+  weak_clear_no_lock(弱引用表，dealloc的那个对象)
+  weak_entry_t *entry = weak_entry_for_referent(weak_table,referent);//通过dealloc的那个对象产生的局部变量，查找弱引用数组
+  遍列弱引用所取出来的所有弱引用对象，如果弱引用指针存在，就把弱引用指针设为nil
+  
+  
+  
+  6-7 自动释放池相关面试问题
+  
+  -(void)viewDidLoad
+  {
+    [super viewDidLoad];
+    NSMutableArray *array = [NSMutableArray array];
+    NSLog(@"%@",array);
+  }
+  请思考这个array是在什么时候释放的？
+  在每一次runloop将要结束的时候对前一次创建的autoreleasepool进行释放操作，会调用autoreleastpoolpage::pop方法，会push一个新的
+  autoreleasepool，所以这个array对象是在当次runloop将要结束的时候调用autoreleastpoolpage::pop方法进行释放
+  
+  autoreleasepool的实现原理是怎样的？
+  
+  autoreleasepool为何可以嵌套使用？
+  就是多次插入哨兵对象，及插入要释放的对象，每次进行一个autoreleasepool代码块创建的时候，系统会为我们进行一个哨兵对象插入，完成一个
+  新的autoreleasepoolPage创建，autoreleasepoolPage是一个栈，用一个双向链表维护的，如果page没有满，就插入一个哨兵对象，所以autoreleasepool就是
+  多次插入哨兵对象，及要释放的对象
+  
+ 
+ 编译器会将@autoreleasepool{}改写为如下代码：
+ void *ctx = objc_autoreleasePoolPush();
+ objc_autoreleasePoolPop(ctx);
+ 
+objc_autoreleasePoolPush()的内部实现：
+会调用c++方法  autoreleasepoolpage:push(void)
+
+objc_autoreleasePoolPop(ctx)的内部实现：
+会调用autoreleasepoolpage::pop(void* ctxt)
+一次pop实际上相当于一次批量的pop操作：
+在autoreleasepool这个方法花括号当中所有对象，都会添加到
+自动释放池中，当进行pop后，所有的对象都会被发送一次release消息，
+所以是一次批量操作
+
+自动释放池的数据结构是怎样的？
+是以栈为节点通过双向链表的形式组合而成的，
+是和线程一一对应的。
+
+什么是自动释放池，自动释放池的实现结构是怎样的，面试题？
+
+双向链表：
+parentptr 父指针
+childptr 子指针
+
+头节点父指针指向空，子指针指向头节点的下一个节点，下一个节点有两个子针，一个父子针指向头节点，
+   子指针指向下一个节点，尾结点的子指针指向一个空。
+   
+栈结构：
+栈是向下增长的，下面高地址，上面是高地址
+
+栈顶 从栈顶后加入的对象先弹出来， 后入先出
+
+栈底
+   
+   
+autoreleasepoolpage这个c++类的分析：
+它的组成成员如下：
+id *next; 指向栈当中下一个可填充的位置
+autoreleasepoolpage *const parent; 双向链表父指针
+autoreleasepoolpage *child;双向链表孩子指针
+pthread_t const thread;线程成员变量一一对应的
+
+autoreleasepoolpage的栈结构：
+
+  低地址    栈顶
+  next     next指针指向栈的一个空位置，有新的对象就添加到next指向的位置
+  id obj1  花括号中填写的要释放的autorelease对象
+  id obj2
+  autoreleasepoolpage  低地址 栈底
+  自身占用的内存
+
+autoreleasepoolpage::push的内部实现：
+把next向上移，然后之前的next指向位置插入要释放的对象
+
+[obj autorelease]；这个方法的autorelease实现？
+会判断当前next指针是否指向了栈顶，如果没有指向栈顶直接把当前对象添加到next栈指向的位置，结束流程
+如果next是指向了栈顶，增加一个autoreleasepool节点拼结到链表上，在新的栈上去添加对象，并把next向上移动。
+
+
+autoreleasepoolpage::pop的内部实现：
+根据传入的哨兵对象（要释放的对象）找到对应对象在栈中的位置。然后给上次push操作之后添加的对象依次发送
+release消息。回退next指针到正确的位置，即next指针下移致力正确位置
+
+
+什么情况下需要我们手动创建autoreleasepool呢？
+在for循环中alloc出大量的图片数据，这些数据对内存消耗非常大，需要在for循环内部创建一个autoreleasepool
+每一次for循环都对内存进行一次释放
+
+autoreleasepool的实现原理是怎样的？
+就是以栈为节点通过双向链表组成的数据结构
+
+
+
+
+
+            
+            
