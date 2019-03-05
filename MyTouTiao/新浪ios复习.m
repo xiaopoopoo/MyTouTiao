@@ -2354,6 +2354,13 @@ mrc是手动引用计数管理，同是可以调用一些引用计数相关的�
 arc中禁止调用retain/release/retaincount/dealloc
 arc中新增weak,strong属性关键字
 
+1.何为assign?assign 是oc中定义对象属性property时用于修饰基本数据类型和oc数据类型的关键字。
+2.为什么assign不能用于修饰对象？首先我们需要明确，对象的内存一般被分配到堆上，基本数据类型和oc数据类型的内存一般被分配在栈上。
+如果用assign修饰对象，当对象被释放后，指针的地址还是存在的，也就是说指针并没有被置为nil，从而造成了野指针。
+因为对象是分配在堆上的，堆上的内存由程序员分配释放。而因为指针没有被置为nil,如果后续的内存分配中，刚好分配到了这块内存，就会造成崩溃。
+而assign修饰基本数据类型或oc数据类型，因为基本数据类型是分配在栈上的，由系统分配和释放，所以不会造成野指针。
+
+
 
 
 6-5 引用计数管理相关面试问题
@@ -2533,7 +2540,7 @@ autoreleasepoolpage::push的内部实现：
 
 [obj autorelease]；这个方法的autorelease实现？
 会判断当前next指针是否指向了栈顶，如果没有指向栈顶直接把当前对象添加到next栈指向的位置，结束流程
-如果next是指向了栈顶，增加一个autoreleasepool节点拼结到链表上，在新的栈上去添加对象，并把next向上移动。
+如果next是指向了栈顶，增加一个autoreleasepoolpage节点拼结到链表上，在新的栈上去添加对象，并把next向上移动。
 
 
 autoreleasepoolpage::pop的内部实现：
@@ -2546,11 +2553,384 @@ release消息。回退next指针到正确的位置，即next指针下移致力�
 每一次for循环都对内存进行一次释放
 
 autoreleasepool的实现原理是怎样的？
-就是以栈为节点通过双向链表组成的数据结构
+就是以栈为节点通过双向链表组成的数据结构，一个autoreleasepoolpage是一个栈，添加时把对象放入到这个栈的next指针指向位置，然后next指针
+向上移动，如果这个栈满了，就会再增加一个autoreleasepoolpage，把对象添加到新的栈上，并把next指针向上移。释放的时候找到这些对象，发送release消息，
+然后next指针向下移动回到应有的位置。
+
+
+
+6-8 循环引用相关面试问题&面试总结-1
+循环引用分为三种类型：
+
+自循环引用：
+有一个对象，它有一个成员变量 id strong obj，这时对象强执有这个成员变量，此时给obj=self（原对象）造成一个自循环引用
+
+相互循环引用：
+对象a，它有一个成员变量 id strong obj
+对象b，它有一个成员变量 id strong obj
+此时对象a的obj指向对象b，对象b的obj指象对象a，造成相互循环引用
+
+
+多循环引用
+对象a，它有一个成员变量 id strong obj
+对象b，它有一个成员变量 id strong obj
+对象c，它有一个成员变量 id strong obj
+对象d，它有一个成员变量 id strong obj
+对象e，它有一个成员变量 id strong obj
+对象f，它有一个成员变量 id strong obj
+每个对象的obj都指向下一个对象，就产生大环的循环引用
+
+考点：
+  代理 是相互循环引用，所以代理不能用strong类型
+  block（爱考）block章节再讲解
+  nstimer（爱考）
+  大环引用
+  
+如何破除循环引用呢？
+避免产生循环引用  如代理设为weak
+在合适的时机手动断环 
+
+具体解决方案有哪些？
+__weak 在代理 block中会用到
+__block 一般使用在block中解决循环引用问题
+__unsafe_unretained 修饰的关键字是未增加引用计数的
+
+__weak破解循环引用的解决方案：
+对象a，它有一个成员变量 id weak obj
+对象b，它有一个成员变量 id strong obj
+
+__block破解方案：
+
+mrc下,__block修饰对象不会增加其引用计数，避免了循环引用
+arc下，__block修饰对象会被强引用，无法避免循环引用，需手动解环
+
+__unsafe_unretained方式破解循环引用：
+修饰对象不会增加其引用计数，避免了循环引用。
+如果被修饰对象在某一时机被释放，会产生悬垂指针！这会访问对象会出错，所以不建议使用这种方式
+
+
+循环引用示例：
+你在平时开发过程中是否遇到过循环引用，你是怎么解决循环引用问题的？
+block的使用示例，请参看block章节讲解
+
+nstimer循环引用问题：
+比如有一个vc控制器，里面有一个scrollview的对象obj，负责轮播广告
+此时vc对obj是strong持有的，obj广告需每隔一次进行播放，涉及到定时器的使用
+所以需要在obj广告栏所属这个类中添加成员变量nstimer强引用,为nstimer添加回调事件后，
+nstimer会对这个对象obj进行强引用，产生了相互循环引用问题？
+思考：
+把这个obj广告栏对象弱引用nstimer，能破除循环引用吗？
+不会，因为nstimer被分配内存之后，还会被当前线程的runloop进行一个强引用，如果nstimer是在
+主线程创建的，那么就由主线程持有这个nstimer. 就形成runloop强引用nstimer,nstimer强引用obj广告栏，
+vc也强引用obj广告栏，这时即使vc不引用obj广告栏，但是nstimer被runloop强引用不能消毁，所以nstimer还是
+强引用obj，使obj广告栏不能释放。
+
+nstimer有重复定时器和非重复定时器的区分：
+如果创建的这个nstimer是非重复定时器，即只调用一次回调方法，那么会在定时器回调方法中调用nstimer invalidate()方法，停止定时器，然后nstimer=nil
+如果创建的这个nstimer是一个重复多产回调方法的定时器，就不能作nvalidate()，nstimer=nil的操作，
+解决方案：增加一个中间对象，nstimer不再指向这个obj，而是强引用中间对象，中间对象弱引用nstimer,和obj.  在中间对象的类中，nstimer回调方法中
+判断弱引用的obj是否为nil，如果为nil，表示vc控制器消毁，及广告栏消毁，则可在回调方法中设置nvalidate()，nstimer=nil的操作
 
 
 
 
 
+6-8 循环引用相关面试问题&面试总结-2
+
+关于这个nstimer破除循环引用方法的内部实现：
++(NSTimer *)schedledWeakTimerWithTimeInternal:(NSTimeInterval)interval
+ target:(id)aTarget selector:(SEL)aSelector userInfo:(id)userInfo repeats:(BOOL)repeats;
+
+
+NSTimer+WeakTimer.h
+#import <Foundation/Foundation.h>
+
+@interface NSTimer (WeakTimer)
+
++ (NSTimer *)scheduledWeakTimerWithTimeInterval:(NSTimeInterval)interval
+                                         target:(id)aTarget
+                                       selector:(SEL)aSelector
+                                       userInfo:(id)userInfo
+                                        repeats:(BOOL)repeats;
+
+@end
+
+
+
+NSTimer+WeakTimer.m
+#import "NSTimer+WeakTimer.h"
+
+@interface TimerWeakObject : NSObject
+@property (nonatomic, weak) id target;//weak指向的
+@property (nonatomic, assign) SEL selector;//定时器到时之后的回调方法
+@property (nonatomic, weak) NSTimer *timer;
+
+- (void)fire:(NSTimer *)timer;
+@end
+
+@implementation TimerWeakObject
+
+- (void)fire:(NSTimer *)timer
+{
+    if (self.target) {//判断如果当前持有的target存在，
+        if ([self.target respondsToSelector:self.selector]) {//是否响应这个选择器，如果响应就回调下面这个方法
+            [self.target performSelector:self.selector withObject:timer.userInfo];
+        }
+    }
+    else{
+        [self.timer invalidate];//不响应就把timer置为无效，就达到timer强引用及弱引用的释放
+    }
+}
+
+@end
+
+@implementation NSTimer (WeakTimer)
+
++ (NSTimer *)scheduledWeakTimerWithTimeInterval:(NSTimeInterval)interval
+                                         target:(id)aTarget
+                                       selector:(SEL)aSelector
+                                       userInfo:(id)userInfo
+                                        repeats:(BOOL)repeats
+{
+    TimerWeakObject *object = [[TimerWeakObject alloc] init];//创建一个中间对象
+    object.target = aTarget;//把这个target指给中间对象
+    object.selector = aSelector;//把这个回调指给中间对象
+    //调用系统的nstimer方法去创建nstimer，同时把它的回调方法指向中间对象的fire方法，在fire方法当中再对实际对象的fire方法进行回调调用
+    object.timer = [NSTimer scheduledTimerWithTimeInterval:interval target:object selector:@selector(fire:) userInfo:userInfo repeats:repeats];
+    
+    return object.timer;
+}
+
+@end            
+
+
+在日常开发过程当中是否遇到过循环引用，遇到过是怎样解决的？
+在日常开发过程中遇到过nstimer这种循环引用，解决nstimer循环引用是创建一个中间对象，
+令中间对象持有两个弱引用对象nstimer和原对象，然后在nstimer中直接分派的回调是在中间对象当中创建的，中间对象持有的回调方法当中所持有的target值的
+判断，如果说值存在，直接把nstimer回调给原对象，如果当前self.target对象被释放了，则把nstimer设为无效状态，就可以解除线程的runloop对nstimer的
+强引用，以及nstimer对中间对象的强引用。
+
+什么是arc?
+arc是由llvm编译器和runtime共同协作为我们实现引用计数的管理。
+
+为什么weak指针指向的对象在弃掉时之后会被自动设为nil？
+当对象弃用之后，decallo方法的内部实现当中，会调用清除弱引用方法，
+在清除弱引用的方法当中会调用hash算法来查找被弃对象在弱引用表中的位置，
+来提取它所对应的弱引用指针的列表数组，然后进行for循环遍列把每个weak指针
+都置为nil。
+
+苹果是如何实现autoreleasepool的？
+autoreleasepool是以栈为节点，由双向链表形式来合成的数据结构。
+
+什么是循环引用？你遇到过哪些循环引用，是怎样解决的？
+nstimer的循环引用问题就可以作为这道面试题的答案。
+
+
+
+
+第7章，block相关的面试问题
+
+
+7-1 Block本质相关面试问题
+block介绍：什么是block，你对block的调用是怎样理解的？
+截获变量：block的一大特性是截获变量，系统关于block的截获变量特性是怎样实现的？
+__block修饰符：使用这个修饰符是用来作什么事情的？
+block的内存管理：这方面考察的内容比较多，什么时候需对block进行copy操作，栈block和堆block你是否了解？block的内存管理，因为在使用不当产生循环引用。
             
             
+什么是block?
+block是将函数及其执行上下文封装起来的对象
+
+下面看一段block的代码段定义：
+{
+   int multiplier = 6;
+   int(^Block)(int) =  ^int(int nume){
+        return num*multiplier;
+   };
+   Block(2);
+}
+这段代码在编译器编译后会是什么样子呢？
+合用【clang -rewrite-objc file.m】查看编译之后的内容
+
+打开xcode
+
+MCBlock.h
+#import <Foundation/Foundation.h>
+
+@interface MCBlock : NSObject
+
+- (void)method;
+
+@end
+
+
+MCBlock.m
+
+#import "MCBlock.h"
+
+@implementation MCBlock
+- (void)method
+{
+    static int multiplier = 6;
+    int(^Block)(int) = ^int(int num)
+    {
+        return num * multiplier;
+    };
+    Block(2);
+}
+
+@end
+
+打开命令窗口： clang -rewrite-objc MCBlock.m
+运行完成后会在同级目录中生成MCBlock.cpp文件,这个文件编译后很大
+
+首先会生成下面函数：
+//_I_MCBlock_method I表示这个函数是当前类的一个实例方法，MCBlock当前类的类名，在oc文件当中编写的实际方法名称method
+static void _I_MCBlock_method(MCBlock * self, SEL _cmd) {//self 和选择器因子两参数
+    static int multiplier = 6;
+    //__MCBlock__method_block_impl_0是一个结构体传入3个参数，第一个是__MCBlock__method_block_func_0函数指针，第2个__MCBlock__method_block_desc_0_DATA是block描述，第三个是传入的常量
+    //__MCBlock__method_block_impl_0结构体强制转换以后赋值给我们的block变量
+    int(*Block)(int) = ((int (*)(int))&__MCBlock__method_block_impl_0((void *)__MCBlock__method_block_func_0,
+     &__MCBlock__method_block_desc_0_DATA, &multiplier));
+}
+
+什么是block呢？查找上面函数中__MCBlock__method_block_impl_0结构体的函义
+struct __MCBlock__method_block_impl_0 {
+  //结构体1
+  struct __block_impl impl;
+  //结构体2 关于block的描述
+  struct __MCBlock__method_block_desc_0* Desc;
+  //block中使用到的局部变量
+  int *multiplier;
+  //当前结构体构造函数的声名及定义  参数为：函数指针， block描述，使用到的变量，flags标记  multiplier(_multiplier)表示将传入的函数直接赋值给int *multiplier变量
+  __MCBlock__method_block_impl_0(void *fp, struct __MCBlock__method_block_desc_0 *desc, int *_multiplier, int flags=0) : multiplier(_multiplier) {
+    impl.isa = &_NSConcreteStackBlock;
+    //标记位的赋值
+    impl.Flags = flags;
+    //函数指针的赋值
+    impl.FuncPtr = fp;
+    //描述的赋值
+    Desc = desc;
+  }
+};
+
+查看  结构体1struct __block_impl impl代表的含义：
+
+struct __block_impl {
+  void *isa;//isa指针，是指这个block对象，因为block有isa指针，所以也是objclass，也是对象
+  int Flags;
+  int Reserved;
+  void *FuncPtr;//无类型的函数指针，指向对应函数实现
+};
+
+往下再看一个函数：
+//命名__MCBlock所以类的名称   所在类的方法method  block代表block  func代表函数
+//参数：第一个是 __MCBlock__method_block_impl_0结构体  num是传递进来的参数
+static int __MCBlock__method_block_func_0(struct __MCBlock__method_block_impl_0 *__cself, int num) {
+  int *multiplier = __cself->multiplier; // 取它的成员变量
+
+
+        return num * (*multiplier);//被转化成了函数指针
+    }
+    
+
+什么是block？
+block就是一个对象，封装了函数以及函数执行上下文
+
+什么是block调用？
+刚源码产生了函数，block调用即是函数调用
+看源码：//对block进行强制类型转换，然后取出成员变量funptr，这个是函数指针，对应了当前的函数指针，再把对应参数传进去，block本身，和2，就进行了函数调用。
+int (*)(__block_impl *, int))((__block_impl *)Block)->FuncPtr)((__block_impl *)Block, 2);
+
+
+
+
+7-2 Block截获变量相关面试问题
+看一段滴滴出行的笔试真题：下面代码打印是2*4还是2*6呢？正确答案是12
+- (void)method
+{
+    int multiplier = 6;
+    int(^Block)(int) = ^int(int num)
+    {
+//        __block
+        return num * multiplier;
+    };
+    multiplier = 4;
+    NSLog(@"result is %d", Block(2));
+}
+
+@end
+
+block截获变量：
+截获变量涉及到被截获变量的类型，不同类型的变量，block截获变量的特点也是不一样的
+局部变量：基本数据类型 对象类型 变量的截获是不一样的
+block对静态局部变量 全局变量 静态全局变量截获又有什么特性呢？
+
+关于block的截获特性你是否有了解，block的截获变量特性又是怎样的呢？
+
+
+回答这方面问题应该答到针对不同变量类型block是怎样截获的：
+对基本数据类型的局部变量是截获其值。
+对于对象类型的局部变量连同所有权修饰符一起截获。
+局部变量，局部静态变量的截获是以指针形式截获。
+全局变量，全局静态变量是不对其截获的。
+
+打开命令窗口： clang -rewrite-objc -fobjc-arc MCBlock.m 查看编译代码来分析block对不同类型数据是如何截获的。
+
+MCBlock.m
+#import "MCBlock.h"
+
+@implementation MCBlock
+
+// 全局变量
+int global_var = 4;
+// 静态全局变量
+static int static_global_var = 5;
+
+- (void)method
+{   
+   //基本数据类型的局部变量
+    int var = 1;
+    //对象类型的局部变量
+    __unsafe_unretained id unsafe_obj = nil;
+    __strong id strong_obj = nil;
+    //局部静态变量
+    static int static_var = 6;
+    void(^Block)(void) = ^
+    {
+       //在block中使用到的变量，block会对变量进行截获
+       NSLog(@"局部变量<基本数据类型> var %d",var);//block中就是对值截获，作了赋值操作
+       //对象类型局部变量是把修饰符都一并传入到编译后的block代码，所以对象类型的所有权修饰符都是一并截获的
+       NSLog(@"局部变量<__unsafe_unretained 对象类型> var %d",unsafe_obj);
+       NSLog(@"局部变量<__strong 对象类型> var %d",strong_obj);
+       //int *static_var ，是截获了这个局部变量的指针，如果这个block方法体中是静态局部变量，因为它是指针截获，所以当静态局部变量值在block方法执行修改后，block方法体类的静态的值是会有所改变的
+       NSLog(@"局部静态变量 %d",static_var);
+       //block中未定义如下两个变量，所以不对全局变量截获
+       NSLog(@"全局变量 %d",static_var);
+       NSLog(@"静态全局变量 %d",static_var);
+    };
+    Block();
+}
+
+
+局部静态变量：
+- (void)method
+{
+    static int multiplier = 6;
+    int(^Block)(int) = ^int(int num)
+    {
+//        __block
+        return num * multiplier;
+    };
+    multiplier = 4;
+    NSLog(@"result is %d", Block(2));//指印结果为8，不是12，因为局部静态变量以指针形式截获
+}
+
+@end
+
+如果在block体中对multiplier值进行修改，需要用到 __block修饰符。
+
+
+7-3 __block修饰符相关面试问题
+
+ 
