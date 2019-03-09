@@ -2932,5 +2932,647 @@ static int static_global_var = 5;
 
 
 7-3 __block修饰符相关面试问题
+在什么情况下会用这个修饰符呢？
+对被截获变量进行赋值操作需添加__block修饰符
+
+什么是赋值操作，什么是使用操作？
+
+NSMutableArray *array = [NSMutableArray array];
+void(^Block)(void) =  ^{
+    [array addObject:@123]
+};
+Block（）;
+上面只是一个使用，没有对指针赋值，所以不用__block；
+array = [NSMutableArray array];//这种情况需要使用__block因为改变了指针
+
+对变量赋值时__block修饰符的一个特点：
+
+局部变量基本类型和对象类型需要__block。
+静态局部变量，静态全局变量，全局变量不需要添加__block修饰符，因为这几个变量不涉及截获操作，
+
+__block int multiplier = 6;
+NSMutableArray *array = [NSMutableArray array];
+void(^Block)(int) =  ^int(int num){
+    return num*nultiplier;
+};
+multiplier = 4;
+Block（2）;
+打印结果是8
+
+__block 修饰的变量最后变成了对象，有isa指针，也有一个__forwarding指针，如果是栈上创
+建的block，指向其__block变量，如果是堆上创建的block变量，__forwarding指向其它地方，
+所以最终截获的是__forwarding指针指向的对象改变的值。
+
+为什么需要__forwarding指针呢？
+
 
  
+7-4 Block内存管理相关面试问题
+在block的编译中能看到有这么一句代码：
+impl.isa = &_NSConcreteStackBlock;
+isa就是标识block是哪种类型的。
+
+block有三种类型：
+_NSConcreteGlobalBlock;全局类型block
+_NSConcreteStackBlock;栈类型block
+_NSConcreteMallocBlock;堆类型block
+
+内存分布情况：
+
+内核区
+栈（stack） 方法和函数都是在在栈上工作的 高地址向低地址向下扩展，方法调用在这个区展开  _NSConcreteStackBlock
+堆（heap） block 或对象copy之后放这里，堆是向上增长的  通过alloc等分配的对象  _NSConcreteMallocBlock
+未初始化数据(.bss)  未初始化静态变量 全局变量
+已初始化数据(.data) 已初始化静态变量 全局变量  _NSConcreteGlobalBlock
+代码段(.text) 
+保留
+
+不同类型Block的copy操作会产生怎样的效果？
+栈上的block  copy后在堆上面  
+全局类型的block 在数据区的 copy后什么也不做
+堆上面的block  在堆的 copy后引用计数加1
+
+所以在栈上block不能用assgin修饰,因为它在栈上，有可以会成为野指针
+
+栈上block的销毁：
+__block变量在栈上，当变量作用域结束之后它以及它所在的block就会销毁，它修饰的会变成对象
+
+如果栈上有一个block，这个block中使用到了__block变量，栈上的block copy操作，会
+产生一个在堆上的block，并且这个block中也有__block变量，唯一不同的是这个是在堆上的block
+copy后，随着__block变量的作用域结束，栈上的block会销毁，堆上的block和__block仍然存在
+
+在mrc中，栈上block作copy操作，和平常对象一样，如果没有一个指针去指向它，会内存泄漏。
+
+__block变量copy之前，它的__forwarding指向了它自身，
+对栈上block中的__block变量copy操作之后，同样在堆上产生一个__block变量，新产生的__block变量的__forwarding指针指向了它本身，旧的栈上的
+__block变量的__forwarding指针指向了新的__block变量。
+
+所以当对一个栈上的__block变量，已经copy了的，进行修改，实际上是通过__block变量里的__forwarding
+指针找到堆上的__block变量，并修改了堆上__block变量的值。
+
+如果说未对栈上的__block变量进行copy，那修改的就是__block变量的__forwarding指针指向它自身去修改，属指针修改，在block截获的时候
+会截获到最后指针对应的值。
+
+
+例：
+__block int multiplier = 10;//变成了一个对象
+//_blk是一个对象的block类型的成员变量，这里赋值实际上是一个copy，block会在堆上有另一拷贝
+_blk  = ^int(int num){
+    return num * multiplier; 
+};
+multiplier = 6;//这里是对__block中的__forwarding指针指向它的__block multiplier进行赋值，这里是在堆上的，因为上面是一拷贝
+[self executeBlock];
+-(void)executeBlock{
+    int reslut = _blk(4);
+    NSLog(@"%d",result);
+}
+打印结果为24。
+
+__forwarding存在的意义，无论在仍合位置，都能通过__forwarding访问同一个__block变量，如果未对栈上的__block copy
+那就是__forwarding指向它栈上的__block变量本身，如果发生copy，无论在栈上，堆上的__block进行赋值，其实都是在copy后的
+堆上的__block变量进行赋值。
+
+
+7-5 Block循环引用相关面试问题&面试总结
+
+//array一般用strong修饰
+_array = [NSMutableArray arrayWithObject:@"block"];
+//block一般用copy修饰
+_strBlk = ^NSString*(NSString* num){
+    return [NSString stringWithFromat:@"%@",_array[0]];
+}
+_strBlk(@"hello");
+
+会产生自循环引用，因为对象对block是强引用，block中用到了array成员变量，
+block中截获的对象类型变量会连同strong一块截获，所以会有strong指针指向
+block，所以当_strBlk变量生存周期结束后，还用一个strong的_array持有这个block块，不能释放，会产生循环引用
+
+怎么解决：
+
+避免产生循环引用的方式去解决：
+//array一般用strong修饰
+_array = [NSMutableArray arrayWithObject:@"block"];
+__weak NSArray* weakArray = _array;
+//block一般用copy修饰
+_strBlk = ^NSString*(NSString* num){
+    return [NSString stringWithFromat:@"%@"weakArray[0]];
+}
+_strBlk(@"hello");
+
+
+为什么__weak会解决这问题呢？
+因为block截取的是对象类型的，所以连所有权strong都会截获，
+
+__block引起的循环引用：
+
+__block MCBlock* blockSelf = self;
+_blk = ^int(int num){
+  return num*blockSelf.var;
+}
+_blk(3);
+
+答案：
+在mrc中是不会产生循环引用，arc下会产生循环引用
+
+在arc下：
+_blk强持有了block，block又持有了blockSelf,blockSelf又持用了原来的对象，会产生大环引用
+
+解除方法：
+__block MCBlock* blockSelf = self;
+_blk = ^int(int num){
+  int result = num*blockSelf.var;
+  blockSelf = nil;//解除它对self的持有。
+  return result;
+}
+_blk(3)
+
+这个有个避端，如果很久都不调用_blk(3)，就不会执行blockSelf=nil,环就一直存在
+
+
+block面试题总结：
+
+什么是block？
+block是关于函数以及上下文封装起来的对象
+
+为什么block产生循环引用：
+如果当前block对当前对象截获会有一个强引用，当前变量又对block块有强引用，需要weak修饰去解决
+如果截获的是blockSelf=self，在mrc下不会产生循环引用，在arc下会产生循环引用
+
+怎样理解block截获变量的特性？
+对于基本数据类型对其值截获
+对象类型是所有权修饰符进行截获
+对于局部静态变量是对其指针截获
+对于全局变量，全局静态变量不截获
+
+你遇到过哪些循环引用，你又是怎样解决的？
+从block，nstimer讲 请看如上
+
+
+
+
+
+第8章 gdc面试相关问题
+
+8-1 GCD相关面试问题：
+
+多线程几种考察：
+在ios系统中为我们提供了哪些多线程技术方案：
+gck 使用最多
+nsoperation afnetwork所有网络请求都对应封装成nsoperation，图片异步下载也涉及到
+nsthread 实现一个长驻线程会用到这个技术
+线程同步和资源共享方面问题，多线程和锁
+
+同步是指在当前线程下执行
+异步是指在当前线程重新开一个线程下执行
+
+gcd:
+
+同步/异步  串行/并发：
+dispatch_sync(serial_queue,^{//任务})／／同步分配任务到串行队列上
+dispatch_async(serial_queue,^{//任务})／／异步分配任务到串行队列上
+dispatch_sync(cocurrent_queue,^{//任务})／／同步分配任务到并发队列上
+dispatch_async(cocurrent_queue,^{//任务})／／异步分配任务到并发队列上
+
+面试题1：
+同步串行：
+在viewDidLoad中
+dispatch_sync(dispatch_get_main_queue(),^{
+  [self doSomething];
+});
+这道面试是会产生死锁。队列引起的循环等待
+
+比如说在主队列中提交了两个任务，一个是viewdidload，一个是block任务，最后
+分配到主线程执行。当block中的方法调用完成之后，这个viewdidload方法中的执行才会
+向下走，所以先进队列的是viewdidload，viewdidload中又调用了block，所以block又
+进入了队列，viewdidload要执行完需要执行完block，block执行完需要等队列中viewdidload执行
+完，所以相互等待的死锁。
+
+换成异步提交到主线程也一样，它也是放到主队列中，分配给主线程去处理的，一样会产生死锁
+dispatch_async(dispatch_get_main_queue(),^{
+  [self doSomething];
+});
+
+
+同步串行另一个问题：
+
+在某个方法调用viewDidLoad方法中
+dispatch_sync(seriqlqueue(),^{
+  [self doSomething];
+});
+同步提交一个任务在串行队列中，是不会产生互锁的。
+viewdidload放到了主队列，分配到主线程上的， 同步是在当前线程下执行
+block是放到串行队列，分配到主线程上的
+所以viewdidload方法执行不用去在主队列中等block执行完再执行其它的代码
+block方法执行不用等viewdidload执行完再执行block，因为它们排在不同的队列中
+
+如果viewdidload放到同一串行队列中，也会产生死锁循环等街问题
+
+
+同步并发面试是：
+
+在某个方法调用viewdidload方法中：
+nslog(@"1");
+dispatch_sync(global_queue(),^{
+  nslog(@"2");
+    dispatch_sync(global_queue(),^{
+      nslog(@"3"); 
+     });
+     nslog(@"4");
+});
+nslog(@"5");
+
+打印结果：
+1
+2
+3 并发队列的特点，所有提交的任务，block不用排队执行，可以并发执行
+4
+5
+
+如果换成串行队列同样产生死锁，2执行完成需要执行到3，3又需要等2执行完成：
+在某个方法调用viewdidload方法中：
+nslog(@"1");
+dispatch_sync(seriqlqueue(),^{
+  nslog(@"2");
+    dispatch_sync(seriqlqueue(),^{
+      nslog(@"3"); 
+     });
+     nslog(@"4");
+});
+nslog(@"5");
+
+异步串行面试题：
+在viewdidload中，经常会这么用，没问题，因为不是调用viewdidload，也就不存在把viewdidload放到主队列
+dispatch_async(dispatch_get_main_queue(),^{
+  [self doSomething];
+});
+
+异步并发面试题：
+-(void)viewdidload{
+  dispatch_async(global_queue(),^{
+  NSLOG(@"1");
+  [self performSelector:@selector(print) withObject:nil afterDelay:0];
+  nslog(@"3");
+  });
+}
+
+-(void )print
+{
+  nslog(@"2");
+}
+答案,1,3
+
+异步方式分配到全局并发对列，它是会在gcd所维护的某个线程池上面进行执行处理。gcd维护的线程默认是未开启
+runloop的。[self performSelector:@selector(print) withObject:nil afterDelay:0];这个是要提交到runloop
+上面的一个逻辑的。所以在gcd所维护的这个线程内是没有runloop的，调用刚那个方法的前提是当前线程是有runloop，所以
+这个方法就失效了。并发对列只是个障演法。
+
+
+
+
+
+其它章节内容：
+dispatch_barrier_async 异步炸拦调用 解决多读单写的问题
+
+dispath_group
+
+
+
+8-2 dispatch_barrier_async()函数相关面试问题
+
+怎样利用gcd多读单写？
+读者与读者是并发的 读者读的时候不能有写数据操作互斥  写与写也是互斥
+
+dispatch_barrier_async(concurrent_queue,^{写操作})
+
+
+dispatch_barrier_async和dispatch_barrier_sync都会把自己括号体内的任务放入队列中，只有当队列中的
+任务执行完为0后才会执行它自己括号体内的代码，区别在于当任务为零时，这时执行dispatch_barrier_async括号内的代码，如果这段代码的执行时间太长，
+程序不会等待这段代码执行完成后再继续往下执行其它代码。而dispatch_barrier_sync会等待它括号体内的代码执行完成，再执行其它代码。
+
+
+代码案例：
+
+
+代码案例：
+
+UserCenter.h:
+#import <Foundation/Foundation.h>
+
+@interface UserCenter : NSObject
+
+@end
+
+ 
+ 
+UserCenter.m
+ 
+ 
+#import "UserCenter.h"
+
+@interface UserCenter()
+{
+    //定义一个并发队列
+    dispatch_queue_t concurrent_queue;
+    //用户数据中心，可能多个线程需要数据访问，这个存的是数据，可充许多个线程同时访问这个字典
+    NSMutableDictionary  *userCenterDic;
+}
+
+@end
+
+@implementation UserCenter
+
+- (id)init
+{
+    self = [super init];
+    if (self) {
+        // 创建并发队列
+        concurrent_queue = dispatch_queue_create("read_write_queue", DISPATCH_QUEUE_CONCURRENT);
+        // 创建数据容器
+        userCenterDic = [NSMutableDictionary dictionary];
+    }
+
+    return self;
+}
+
+- (id)objectFbrKey:(NSString*)key
+{
+    __block id obj;
+        // 同步读取指定数据,多个读可并发执行，并同步立刻返回结果。满足同时并发返回调用结果
+        dispatch_sync( concurrent_queue, ^{
+            obj = [userCenterDic objectForKey:key];
+        });
+    
+    return obj;
+}
+//当队列中的读操作完成，这会队列中任务为0时，才会执行dispatch_barrier_async中的代码，实现了多读单写的效果
+-(void)setObject:(id)obj forKey:(NSString *)key
+{
+    //异步栅栏调用设置数据，在一个并发队列去写数据，
+    dispatch_barrier_async( concurrent_queue, ^{
+            [userCenterDic setObject:obj forKey:key];
+        });
+}
+
+
+@end
+
+
+
+
+
+
+8-3 dispatch_group_async()函数相关面试问题
+使用gcd实现a,b,c三个任务并发执行，当这三个任务完成之后再执行d任务。
+
+GroupObject.h
+#import <Foundation/Foundation.h>
+
+@interface GroupObject : NSObject
+
+@end
+
+
+GroupObject.m
+
+#import "GroupObject.h"
+
+@interface GroupObject()
+{   //并发队列  这道面试题场景会并发下载数据，数据下载任务都完成了再拼成一幅图片
+    dispatch_queue_t concurrent_queue;
+    NSMutableArray <NSURL *> *arrayURLs;
+}
+
+@end
+
+@implementation GroupObject
+
+- (id)init
+{
+    self = [super init];
+    if (self) {
+        // 创建并发队列
+        concurrent_queue = dispatch_queue_create("concurrent_queue", DISPATCH_QUEUE_CONCURRENT);
+        arrayURLs = [NSMutableArray array];
+    }
+
+    return self;
+}
+
+- (void)handle
+{
+    // 创建一个group
+    dispatch_group_t group = dispatch_group_create();
+    
+    // for循环遍历各个元素执行操作
+    for (NSURL *url in arrayURLs) {
+        
+        // 异步组分派到并发队列当中，图片下载逻辑分配到这里，dispatch_group_async与dispatch_group_t配对使用，这些任任都在一个组内
+        dispatch_group_async(group, concurrent_queue, ^{
+            
+            //根据url去下载图片
+            
+            NSLog(@"url is %@", url);
+        });
+    }
+    //所以并发任务执行完成才会执行这个，这时回到主队列去执行
+    dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+        // 当添加到组中的所有任务执行完成之后会调用该Block
+        NSLog(@"所有图片已全部下载完成");
+    });
+}
+
+
+
+
+@end
+
+
+
+
+8-4 NSOperation相关面试问题
+
+实现多线程的方案需要结合NSOperationQueue配合实现多线程方案。
+
+ NSOperationQueue实现多线程方案它有哪些优势和特点呢？
+ 答：主要有三方面：
+ 添加任务依赖移除依赖，这是gcd,nsthread所不具备的，gcd要实现我这里思考可以用dispatch_group_t 
+ 任务状态的控制，提供了执行状态的控制
+ 可以控制它的最大并发量，设为1就是串行
+ 
+ 
+ 有哪些任务状态控制？
+ isReady 当前任务是否处于就绪状态，及准备状态
+ isExecuting 当前任务是否处于进行中的状态
+ isFinished 当前任务是否处于完成状态
+ isCancelled 当前任务是否已经取消
+ 
+ 状态控制：
+ 主要看是否重写了start方法或者main方法
+ 
+ 如果只重写main方法，底层实现控制变更任务执行完成状态，以及任务退出，不需要我们自己控制状态，系统代我们处理状态
+ 如果重写了start方法，自行控制任务状态，会在不同的情况下自己去写isFinished等状态
+ 
+ 源
+ 码分析基于gnustep-base-1.24.9
+ 
+ 有一个start方法，创建一个自动释放池，以及线程的优先级获取，作一系列异常判断，
+ 如果前面异常判断通过了，会去判断当前是否处于执行中，如果没处理执行中，设置它的
+ 状态，判断当前任务如果未被取消就调用main方法，最后调用finsh方法
+ finsh方法中kvo调用finsh的标志位，这里看出如果只重写main方法，系统会自动调用状态变列，
+ 如果重写了start方法，系统默认实现都被我们覆写掉了。
+ 
+ 系统是怎样移除一个isFinished=YES的NSOperation的？
+ 通过kvo的方式来移除operationqueue中所对应的operation的。来达到正常退出消毁operation这个对象。
+ 
+ 
+ 
+ 
+ 
+ 8-5 NSThread相关面试问题
+  NSThread方面的面试问题一般和runloop结合考察，这里主要讲 NSThread的启动流程：
+  创建一个 NSThread后会调用start()启动线程，start方法内部会创建pthread线程，指定pthread的启动函数
+  在启动函数中调用 NSThread所定义的main(),main中会通过[target performSelector:selector]来调用
+   NSThread中指定的方法，这后调用exit()函数关闭线程。
+   
+往往 NSThread的考察都是结合常驻线程来考察的：
+在对应的一个 NSThread入口函数中添加一个runloop或事件循环，往往这个事件循环就是添加到 NSThread所指定的调用方法当中，
+在这个方法中维护一个runloop来达到常驻线程的目的
+
+ NSThread的start方法源码分析：
+ functon中的源码是没公共的，但可以通过下面的源码去分析，因为大体实现是一样的
+ 基于gnustep-base-1.24.9进行源码解析
+ 在start方法中：
+ 先判断是否有异常
+ 调用pthread_create(&thr,&attr,nsthreadLuncher,self)创建一个线程，然后调用nsthreadLuncher启动函数
+ nsthreadLuncher启动函数中获取线程t，发送一个通知告诉观察者已经启动了，设置线程名称，再调用main函数，再exit退出线程
+ 在main函数中什么都不作，要保证常驻线程，就需在main函数中开启一个runloop，实现常驻，main函数中只调用了[target performSelector:selector]
+ [target performSelector:selector]又调用了NSThread中指定的方法，target和selector是怎样和NSThread绑定的，因为
+ NSThread中的类方法+(void)detachNewThreadSelector:(SEL)aSelector toTarget:(id)aTarget 会传入target和selector参数，所以绑定在一起。
+ initWithTarget方法同样会传入target和selector参数，所以绑定在一起。
+ 
+ 
+ 8-6 多线程与锁相关面试问题&面试总结
+ 多线程和锁相关的问题
+ 
+ ios中都有哪些锁呢？开发中使用过哪引起锁，怎样使用的？
+ ios中的锁：
+ @synchronized
+ atomic
+ OSSpinLock
+ NSRecursiveLock
+ NSLock
+ dispatch_semaphore_t
+ 
+ 
+ @synchronized 一般创建单例对象的时候使用，保证多线程情况下创建对象是唯一的
+atomic 是属性关键字，对被修饰对象进行原子操作，不负责使用
+如：@property(atomic)NSMutableArray *array;
+self.array = [NSMutableArray array];//可以保证线程安全性
+[self.array addObject:obj];//不保证线程安全性
+
+ OSSpinLock自旋锁 经常考察，会循环等待访问，不释放当前资源，while循环一直看是否获取到这锁，直到获取到这个锁才
+ 会停止循环，但不释放资源。和普通锁不一样，普通锁逻辑是否个线程获取到这把锁，其它线程就不能获取到，没有循环获取这样的概念。
+ 应用场景是一些轻量级的数据访问，简单的加1,减1操作，内存管理和runtime相关的面试题有提到。对引用计数加减操作
+ 
+ NSLock 一般解决一些细粒度的线程同步问题，来保证各个线程互斥进入自己的零介区
+ -(void)methodA
+ {
+  [NSLock lock];
+  [self methodB];
+  [NSLock unlock];
+ 
+ }
+ 
+  -(void)methodB
+ {
+  [NSLock lock];
+  .....//逻辑操作代码。。。
+  [NSLock unlock];
+ 
+ }
+ 
+ 会导致死锁
+ 方法a，加锁的时候，[NSLock lock];某个线程加锁获取到锁
+ 方法b，再次调用[NSLock lock];再次获取锁，重获取会导制死锁，因为方法b要获取到获，必须方法a执行完释放所，但方法
+ a的执行完成又需要方法b先执行完成，解决这种问题需要用到递归锁
+ 
+ 
+  NSRecursiveLock
+  递归锁是可以重入的，可以解决这个问题，递归锁可以获取自身多次
+  
+  -(void)methodA
+ {
+  [NSRecursiveLock lock];
+  [self methodB];
+  [NSRecursiveLock unlock];
+ 
+ }
+ 
+  -(void)methodB
+ {
+  [NSRecursiveLock lock];
+  .....//逻辑操作代码。。。
+  [NSRecursiveLock unlock];
+ 
+ }
+ 
+ 
+  dispatch_semaphore_t信号量机制
+  
+//创建信号量，参数：信号量的初值，如果小于0则会返回NULL
+dispatch_semaphore_create（信号量值）
+ 
+//等待降低信号量
+dispatch_semaphore_wait（信号量，等待时间）等待哪个信号量
+ 
+//提高信号量
+dispatch_semaphore_signal(信号量)
+
+dispatch_semaphore_create内部实现
+实例化了结构体
+struct semphore{
+  int value;//信号量值
+  List<thread>;//关于线程进程控制表，一个线程死表
+}
+
+
+ dispatch_semaphore_wait内部实现
+ 信号量值减1，来获取信号量
+ 如果信号量值小于等于0,那这个信号的所在的线程就是会阻塞行为把自己阻塞行为，是一个主动行为
+ 
+ //提高信号量
+dispatch_semaphore_signal(信号量)
+信号量值加1
+如果信号量值小于等于0，意味着释放信号之前有队列的任务在排队，因为在进行wait 操作的时候如果说之前的
+线程没有办法获取到信号量，会主动把自己挂到这个队列列表上，作信号量加1后value值仍然小于等于0,表示列表当中相应
+的线程需要唤醒，就可实现线程同步，唤醒是一个被动行为，同释放信号的线程来唤醒一个被阻碍的线程
+
+正常的使用顺序是先降低然后再提高，这两个函数通常成对使用。
+
+
+线程安全：如果你的代码所在的进程中有多个线程在同时运行，而这些线程可能会同时运行这段代码。如果每次运行结果和单线程运行的结果是一样的，而且其他的变量的值也和预期的是一样的，就是线程安全的。
+若每个线程中对全局变量、静态变量只有读操作，而无写操作，一般来说，这个全局变量是线程安全的；若有多个线程同时执行写操作（更改变量），一般都需要考虑线程同步，否则的话就可能影响线程安全。
+线程同步：可理解为线程 A 和 线程 B 一块配合，A 执行到一定程度时要依靠线程 B 的某个结果，于是停下来，示意 B 运行；B 依言执行，再将结果给 A；A 再继续操作。
+举个简单例子就是：两个人在一起聊天。两个人不能同时说话，避免听不清(操作冲突)。等一个人说完(一个线程结束操作)，另一个再说(另一个线程再开始操作)。
+下面，我们模拟火车票售卖的方式，实现 NSThread 线程安全和解决线程同步问题。
+场景：总共有50张火车票，有两个售卖火车票的窗口，一个是北京火车票售卖窗口，另一个是上海火车票售卖窗口。两个窗口同时售卖火车票，卖完为止。
+
+
+总结：
+gcd实现多读单写？
+ios为我们提供了几种线程技术，它们的特点是怎么样的？
+gcd nsoperation nsthread
+gcd实现一些简单的线程同步，子线程的分派，包括实现一些多读单写的场景
+nfnetwork 图片下载 用nsoperation，因为可以对状态控制，添加依赖，移除依赖，以及并发量控制
+nsthread常驻线程的实现
+nsoperation对象在finished之后是怎样从queue当中移除的？
+你用过哪些锁，结合实际弹弹是怎么使用的？
+ 
+ 
+
+ 
+
+
+
+
+
