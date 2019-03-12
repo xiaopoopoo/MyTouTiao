@@ -3567,6 +3567,415 @@ nfnetwork 图片下载 用nsoperation，因为可以对状态控制，添加依�
 nsthread常驻线程的实现
 nsoperation对象在finished之后是怎样从queue当中移除的？
 你用过哪些锁，结合实际弹弹是怎么使用的？
+
+
+
+
+
+第9章   runloop 相关面试问题
+
+9-1 RunLoop本质相关面试问题
+什么是runloop,runloop的实现机制？这涉及到一个runloop的概念问题
+以及runloop的数据结构
+runloop的效果是有事作的时候作事没事作的时候休息。这是runloop的事件循环机制有关
+runloop与nstimer之间的关系，nstimer有什么特殊的地方需要注意
+以及runloop与多线程的关系，如何实现常驻线程
+
+什么是runloop？
+runloop是通过内部维护的事件循环，来对事件/消息管理的一个对象
+维护的事件循环是怎样的？
+
+事件循环是什么呢？
+没有消息处理时，休眠以避免资源占用：
+没有消息处理时，进程或线程休眠，当前线程从用户态把控制权转移到内核态进行休眠
+
+有消息需要处理，立刻唤醒：
+由内核态到用户态的状态切换
+
+用户态和内核态理解
+我们的应用程序，aip，用户进程都是运行在用户态的，当进行系统调用，需要使用一些操作系统以及底层内核相关的指令,api会触发系统调用，有些系统调用
+会发生一个状态空间的切换，这种切换空间之所以区分用户态，内核态，是对计算机资源调度管理一个统一性的操作，可以合理安排资源调度，避免一些
+特殊异常，比如内核态有些陷井指令，关机开机操作。因为每一个app如果都可以引发手机关机，那这是无法想像的，所以有一个用户态到内核态的区分
+内核态中的有些内容可以对用户态的线程进行一些调度管理，包括通信
+
+什么是事件循环，事件循环的机制是怎么样的？
+维护的事件循环可以处理消息和事件，对它们进行管理，同时当没消息处理时，会发生一个从用户态到内核态的切换
+当前线程会休眠，避免资源占用
+有消息需要处理时，会从内核态到用户态的切换，当前线程会被唤醒
+状态的切换才是回答runloop的关键点
+
+
+在程序运行中一般：
+int main()是程序的入口，main函数顺着代码依次执行，然后退出。
+main函数为什么会不保持不退出？
+在main函数中会调用uiapplicaion函数，在这个函数内部会启动一个runloop
+这个runloop会不断执着收事件消息，比如点击屏幕，滑动列表，网络请求返回
+接收消息之后对事件进行处理，处理完后再会进等待，这个循环不是一个单纯的
+循环，而是从用户态到内核态的相互切换，这里的等待并不等于死循环。
+
+总结上题答案：
+main函数调用application函数，会启动一个主线程的runloop，runloop又是对
+事件循环的一种维护机制，可以作到在有事作的时候可以作事，没有事作的时候会通过用户态到
+内核态的切唤，从而导致避免资源占用，当前线程作为一个休眠的状态。
+
+runloop是怎样维护事件循环机制的呢，请看下一章，runloop的数据结构：
+
+
+
+
+9-2 RunLoop数据结构相关面试问题
+
+只有对runloop的数据结构有更好的理解，才能讲解runloop的事件机制以及面试问题。
+在oc当中提供了两个runloop，一个是nsrunloop,cfrunloop，nsruloop对cfrunloop
+进行封装，提供了一些面向对象的api,nsrunloop是位于fundation框架当中，
+cfrunloop是位于corefunction当中
+苹果对cfrunloop源码是开源的
+
+三个数据结构：
+cfrunloop cfrunloopmode  source/timer/observer
+
+
+cfrunloop包含以下几个：
+pthread c语言的线程对象
+currentmode runloop当前所处的一个模式
+modes runloop多个mode的一个集合，一对多的关系
+commonmodes 
+commonmodeitems
+
+一一解释：
+
+pthread c语言的线程对象:
+代表线程，runloop和线程是一一对应的关系
+
+currentmode runloop当前所处的一个模式：
+是一个cfrunloopmode的数据结构，一会可以对其进行讲解
+
+modes runloop多个mode的一个集合，一对多的关系：
+是一个集合 nsmutableset<cfrunllopmode*>
+
+
+commonmodes :
+是一个集合 nsmutableset<nsstring*>,代表common模式的集合，为什么是字符串？
+
+
+commonmodeitems:
+是一个集合，集合中包含多个元素，包含多个 observer观察者（可为runloop添加观察者） 多个timer 多个source（可以提交到对应的某个runloop对应的某个runloopmode上面）
+
+
+
+
+cfrunloopmode数据结构包含：
+
+name:
+字符串类型 对应的是某一个runloop它的nsdefaultrunloopmode默认mode的名称，可以通过name找到对应的mode，所以commonmodes 中
+存储的是不同模式的名称，这个设计思想是怎么样的？
+
+sources0：
+和runloop包含的commonmodeitems存储的元素是不一样的，是代个s的。，是集合类型的数据结构 ， 无序
+
+sources1：
+和runloop包含的commonmodeitems存储的元素是不一样的，是代个s的。，是集合类型的数据结构 ，无序
+
+observers:
+是一个mutablearray数组，是有序的，集合是无序的
+
+timers:
+ 是一个mutablearray数组，是有序的，集合是无序的
+ 
+ 
+ 
+ 
+ cfrunloopsource数据据结构包含：
+ 
+ 
+ source0：
+ 这里和上面的sources0集合存的数据类型是一样的，需要手动唤醒线程，把当前线程从内核态切换到用户态
+ 
+ source1:
+ 具备唤醒线程的能力，不需要手动唤醒
+ 
+ cfrunlooptimer：
+ 基于事件的定时器，它和我们使用的nstimer是具备免费桥转换的，toll-free bridged
+ 
+ cfrunloopobserver:
+ 可以注册一些observer对runloop进行一些相关时间点的监测，观察
+ 
+ 可以监测runloop哪些时间点呢？
+ 
+ 主要有以下6个：
+ kcfrunloopentry：
+  入口时机，当runloop准备启动的时候系统会给一个回调通知，这个通知叫 kcfrunloopentry
+  
+ kcfrunloopbeforetimers：
+  通知观察者runloop将要对timer一些相关事件进行处理了
+  
+  kcfrunloopbeforesources:
+  通知观察者runloop将要处理一些source事件
+  
+  kcfrunloopbeforewaition:
+  通知观察者当前runloop将要进入休眠状态，比较重要，当收到这个通知时，即将要发生用户态到内核态的切换
+  
+  kcfrunloopafterwaiting:
+  从内核态切换到用户态不久的时间系统会发出这个通知
+  
+  kcfrunloopexit:
+  代表runloop退出的通知
+  
+  
+  
+  各个数据结构之间的关系：
+  
+  线程和runloop是一一对应的。
+  runloop和runloop的mode是一对多的关系，因为runloop有一个modes的成员
+  mode与source,timer,observer也是一对多的关系
+  
+  引出面试问题：
+  runloop和mode，以及mode和source,timer,observer是怎样一个关系呢？
+  可以从一对多，一对一的角度回答这个问题
+  
+  
+  runloop的mode：
+  这个也是面试经常问题，runloop为什么会有多个mode
+  
+  一个runloop对应多个mode，每个mode又对应多个sources1,observers,timers,
+  当一个runloop运行在某一个mode上的时候，如mode1上面，这时候model2的比如timers事件
+  回调了，发出通知了这个时候我们是没办法知道model2回调的timer，source事件的。
+  runloop有多个mode的原因实际上起到的就是一个屏闭的效果。当运行在mode1上的时候只能接收处理
+  mode1上的source,timer,observer，如果此时有其它model的事件处理时，runloop是不会处理的
+  这个就是有多个mode的原因。
+  
+  我个在滑动tableview的时候如果里面有滚动广告栏，这个广告栏不会自动滚动了，为什么？
+  
+  一个timer如果要加入到两个model里面我们需要怎么作呢？
+  timer即想在model1上运行，在时间回调函数作相应处理，在model2上也需要作处理和相应事件的回
+  调接收，我们怎样添加到两个model中，系统为了满足开发中需要的这种场景，提供了方法可以把同一个
+  timer或source或observer添加到多个mode上，实现多个mode上都可以事件处理。保证当runloop发生
+  model切换的时候也可以保证timer/source/observer能得到处理，这里会用到commonmode的特性。
+  
+ 
+ 
+  commonmode的特性：
+  nsrunloopcommonmodes:
+  commonmode并不是一个实际存在的模式，在oc当中通常会通过nsrunloopcommonmodes这样的字符串常量来
+  表达commonmode，commonmode本身和defaultmode是有区分的，实际上我们调用一个线程运行在commonmode上面
+  和运行在defaultmode上面是有区别的。
+  是同步source/timer/observer到多个mode中的一种技术方案
+  
+  
+  
+  
+  9-3 RunLoop事件循环机制相关面试问题
+  
+  在开发过程中调用的nsrunloop的run方法最终会调用下面这个方法：
+  void cfrunlooprun()  
+  什么是runloop,runloop事件循环机制是怎样的
+  
+  我们的一个程序从点击一个图标到程序启动到系统杀死，我们的系统是怎样实现的？
+  这个问题是你对于一个runloop的理解。
+  要给出一个区分初级和中级的答案
+  
+  runloop整个事件循环机制：
+  
+  当runloop启动的时候会发送一个通知给observer告诉观察者runloop即将启动
+  将要处理timer/source0事件（手动唤醒线程）
+  正事处理source0事件
+  如果有source1事件（自动唤醒线程）要处理，会跳过休眠。可通过goto语句来进行代码跳转处理source1自动唤醒时收到的消息
+  如果没有source1要处理，线程会休眠，同时发送通知给observer,告诉observer要休眠
+  正事休眠，等待唤醒，正式发生从用户态到内核态的切换
+  等待唤醒的条件有三个：source1唤醒 timer事件的回调到了  外部手动唤醒
+  线程被唤醒也发一个通知给observer通知已经唤醒
+  处理唤醒后接收到的消息，再回到将要处理timer/source0事件（手动唤醒线程）的步骤
+  
+  
+  引出的面试题：
+  当一个处于休眠状态的runloop我们可以通过哪些方式唤醒它呢？
+  source1唤醒 timer事件的回调到了  外部手动唤醒
+  
+  
+  我们的一个程序从点击一个图标到程序启动，运行，到系统杀死，我们的系统是怎样实现的？
+  调用main函数之后会调用uiapplication的main函数，在函数内部启动主线程的runloop，经过
+  一系列的处理，主线程的runloop处于休眠状态，如果此时点击一个屏幕，会转程一个source1(自动唤醒)
+  把主线程唤醒，运行处理收到的点击事件，之后把程序杀死会发生runloop的退出，也会发送一个通知给observer
+  再销毁掉线程，这个是关于runloop的整体的事件循环机制。
+  
+  
+  
+  runloop的核心，可以从用户态到内核态来讲述
+  
+  main()函数
+{
+   mach_mag()
+}
+经过一系列处理之后，会调用一个系统函数 mach_mag()，发生了系统调用，当前用户线程就把控制权转交给内核态，
+mach_mag()在一定条件下会返回给调用方，返回的逻辑就是唤醒线程的逻辑，比如说收到一个source1,timer事件
+回调，包括外部手动唤醒，触发从内核态到用户态的切唤，当前app的主运行循环会被唤醒，这是runloop的核心。
+  
+  
+  
+ 9-4 RunLoop与NSTimer相关面试问题
+ 
+ 
+ 滑动tableview的时候定时器还生效吗？
+ 
+ 当前的线程正常是运行在kcfrunloopdefaultmode模式下的
+ 对tableview滑动会发生切换，会切到uitrackingrunloopmode上
+ 把一个timer/source/observer添加到某一个model上的时候，如果当前
+ runloop是运行在另一个model上面，对应的timer/source/observer是没有办法处理
+ 和回调的，这种隔离产生了这种问题，怎么解决？怎么生效？
+ 
+ 可以void cfrunloopaddtimer(runloop,timer,commonmode)
+ 这个函数把当前的timer添加到commonmode中，commonmode不是一个实际的mode，
+ 只是把一些mode打上一些标记，我们可以把某一个事件源，如timer同步到多个mode当中，
+ 在xcode中看源码：
+ 
+ void cfrunloopaddtimer(runloop,timer,commonmode)
+ 中有判断
+ 如果说当前是commonmode，会提取commonmodes，这里面是一些字符串元素
+ 同是判断这个runloop对应的commonmode是否为空，如果为空会创建一个commonmodeitems集合
+ 把timer加到了commonmodeitems这样的数组集合中，把runloop和timer封装成context，对这个
+ 集合中的每一个元素都调用cfrunloopadditemtocommonmodes这个函数
+ 这个函数两个参数，集合当中对象的元素，另一个是contexts，
+ 这个cfrunloopadditemtocommonmodes实现：
+ 首先会取当前mode的名称，再把对应的runloop和commonmodeitem取出来
+ 根据item当前的类型判断来决定调用是cfrunloopaddsource还是cfrunloopaddobserver或/cfrunloopaddtimer
+ 这里没产生循环调用，因为这会传入的commonmode是被打上标记的具体的一个实际的model
+ 
+ cfrunloopaddtimer如果传的是一个具体的model，就会实现把多个model中都添加一个事件源
+ 把一个timer添加到多个model后，实际上uitrackingrunloopmode也是打上标际的，这时候timer也能在这个
+ model下运行，滑动的时候timer也能正常回调的。
+ 
+ 
+ 
+ 
+ 9-5 RunLoop与多线程相关面试问题&面试总结
+ 
+ runloop与多线程之间的关系：
+ 线程与runloop是一一对应的
+ 自己创建的线程是没有runloop的，我们需要手动创建
+ 
+ 怎样实现一个常驻线程：
+ 1。为当前线程开启一个runloop
+ 2。向该runloop中添加一个port/source等维持runloop的事件循环。
+ 3。启动该runloop
+ 
+ 为当前线程开启一个runloop：
+ [NSRunLoop currentRunLoop];//获取当前线程的RunLoop
++(NSRunLoop　*)mainRunLoop;//获取主线程的NSRunLoop
+
+向该runloop中添加一个port/source等维持runloop的事件循环：
+如果runloop线程没有资源事件源需要处理，默认情况下不能维持事件循环就会退出，所以需要添加一个port/source来维持事件循环
+
+ 启动该runloop：
+ 调用runloop的run方法启动runloop，实现一个常驻线程
+ 
+ 
+ 代码案例：
+ 
+ MCObject.h
+ 
+#import <Foundation/Foundation.h>
+
+@interface MCObject : NSObject
+
+@end
+
+
+MCObject.m
+
+#import "MCObject.h"
+
+@implementation MCObject
+
+static NSThread *thread = nil; //自定义的线程
+// 标记当前线程是否要继续它的事件循环
+static BOOL runAlways = YES;
+
++ (NSThread *)threadForDispatch{
+    if (thread == nil) {
+        @synchronized(self) {//线程安全的方式去创建
+            if (thread == nil) {
+                // 线程的创建
+                thread = [[NSThread alloc] initWithTarget:self selector:@selector(runRequest) object:nil];
+                [thread setName:@"com.imooc.thread"];//线程名称
+                //启动线程
+                [thread start];
+            }
+        }
+    }
+    return thread;
+}
+
++ (void)runRequest
+{
+    // 创建一个Source
+    CFRunLoopSourceContext context = {0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};//上下文，作为创建source的一个参数
+    CFRunLoopSourceRef source = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &context);
+    
+    // 创建RunLoop，同时向RunLoop的DefaultMode下面添加Source  CFRunLoopGetCurrent()为当前线程创建一个runloop，没有runloop会创建一个runloop，并把事件源添加到这个runloop的defaultmode中
+    // 主线程中系统已经为我们创建好了这个事件循环
+    CFRunLoopAddSource(CFRunLoopGetCurrent(), source, kCFRunLoopDefaultMode);
+    
+    // 通过while循环来维持一个runloop的事件循环
+    while (runAlways) {
+        @autoreleasepool {//达到每次运行完会对内存释放
+            // 令当前RunLoop运行在DefaultMode这种模式下面，添加资源的model和这里抽mode必须是一个，这里不会死循环，这个函数会让用户状态到内核状态，线程会休眠，会停在这里面
+            CFRunLoopRunInMode(kCFRunLoopDefaultMode, 1.0e10, true);//runloop运行到 1.0e10,会退出，1.0e10很大，不会退出的
+        }
+    }
+    
+    // 如果runAlways==no，才会执行这里，某一时机 静态变量runAlways = NO时 可以保证跳出RunLoop，线程退出，
+   // 因为runloop对应的mode这时移除事件源，没有对应的事件源处理，runloop会退出，线程处理结束后也会自动退出   
+    CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, kCFRunLoopDefaultMode);
+  //释放掉，防内存泄漏
+    CFRelease(source);
+}
+
+@end
+
+
+总结：
+1。什么是runloop，它是怎么做到有事做事，没事休息的？
+实际上是两个问题.runloop实际上是一个事件循环，用以处理事件和消息，便于我们管理
+它是怎么做到有事做事，没事休息的：在调用cfrunloop的run相关方法后，会调用系统的一个函数matchmessage，
+同时发生了用户态向核心态的切换，当前线程处于休眠，作到了有事作事，没事休息
+
+2.runloop与线程是怎样的关系？
+runloop和线程是一一对应关系，线程是没有runloop的，我们需要为它手动创建。
+
+3.如何实现一个常驻线程？
+创建一个线程，在线程回调方法中创建它对应的一个runloop，可以在这个runloop对应的mode中添加一个事件源，如source，
+timer/observer/port等source，在调用cfrunloop的run方法，让这个runloop运行在对应的mode下。运行的这个mode和你
+添加source到一个mode，这两个是同一个mode，这样才能实现runloop运行在某个mode下的，如果该mode有事件源会继续运行‘
+如果没有事件源了，则会runloop退出。
+
+4.怎样保证子线程数据回来更新ui的时候不打断用户的滑动操作？
+用户的滑动一般在uitrackingmode下面，一般对网络的请求是放在子线程中进行的
+子线程返回的数据给主线程以及更新ui这块逻辑可以把它封装成一个方法，把它提交到defaultmode下，
+这样回来的任务，当滑动的时候就能保证界面数据没有更新，当滑动停止切到defaultmode下，才会更新
+数据到ui界面上
+添加事件源到mode中的方法如：
+ NSRunLoop *runLoop = [NSRunLoop currentRunLoop]; 
+ runLoop addPort: addtimer
+ 
+ 系统默认注册了5个Mode：
+
+NSDefaultRunLoopMode：App 的默认 Mode，通常主线程是在这个 Mode 下运行(默认情况下运行)
+UITrackingRunLoopMode：界面跟踪 Mode，用于 ScrollView 追踪触摸滑动，保证界面滑动时不受其他 Mode 影响(操作 UI 界面的情况下运行)
+UIInitializationRunLoopMode：在刚启动 App 时进入的第一个 Mode，启动完成后就不再使用
+GSEventReceiveRunLoopMode：接受系统事件的内部 Mode，通常用不到(绘图服务)
+NSRunLoopCommonModes：这是一个占位用的 Mode，不是一种真正的 Mode (只是对添加的model作了一个标记，通过这个标记把对应的runloop和commonmodeitem取出来，
+commonmodeitem中再添加当前的事件源到这个mode中，实现一个事件源可以在多个model中运行)
+
+
+
+
+
+
+ 
+ 
+ 
+ 
+ 
  
  
 
