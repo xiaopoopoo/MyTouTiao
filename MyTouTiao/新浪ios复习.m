@@ -5554,6 +5554,41 @@ ios中，中间层，让某一个业务方注册一个协议到中间层中，�
 复杂页面架构  mvvm  rn facebook的设计思想。
 客户端的整体架构分层 上层可以依赖下层，下层不能依赖上层  解耦：openurl 依赖注入
 
+openURL:方法
+
+UIApplication有个功能十分强大的openURL:方法
+
+-(BOOL)openURL:(NSURL *)url;
+
+//openURL:方法的部分功能有
+//打电话：
+[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@“tel://18812345678”]];
+
+//发短信：
+[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@“sms://18812345678"]];
+
+//发邮件：
+[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@“mailto://marlonxlj@163.com”]];
+
+//打开网页：
+[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@“http://www.baidu.com”]];
+
+//调用谷歌地图(Google Maps)
+NSString *searchQuery = @"1 Infinite Loop, Cupertino, CA 95014";  
+searchQuery = [addressText stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding];  
+NSString *urlString=[NSString stringWithFormat:@"http://maps.google.com/maps?q=%@", searchQuery];  
+[[UIApplication sharedApplication] openURL:[NSURL URLWithString: urlString]];
+
+//调用应用商店(AppStore),这个地址是可以官网上查到的
+NSURL *appStoreUrl= [NSURL URLWithString:@"http://phobos.apple.com/WebObjects/MZStore.woa/wa/viewSoftware?id=291589999&amp;mt=8"];
+[[UIApplication sharedApplication] openURL:appStoreUrl];
+
+//调用appstore中程序的评论
+NSString *str = [NSString stringWithFormat:
+                         @"itms-apps://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewContentsUserReviews?type=Purple+Software&id=%d",
+                         m_appleID ];  
+[[UIApplication sharedApplication] openURL:[NSURL URLWithString:str]];
+
 
 
 
