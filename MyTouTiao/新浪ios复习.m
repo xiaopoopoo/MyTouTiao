@@ -4552,12 +4552,742 @@ tcp的特点：
             httpdns
             长连接方案
             
-         
-      
-      
             
             
-                  
+第十一章 各种模式
+
+      
+      
+      11-1 六大设计原则相关面试问题
+      
+      任何一种设计模式都是遵从一些设计原则的
+      
+      六大设计原则
+      
+      责任链  如系统的响应机制
+      桥接
+      适配器模式
+      单例  在使用上有很多注意的点的
+      命令  
+      
+      六大设计原则
+      你都了解知道哪些设计原则，对这些原则理解
+      单一职责原则
+      依赖倒置原则
+      开闭原则
+      里氏替换原则
+      接口隔离原则
+      迪米特法则
+      
+      单一职责原则：
+      一个类只负责一件事 如：uiview只负责事件传递事件响应 calayer负责动画视图的展示显示
+      
+      开闭原则：
+      对修改关闭，对扩展开放  比哪类的定义，以后迭代，如成员变量定义谨慎，避免反复修改类，同时扩展开发，类的数据结构定好了，就只关心接口和子类  
+      
+      接口隔离原则：
+      使用多个专门的协议，而不是一个庞臃肿的协议 deleagate专处理回调事件 datasource专门获取数据源  多个专门协议作接口隔离
+      协议中的方法尽量少
+      
+      依赖倒置原则：
+      抽象不应该依赖于具体实现，具体实现不应该依赖于抽象
+      比如我们在定义一些具体访问，增删改查接口调用，所有调用都应该依赖于你所定义的抽象的接口，接口内部怎么实现，用数据库，文件，plist它不知道
+      对上层来说它只依赖于作好的接口定义，上层不关注里面具体实现。
+      
+      里氏替换原则：
+      父类可以被子类无缝替换，且原有功能不受任何影响
+      kvo机制利用到了这种原则 oc特性中，kvo，当调用addobersver这个方法的时候，系统在动态运行时为我们创建子类，我们虽然感受到使用的是父类，但实际上
+      已经消无声息的被替换成对应的子类，体现到了原有功能不受影响
+      
+      迪米特法则：
+      应该让一个对象对其它对象有尽可能的了解，作到高内聚 低耦合
+      因为模块之间耦合低比较好。
+      
+      
+      
+      11-2 责任链模式相关面试问题
+      
+      现有业务有a,b,c  ，程序启动后调用a，调用b，最后调用c
+      如果哪天业务变了，调用c 调用b 调用a
+      怎么解决问题？
+      
+      类构成 
+        有个类 类有个成员变量，这个成员变量的类型和这个类是一样的，这就是基础数据定义
+        
+ 
+ BusinessObject.h       
+#import <Foundation/Foundation.h>
+
+@class BusinessObject;//相当于业务 a b c
+typedef void(^CompletionBlock)(BOOL handled);//表达某一业务处理完成之后，返回的结果代表它是否有处理对应的业务
+typedef void(^ResultBlock)(BusinessObject *handler, BOOL handled);//业务最终处理者 参数2表达是否有处理这业务
+
+@interface BusinessObject : NSObject
+
+// 下一个响应者(响应链构成的关键)定义和当前类类型相同的成员变量，就组成了基本的责任链结构
+@property (nonatomic, strong) BusinessObject *nextBusiness;
+// 响应者的处理方法，作为响应链的入口函数
+- (void)handle:(ResultBlock)result;
+
+// 各个业务在该方法当中做实际业务处理，完成后通过block作为业务结果返回，因为可能有异步网络请示，用block
+- (void)handleBusiness:(CompletionBlock)completion;
+@end
+
+
+BusinessObject.m
+#import "BusinessObject.h"
+
+@implementation BusinessObject
+
+// 责任链入口方法
+- (void)handle:(ResultBlock)result
+{
+    CompletionBlock completion = ^(BOOL handled){
+        // 当前业务处理掉了，上抛结果
+        if (handled) {
+            result(self, handled);//处理了返回当前处理的对象以及返回结果
+        }
+        else{//没处理掉
+            // 沿着责任链，指派给下一个业务处理，a业务处理完如果再处理b业务会走这段代码
+            if (self.nextBusiness) {
+                [self.nextBusiness handle:result];//递归的去调用
+            }
+            else{
+                // 没有业务处理, 上抛，a后面没有下其它业务如b,c会返回这个处理结果
+                result(nil, NO);
+            }
+        }
+    };
+    
+    // 当前业务进行处理，这里就是不同的业务a,b,c，相当于当前不同的类对象，作不同的业务处理，如a业务处理完成之后就会调用上面代码的block
+    [self handleBusiness:completion];
+}
+
+- (void)handleBusiness:(CompletionBlock)completion
+{
+    /*
+     业务逻辑处理
+     如网络请求、本地照片查询等
+     */
+}
+
+@end
+
+      
+  答：使用责任链模式解决这种问题，业务c可以作为第一个要处理的，可把它的nextBusiness指向为b，b可把它的 nextBusiness指向为c，c的nextBusiness指向为nil
+  
+  
+  
+  11-3 桥接模式相关面试问题
+  
+  面试题：
+  你是怎样理解桥接模式的？
+  
+  一个关于业务解耦相关的问题：
+  
+  一个vc列表，它由网络数据b1变到网络数据b2再变到网络数据b3
+  同一列表的网络数据发生了三次变化，但这三套数据是需要并存的，比如说
+  判断此时该用哪一套数据，对于这个需求，这个设计方案和思路？
+  
+  可以通过桥接模式解决列表与数据之间的耦合问题。
+  
+  桥接模式的类构成：
+  
+  比如说有一个抽象类a，有一个成员变量是抽象类b，这样构成桥接模式的关键
+  抽象类a有三个子类a1,a2,a3，抽象类b有三个子类b1,b2,b3
+  vc列表可以看作抽象类a的子类a2，三套列表可以看成是b1,b2,b3,可解决上述问题
+  
+  
+   BridgeDemo桥接模式的使用方 
+   BaseObjectA 就是上述的抽象类a
+   ObjectA1 ，ObjectA2 是BaseObjectA 子类
+   BaseObjectB 就是上述的抽象类b
+   ObjectB1，ObjectB2 是BaseObjectB 子类
+   
+  
+  代码示列：
+  
+ BridgeDemo.h 
+  
+  #import <Foundation/Foundation.h>
+
+@interface BridgeDemo : NSObject
+
+- (void)fetch;
+
+@end
+
+
+
+BridgeDemo.m
+
+
+
+#import "BridgeDemo.h"
+
+#import "BaseObjectA.h"
+#import "BaseObjectB.h"
+
+#import "ObjectA1.h"
+#import "ObjectA2.h"
+
+#import "ObjectB1.h"
+#import "ObjectB2.h"
+
+@interface BridgeDemo()
+@property (nonatomic, strong) BaseObjectA *objA;
+@end
+
+@implementation BridgeDemo
+
+/*
+ 根据实际业务判断使用那套具体数据   a1的业务逻辑使用三套数据  a2的业务逻辑又可以使用不同的三套数据
+ A1 --> B1、B2、B3         3种
+ A2 --> B1、B2、B3         3种
+ A3 --> B1、B2、B3         3种
+ */
+- (void)fetch
+{
+    // 创建一个具体的ClassA 创建的是业务a1 或 a2 或 a3
+    _objA = [[ObjectA1 alloc] init];
+    
+    // 创建一个具体的ClassB， 针对业务创建实现获取不同数据 ObjectB1获取第一套数据 ObjectB2获取第三套数据
+    BaseObjectB *b1 = [[ObjectB1 alloc] init];
+    // 将一个具体的ClassB1 指定给抽象的ClassB
+    _objA.objB = b1;
+    
+    // 获取数据
+    [_objA handle];
+}
+
+@end
+
+
+
+BaseObjectA.h
+
+#import <Foundation/Foundation.h>
+#import "BaseObjectB.h"
+@interface BaseObjectA : NSObject
+
+// 桥接模式的核心实现，它的成员是BaseObjectB 一个抽象类，不是具体的类，它是感知不到BaseObjectB的子类作了哪些事情的
+@property (nonatomic, strong) BaseObjectB *objB;
+
+// 获取数据
+- (void)handle;
+
+@end
+
+
+
+BaseObjectA.m
+
+#import "BaseObjectA.h"
+
+@implementation BaseObjectA
+
+ /*
+    A1 --> B1、B2、B3         3种    control1调用了
+    A2 --> B1、B2、B3         3种
+    A3 --> B1、B2、B3         3种
+  */
+  //调用的是它成员的fetchData
+- (void)handle
+{
+    // override to subclass
+    
+    [self.objB fetchData];
+}
+
+@end
+
+
+ObjectA1.h
+
+#import "BaseObjectA.h"
+
+@interface ObjectA1 : BaseObjectA
+
+@end
+
+
+
+ObjectA1.m
+
+#import "ObjectA1.h"
+
+@implementation ObjectA1
+
+//覆写这个方法，写a1相关的业务逻辑
+- (void)handle
+{
+    // before 业务逻辑操作
+    
+    [super handle];
+    
+    // after 业务逻辑操作
+}
+
+
+@end
+
+
+
+ObjectA2.h
+#import "BaseObjectA.h"
+
+@interface ObjectA2 : BaseObjectA
+
+@end
+
+
+ObjectA2.m
+
+#import "ObjectA2.h"
+
+@implementation ObjectA2
+
+- (void)handle
+{
+    // before 业务逻辑操作
+    
+    [super handle];
+    
+    // after 业务逻辑操作
+}
+
+@end
+
+
+
+
+BaseObjectB.h
+#import <Foundation/Foundation.h>
+
+@interface BaseObjectB : NSObject
+
+- (void)fetchData;
+
+@end
+
+
+
+
+BaseObjectB.m
+
+#import "BaseObjectB.h"
+
+@implementation BaseObjectB
+//获取数据的方法，什么都没有作，作为一个抽象类让子类去实现
+- (void)fetchData
+{
+    // override to subclass
+}
+
+@end
+
+
+
+
+ObjectB1.h
+#import "BaseObjectB.h"
+
+@interface ObjectB1 : BaseObjectB
+
+@end
+
+
+
+
+
+
+ObjectB1.m
+
+#import "ObjectB1.h"
+
+@implementation ObjectB1
+//这里覆写父类，写自己具体的逻辑，如下载对应的网络数据
+- (void)fetchData{
+    // 具体的逻辑处理
+}
+
+@end
+
+
+
+
+ObjectB2.h
+#import "BaseObjectB.h"
+
+@interface ObjectB2 : BaseObjectB
+
+@end
+
+
+
+
+ObjectB2.m
+#import "ObjectB2.h"
+
+@implementation ObjectB2
+//这里覆写父类，写自己具体的逻辑，如下载对应的网络数据
+- (void)fetchData{
+    // 具体的逻辑处理
+}
+
+@end
+
+
+
+
+
+
+
+11-4 适配器模式相关面试问题
+
+一个现有类需要适应变化，怎么解决这个问题？
+场景，有个文件，在很早就产生了，因为这个文件可能设计很成熟，很多年未修改，但新的业务可能
+会影响这个文件，所以需要适配器模式解决。
+
+如果说原有类无法适用新变化，但项目又使用了这个原有类，需适配器解决问题
+
+适配器分：
+   对象适配器
+   类适配器
+   
+   
+   对象适配器的构成
+   
+   创建一个适配对象，把原有的类作为成员变量集成到这个适配对象中
+   原有的类（需要适配的被适配的类）
+   
+   
+   这种模式就是需要适配的类作为适配器类的成员变量   
+
+
+-(void)request
+{
+     coding //适配逻辑 新增的业务功能
+   [被适配对象 某方法]//比较老的功能需要保留的功能
+     coding //适配逻辑 新增的业务功能
+}
+
+Target是需要被适配的类
+CoolTarget是创建的适配器类新增的业务都写到这里
+代码如下：
+
+Target.h
+#import <Foundation/Foundation.h>
+
+@interface Target : NSObject
+
+- (void)operation;
+
+@end
+
+
+Target.m
+#import "Target.h"
+
+@implementation Target
+
+- (void)operation
+{
+    // 原有的具体业务逻辑
+}
+
+@end
+
+
+
+CoolTarget.h
+#import "Target.h"
+
+// 适配对象
+@interface CoolTarget : NSObject
+
+// 被适配对象
+@property (nonatomic, strong) Target *target;
+
+// 对原有方法包装
+- (void)request;
+
+@end
+
+
+CoolTarget.m
+#import "CoolTarget.h"
+
+@implementation CoolTarget
+
+- (void)request
+{
+    // 额外处理
+    
+    [self.target operation];
+    
+    // 额外处理
+}
+
+@end
+
+
+
+  
+  11-5 单例模式相关面试问题
+  
+  你不一定能够使用的正确的模式
+  单例模式要实现好考虑的问题还是比较多的
+  
+  Mooc.h
+  #import <Foundation/Foundation.h>
+
+@interface Mooc : NSObject
+
++ (id)sharedInstance;
+
+@end
+
+
+Mooc.m
+#import "Mooc.h"
+
+@implementation Mooc
+
++ (id)sharedInstance
+{
+    // 静态局部变量
+    static Mooc *instance = nil;
+    
+    // 通过dispatch_once方式 确保instance在多线程环境下只被创建一次
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        // 创建实例，这里用super未用self，是避免产生循环调用，又再次调用allocWithZone
+        instance = [[super allocWithZone:NULL] init];
+    });
+    return instance;
+}
+
+// 重写方法【必不可少】如果直接allocwithzone也是可以创建对象的
++ (id)allocWithZone:(struct _NSZone *)zone{
+    return [self sharedInstance];
+}
+
+// 重写方法【必不可少】 外界可能会copy一个对象，为保证永远只创建一次，则这样写
+- (id)copyWithZone:(nullable NSZone *)zone{
+    return self;
+}
+
+@end
+  
+       
+       
+11-6 命令模式相关面试问题&面试总结
+
+行为参数化的模式
+比如说像微博app，里面各个模块都会涉及到转发 评论 赞
+如果转发 评论赞 以行为参数化的方式封装起来，当点击按钮就会触发按钮的执行
+而不需要每个模块都写一样的代码，降低代码重合度
+
+什么是命令模式 ，它的作用是什么？
+命令模式是作行为参数化的，它的作用是 降低代码重合度
+
+
+代码实现：
+
+Command.h //命令的抽象类，多个功能模块的命令可以创建多个此类的对象
+#import <Foundation/Foundation.h>
+
+@class Command;
+typedef void(^CommandCompletionCallBack)(Command* cmd);//命令完成的回调，返回值是一个命令类型的对象
+
+@interface Command : NSObject
+@property (nonatomic, copy) CommandCompletionCallBack completion;
+
+- (void)execute;//执行
+- (void)cancel;//取消
+
+- (void)done;//完成 如执行完成会block回调，告诉用户完成
+
+@end  
+
+
+Command.m
+
+#import "Command.h"
+#import "CommandManager.h"
+@implementation Command
+
+- (void)execute{
+    
+    //override to subclass;  定义很多抽象父类的命令子类去作自己想执行的逻辑
+    
+    [self done];//上面的逻辑完成之后调这个方法通知完成
+}
+
+- (void)cancel{
+    
+    self.completion = nil;//把回调为nil，获取不到回调则相当于未给上层通知
+}
+
+- (void)done
+{
+    dispatch_async(dispatch_get_main_queue(), ^{//异步加到主队列，因为命令可能在子线程或不在子线程，需要这种方式回到调用方
+        
+        if (_completion) {
+            _completion(self);//回调完成之后
+        }
+        
+        //释放block nil防止循环引用
+        self.completion = nil;
+        
+        //调用命令管理者的移除操作把当前命令移除掉
+        [[CommandManager sharedInstance].arrayCommands removeObject:self];
+    });
+}
+
+@end 
+
+
+CommandManager.h 
+#import <Foundation/Foundation.h>
+#import "Command.h"
+@interface CommandManager : NSObject
+// 命令管理容器，存储了正在执行的命令
+@property (nonatomic, strong) NSMutableArray <Command*> *arrayCommands;
+
+// 命令管理者以单例方式呈现
++ (instancetype)sharedInstance;
+
+// 执行命令
++ (void)executeCommand:(Command *)cmd completion:(CommandCompletionCallBack)completion;
+
+// 取消命令
++ (void)cancelCommand:(Command *)cmd;
+
+@end 
+
+
+
+CommandManager.m
+#import "CommandManager.h"
+
+@implementation CommandManager
+
+// 命令管理者以单例方式呈现
++ (instancetype)sharedInstance
+{
+    static CommandManager *instance = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        instance = [[super allocWithZone:NULL] init];
+    });
+    return instance;
+}
+
+// 【必不可少】
++ (id)allocWithZone:(struct _NSZone *)zone{
+    return [self sharedInstance];
+}
+
+// 【必不可少】
+- (id)copyWithZone:(nullable NSZone *)zone{
+    return self;
+}
+
+// 初始化方法
+- (id)init
+{
+    self = [super init];
+    if (self) {
+        // 初始化命令容器
+        _arrayCommands = [NSMutableArray array];
+    }
+    return self;
+}
+
++ (void)executeCommand:(Command *)cmd completion:(CommandCompletionCallBack)completion
+{
+    if (cmd) {//如果命令存在
+        // 如果命令正在执行不做处理，否则添加并执行命令
+        if (![self _isExecutingCommand:cmd]) {//如果命令已经正在执行，就忽略掉此次执行，这里表示这个命令没有执行
+            // 添加到命令容器当中
+            [[[self sharedInstance] arrayCommands] addObject:cmd];
+            // 设置命令执行完成的回调的block，作一个命令完成的回调
+            cmd.completion = completion;
+            //执行命令
+            [cmd execute];
+        }
+    }
+}
+
+// 取消命令
++ (void)cancelCommand:(Command *)cmd
+{
+    if (cmd) {
+        // 从命令容器当中移除
+        [[[self sharedInstance] arrayCommands] removeObject:cmd];
+        // 取消命令执行
+        [cmd cancel];
+    }
+}
+
+// 判断当前命令是否正在执行
++ (BOOL)_isExecutingCommand:(Command *)cmd
+{
+    if (cmd) {//如果这个命令已经在命令容器中，则认为命令正在执行的
+        NSArray *cmds = [[self sharedInstance] arrayCommands];
+        for (Command *aCmd in cmds) {
+            // 当前命令正在执行
+            if (cmd == aCmd) {
+                return YES;
+            }
+        }
+    }
+    return NO;
+}
+
+
+@end
+            
+            
+面试题总结：
+请手写单例实现，记得重写copy,allocwithzone 两的类方法，dispath_once中用super alloc创建
+
+你都知道哪些设计原则，请谈谈你的理解
+      单一职责原则：
+      一个类只负责一件事 如：uiview只负责事件传递事件响应 calayer负责动画视图的展示显示
+      
+      开闭原则：
+      对修改关闭，对扩展开放  比哪类的定义，以后迭代，如成员变量定义谨慎，避免反复修改类，同时扩展开发，类的数据结构定好了，就只关心接口和子类  
+      
+      接口隔离原则：
+      使用多个专门的协议，而不是一个庞臃肿的协议 deleagate专处理回调事件 datasource专门获取数据源  多个专门协议作接口隔离
+      协议中的方法尽量少
+      
+      依赖倒置原则：
+      抽象不应该依赖于具体实现，具体实现不应该依赖于抽象
+      比如我们在定义一些具体访问，增删改查接口调用，所有调用都应该依赖于你所定义的抽象的接口，接口内部怎么实现，用数据库，文件，plist它不知道
+      对上层来说它只依赖于作好的接口定义，上层不关注里面具体实现。
+      
+      里氏替换原则：
+      父类可以被子类无缝替换，且原有功能不受任何影响
+      kvo机制利用到了这种原则 oc特性中，kvo，当调用addobersver这个方法的时候，系统在动态运行时为我们创建子类，我们虽然感受到使用的是父类，但实际上
+      已经消无声息的被替换成对应的子类，体现到了原有功能不受影响
+      
+      迪米特法则：
+      应该让一个对象对其它对象有尽可能的了解，作到高内聚 低耦合
+      因为模块之间耦合低比较好。
+      
+能否用一幅图简单表示桥接模式的结构
+定义一个抽象父类a ，一个抽象父类b，把抽象父类b作为抽象父类a的一个成员值，这个可
+延伸出a1到b1,a2到b2这样的关系，呈现了一种桥梁的作用。达到解耦合的操作
+
+
+ui事件传递机制是怎样实现的？你对其中运用的设计模式是怎样理解的？
+从ui设计的角度来回答是一道问题，从设计模式来说又是一个问题，如这里用到责任链设计模式。
+类构成 
+有个类 类有个成员变量，这个成员变量的类型和这个类是一样的，这就是基础数据定义                
             
                   
     
