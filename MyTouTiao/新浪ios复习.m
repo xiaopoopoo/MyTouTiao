@@ -6176,15 +6176,416 @@ int PartSort(int a[], int start, int end)
 
 
 
+ 第十四章  框架方面面试题
+ 
+ 14-1 AFNetworking第三方库相关的面试问题
+ 
+ AFNetworking
+ SDWebImageView
+ Reactive Cocoa
+ AsyncDisplayKit 性能优化方面的第三方库
+ 
+  AFNetworking
+  
+   AFNetworking的整体框架怎样的？
+   
+   
+   第一层：
+   会话部份：NSUrlSession
+   网络监听模块：监听网络的变化
+   网络安全模块：网络安全方面
+   
+   第二层：
+   请求序列化：对请求进行了一个请求序列化的封装
+   响应序列化：对响应进行了一个响应序列化的封装
+   
+   第三层：
+   uikit集成模块：uikit原生控件分类的添加
+   
+   主要类关系图
+   
+   AFURLSessionManager 核心类
+   AFURLSessionManager 包含以下内容：
+   NSURLSession:会话模块
+   AFSecurityPolicy:保证安全，如网络证书校验，公钥的验证
+   AFNetworkReachabilityManager:对网络连接的一个临听，与苹果提供的Reachabilit是一样的
+   
+   AFHTTPSessionManager 继承于核心类的子类， 使用频率最高
+   AFHTTPSessionManager包含以下内容：
+   AFURLRequestSerialzation:根据传递进来的参数组装拼接，最终转化成NSMutableRequest
+   AFURLResponseSerialzation:负责响应序列化的，对网络的返回结果进行解析，如返回的json字符串，可能会调用系统的json库,或者imagewithdata，产生uiimage
+   
+   AFURLSessionManager主要负责哪些工作：
+   1：创建和管理NSURLSession,以及调用系统的api来生成NSURLSessionTask
+   NSURLSessionTask实际上可以理解为对应一个网络请求
+   2：实现NSURLSessionDelegate等协议以及代理方法，处理网络请求过程中涉及重定向，认证，以及网络响应处理
+   3:引入AFSecurityPolicy保证安全，比如发送https请求时，涉及证书校验，公钥验证过程
+   4:引入AFNetworkReachabilityManager监听网络状态，根据状态进行相关逻辑处理
+   
+   发送一个get请求对源码进行讲解：
+   方法1：
+   - (nullable NSURLSessionDataTask *)GET:(NSString *)URLString
+                   parameters:(nullable id)parameters
+                      success:(nullable void (^)(NSURLSessionDataTask *task, id _Nullable responseObject))success
+                      failure:(nullable void (^)(NSURLSessionDataTask * _Nullable task, NSError *error))failure DEPRECATED_ATTRIBUTE;
+   
+   参数：url请求地址  要传递的url参数  成功block  失败block
+   
+   
+   方法1内部调用了另一个方法：多了一个参数，downloadProgress一个上报进度的block
+     方法2： - (nullable NSURLSessionDataTask *)GET:(NSString *)URLString
+                   parameters:(nullable id)parameters
+                   progress:(void(^))(NSProgress *_Nonnull)downloadProgress
+                      success:(nullable void (^)(NSURLSessionDataTask *task, id _Nullable responseObject))success
+                      failure:(nullable void (^)(NSURLSessionDataTask * _Nullable task, NSError *error))failure DEPRECATED_ATTRIBUTE;
+
+
+    方法2内部调用了一个方法3,产生一个urltask：
+    方法3:NSURLSessionDataTask *dataTask = [self dataTaskWithHTTPMethod:@"GET"
+                                                    URLString:URLString
+                                                   parameters:parameters
+                                               uploadProgress:nil
+                                             downloadProgress:downloadProgress
+                                                      success:success
+                                                      failure:failure];
+    [dataTask resume];//开始一个网络请求
+     return dataTask;//urltask返回给调用方
+     
+     方法3内部逻辑：
+     - (NSURLSessionDataTask *)dataTaskWithHTTPMethod:(NSString *)method
+                                       URLString:(NSString *)URLString
+                                      parameters:(id)parameters
+                                  uploadProgress:(nullable void (^)(NSProgress *uploadProgress)) uploadProgress
+                                downloadProgress:(nullable void (^)(NSProgress *downloadProgress)) downloadProgress
+                                         success:(void (^)(NSURLSessionDataTask *, id))success
+                                         failure:(void (^)(NSURLSessionDataTask *, NSError *))failure
+{
+    NSError *serializationError = nil;
+    //调用self.requestSerializer对请求进行序列化 根据url 请求方式 参数 生成一个NSMutableURLRequest，它的内部就是生成一个NSMutableURLRequest，对NSMutableURLRequest进行参数添加封装，把网络请求的参数字符串封装了
+    NSMutableURLRequest *request = [self.requestSerializer requestWithMethod:method URLString:[[NSURL URLWithString:URLString relativeToURL:self.baseURL] absoluteString] parameters:parameters error:&serializationError];
+    if (serializationError) {
+        if (failure) {
+            dispatch_async(self.completionQueue ?: dispatch_get_main_queue(), ^{
+                failure(nil, serializationError);
+            });
+        }
+
+        return nil;
+    }
+
+    __block NSURLSessionDataTask *dataTask = nil;
+    //根据request生成最终的dataTask，返回给调用方，内部[self.session dataTaskWithRequest:request]生成一个datatask,给datatask设置代理
+    //alloc一个AFURLSessionManagerTaskDelegate类，封装我们代理的一个回调 [self setDelegate:delegate forTask:dataTask];绑定一个datatask
+    //具体绑定以key value形式 task.tasIdentifier为key value为delegate,回调的时候就可以根据task.tasIdentifier的delegate处理网络的一个响应结果。
+    dataTask = [self dataTaskWithRequest:request
+                          uploadProgress:uploadProgress
+                        downloadProgress:downloadProgress
+                       completionHandler:^(NSURLResponse * __unused response, id responseObject, NSError *error) {
+        if (error) {
+            if (failure) {
+                failure(dataTask, error);
+            }
+        } else {
+            if (success) {
+                success(dataTask, responseObject);
+            }
+        }
+    }];
+
+    return dataTask;
+}
+
+相关章节如下：
+
+77、https
+简化版
+客户端发请求服务器，服务器最开始有私钥和公钥，私钥保存，只把公钥放到一个证书中，这个证书是受保护空间中的，证书是购买的，客户端需要选择是否安装这个证书，并信任它，如
+果客户端信任，就建立了一个受保护层，服务器就可以在这个保护层把数据传给客户端
+这个证书先客户端安装，安装后传的请求参数都通过这个证书的公钥进行了加密，发给服务器，服务器通过自己的私匙解密，然后把返回的数据通过私钥加密，发给客户端
+客户端再通过公钥对这个服务器返回的数据解密
+ssl或tls层是介于http与tcp层中间的，
+复杂版 传输过程中传输内容都需要用hash加密，防止被更改
+1、客户端把支持的协议版本，比如TLS 1.0版，客户端生成的随机数，支持的加密方法，压缩方法，信息发给服务器，
+2、服务器有一个私钥，一个公钥，这时服务器生成一个随机数
+，把这个随机数，还有公钥放到证收中，传给客户端，（像银行需要确认客户是否安全，这里可以发送一个正式客户提供USB密钥，里面就包含了一张客户端证书。密钥对了才能继续操作）
+3、客户端安装信任证书后，再生成一个随机数，加上之前生成的随机数，和服务器发过来的随机数，结合这个证书的公钥
+把请求参数加密，发给服务器，
+4、服务器根据三个随机数，和私钥进行解密，再把返回的数据通过三个随机数，和私钥加密返回给客户端，(这里握手成功后一般可以用对称加密处理，因为已经认证了安全性，所以对称加密耗时更少)
+5、客户端再通过三个随机数和证书中的
+公钥解密数据。
+
+如果是自签名没花钱买的证书，会弹一个框，提示不一定安全
+有些网站不会询问你是否安装证书，因为这是强制安装的
+
+//忽略host方式，可支持ip访问
+[httpClient.requestSerializer setValue:httpClient.baseURL.host forHTTPHeaderField:@"host"];
+
+urlsession的https方式，在代理方法中写上安装证书，信任证书的代码
+afnetworking的https也是设置如域名信任，安装证书的代码就行，不需要作其它处理
+   非对称加密算法：RSA, DSA/DSS
+   对称加密算法： AES, 3DES
+   HASH算法：MD5, SHA1, SHA256
+
+服务器端会向CA申请认证书，此证书包含了CA及服务器端的一些信息（可以理解为类似公章），这样，服务器端将证书发给客户端的过程中，中间方是无法伪造的，保证了，发给客户端的公钥是服务器端发送的。
+
+网络专业版：
+1 客户端发起一个https的请求，把自身支持的一系列Cipher Suite（密钥算法套件，简称Cipher）发送给服务端
+
  
 
+2  服务端，接收到客户端所有的Cipher后与自身支持的对比，如果不支持则连接断开，反之则会从中选出一种加密算法和HASH算法
+
+   以证书的形式返回给客户端 证书中还包含了 公钥 颁证机构 网址 失效日期等等。
+
+ 
+
+3 客户端收到服务端响应后会做以下几件事
+
+    3.1 验证证书的合法性    
+
+　　  颁发证书的机构是否合法与是否过期，证书中包含的网站地址是否与正在访问的地址一致等
+
+        证书验证通过后，在浏览器的地址栏会加上一把小锁(每家浏览器验证通过后的提示不一样 不做讨论)
+
+   3.2 生成随机密码
+
+        如果证书验证通过，或者用户接受了不授信的证书，此时浏览器会生成一串随机数，然后用证书中的公钥加密。 　　　　　　
+
+    3.3 HASH握手信息
+
+       用最开始约定好的HASH方式，把握手消息取HASH值，  然后用 随机数加密 “握手消息+握手消息HASH值(签名)”  并一起发送给服务端
+
+       在这里之所以要取握手消息的HASH值，主要是把握手消息做一个签名，用于验证握手消息在传输过程中没有被篡改过。
+
+ 
+
+4  服务端拿到客户端传来的密文，用自己的私钥来解密握手消息取出随机数密码，再用随机数密码 解密 握手消息与HASH值，并与传过来的HASH值做对比确认是否一致。
+
+    然后用随机密码加密一段握手消息(握手消息+握手消息的HASH值 )给客户端
+
+ 
+
+5  客户端用随机数解密并计算握手消息的HASH，如果与服务端发来的HASH一致，此时握手过程结束，之后所有的通信数据将由之前浏览器生成的随机密码并利用对称加密算法进行加密  
+
+     因为这串密钥只有客户端和服务端知道，所以即使中间请求被拦截也是没法解密数据的，以此保证了通信的安全
+
+客户端如何验证 证书的合法性？
+
+ 
+
+1. 验证证书是否在有效期内。
+
+　　在服务端面返回的证书中会包含证书的有效期，可以通过失效日期来验证 证书是否过期
+
+2. 验证证书是否被吊销了。
+
+　　被吊销后的证书是无效的。验证吊销有CRL(证书吊销列表)和OCSP(在线证书检查)两种方法。
+
+证书被吊销后会被记录在CRL中，CA会定期发布CRL。应用程序可以依靠CRL来检查证书是否被吊销了。
+
+CRL有两个缺点，一是有可能会很大，下载很麻烦。针对这种情况有增量CRL这种方案。二是有滞后性，就算证书被吊销了，应用也只能等到发布最新的CRL后才能知道。
+
+增量CRL也能解决一部分问题，但没有彻底解决。OCSP是在线证书状态检查协议。应用按照标准发送一个请求，对某张证书进行查询，之后服务器返回证书状态。
+
+OCSP可以认为是即时的（实际实现中可能会有一定延迟），所以没有CRL的缺点。
+
+ 
+
+3. 验证证书是否是上级CA签发的。
+
+
+windows中保留了所有受信任的根证书，浏览器可以查看信任的根证书，自然可以验证web服务器的证书，
+是不是由这些受信任根证书颁发的或者受信任根证书的二级证书机构颁发的（根证书机构可能会受权给底下的中级证书机构，然后由中级证书机构颁发中级证书）
+在验证证书的时候，浏览器会调用系统的证书管理器接口对证书路径中的所有证书一级一级的进行验证，只有路径中所有的证书都是受信的，整个验证的结果才是受信
+ 
+
+44、AFNetworking3.0后为什么不再需要常驻线程？
+AFNetworking3.0不再使用NSURLConnection，因NSURLConnection需要一条线程负责等待代理方法回调并处理数据，所以使用了
+NSURLSession
+self.operationQueue = [[NSOperationQueue alloc] init];
+self.operationQueue.maxConcurrentOperationCount = 1;
+self.session = [NSURLSession sessionWithConfiguration:self.sessionConfiguration delegate:self delegateQueue:self.operationQueue];
+从上面的代码可以看出，NSURLSession发起的请求，不再需要在当前线程进行代理方法的回调！可以指定回调的delegateQueue，这样我们就不用为了等待代理回调方法而苦苦保活线程了。
+指定的用于接收回调的Queue的maxConcurrentOperationCount设为了1，这里目的是想要让并发的请求串行的进行回调。
+为什么要串行回调？
+//线程的安全性
+- (AFURLSessionManagerTaskDelegate *)delegateForTask:(NSURLSessionTask *)task {
+    NSParameterAssert(task);
+    AFURLSessionManagerTaskDelegate *delegate = nil;
+    [self.lock lock];
+    //给所要访问的资源加锁，防止造成数据混乱
+    delegate = self.mutableTaskDelegatesKeyedByTaskIdentifier[@(task.taskIdentifier)];
+    [self.lock unlock];
+    return delegate;
+}
+
+NSURLConnection
+
+NSURLSession 的优势
+
+NSURLSession 支持 http2.0 协议  主要是因为它改变了客户端与服务器之间交换数据的方式，
+HTTP 2.0 增加了新的二进制分帧数据层改进传输性能，实现低延迟和高吞吐量
+
+在处理下载任务的时候可以直接把数据下载到磁盘
+
+支持后台下载|上传
+
+同一个 session 发送多个请求，只需要建立一次连接（复用了TCP）
+
+提供了全局的 session 并且可以统一配置，使用更加方便
+
+下载的时候是多线程异步处理，效率更高
 
 
 
 
 
+14-2 SDWebImage第三方库相关面试问题
+
+一个异步下载图片并且支持缓存的框架
+
+它的架构简图？
+其实封装得更多的是一些uikit的分类方法,如uiimageview setimageurl就可以下载一个图片
+
+第一层：uikit的一些会类
+UIImageView+webCache
+第二层：
+SDWebImageManager核心类，一个管理者，管理下载，缓存的调度
+第三层：
+SDImageCache 负责图片缓存，磁盘缓存，内存缓存
+SDWebImageDownloader 图片下载器
+
+加载图片流程是怎样的？
+请求url作为key，查找内存缓存
+没找到 找磁盘
+如果未找到 发送网络请求下载图片
+下载好后放入内存 再放入磁盘
 
 
+
+14-3 ReactiveCocoa第三方库相关的面试问题
+
+函数响应式编程框架：
+
+信号 订阅 两个概念
+rac是一个函数响应式编程，涉及到信号和订阅，可订阅一个信号
+
+reactivecocoa中的核心类racsignal信号
+racsignal继承于racstream
+racsignal的子类有四个：
+1。racdynamicsignal：一般racsignal的creatsignal会生成这个类，动态信号
+2。racreturnsignal:这个信号比较简单
+3。racemptysignal:
+4.racerrorsignal:
+
+racstream有哪些组成：
+第一层：它的抽象方法如下，不能直接使用：
+empty：空
+return：返回
+bind：绑定
+concat：连接
+zipwith
+第二层：它的分类方法，对第一层抽象方法逻辑组合成下面内容，调用不同信号如map,take产生不同逻辑
+map:
+take:
+skip:
+ignore:
+filter:
+
+信号怎么理解：
+信号代表一连串状态：
+如信号由1状态切到2状态再切到3状态
+在状态改变时，对应的订阅者racsubscriber就会收到通知执行相应的命令
+
+
+代码解析racreturnsignal racdynamicsignal来帮助理解什么是信号
+
+在racsignal类有一个createsignal方法，返回一个具体的子类信号如racdynamicsignal
+涉及到一个概念类触，所以创建方法返回的信号都是一个抽象的信号，但创建的方法方式不一样
+
+racdynamicsignal的创建把传进来的一个block参数作为信号的一个成员变量保存起来，并把信号作为简单返回
+
+racreturnsignal的创建，覆写return方法，把传递进来的id对象进行包装，返回
+就是把一个oc对象封装成一个信号返回给调用方
+
+
+订阅
+
+racsubscriber 订阅者
+
+开始订阅一个信号 racsignal，调用subscribenext方法后，这个函数内
+部就会产生一个racsubscriber类对象，会调用一个racsignal的sendnext方法
+进行具体的逻辑执行,sennext又会调用sencompleted，然后结束订阅流程
+
+racsubscriber内部原理：
+
+当产生一个racsubscriber类时，会产生一个didsubscribe对象，
+当调用racsignal的racsubscriber时，内部会执行内部保存的block
+
+看如下代码段：
+[racsignal return:@3];//产生的是一个信号对象
+[racsignal subscribednext:^(id x){//创建了一个订阅者，把nextbllock和其它block作为成员变量绑定到信号中，返回给调用方
+  打印的x为3
+}]
+
+racsignal调用subscribednext  实际上就是racsignal调用了sendnext方法，这个方法其实就是对
+nextblock进行调用。
+
+
+14-4 AsyncDisplayKit第三方库相关面试问题&总结
+
+提升ios界面渲染的一个框架
+
+主要解决哪些问题？
+layout 解决布局耗时运算
+文本宽高计算
+视图布局计算 
+从主线程到子线程去计算
+
+渲染
+文本渲染
+图片解码
+图形绘制
+
+uikit对象创建
+对象创建
+对象调整
+对象销毁
+
+放到子线程作
+
+把主线程中的压力都放到子线程中去作。
+
+
+基本原理是怎样的？
+
+系统：
+uiview作为calayer的一个delegate
+calyer作为uivew的一个成员变量作为视图展示工具
+
+框架在此之上封装了一个asnode
+它中有一个.view成员变量生成一个uiview
+每个view都有一个.node属性可获取到它所对应的节点
+
+产生的节点asnode就是放到后台线程处理的，
+而系统部份是在主线程处理
+
+asnode对uiview作了一个包装，所以渲染，对象创建都通过asnode
+放到子线程中去作
+
+基本原理：
+uivew的修改都变成，针对asnode的修改和提交，会对其进行封装并提交到一个全局容器当中，
+asnode监听runloop的beforewating通知，注册一个观察者observer对通知进行观察
+当runloop休眠前，runloop发送通知后，asdk就把容器中的asnode提取出来，再把它的一些属性设置设置给uiview
+
+
+总结：
+afnetworking是怎样的，可通过架构图进行描述
+sdwebimage框架是怎样加载图片的
+sdwebimgage关于内存的设计是怎样的？最近最久未使用算法等
+rac中的信号订阅是什么意思？信号是一连串状态抽象 订阅是一个block作为信号的成员最终调用block
+askd实现原理，封装asnode节点，对一些属性的设置都转化成asnode，放到后台线程实现，runloop将结束的时候
+接收到通知，从全局容器中提取asnode，并把属性设置到视图中。
 
 
 
