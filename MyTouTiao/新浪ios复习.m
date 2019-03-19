@@ -5593,6 +5593,595 @@ NSString *str = [NSString stringWithFormat:
 
 
 
+第13章   数据结构和算法
+
+算法：
+字符串反转
+链表反转
+有序数组合并
+hash算法
+查找两个子视图的共同父视图
+求无序数组当中的中位数
+
+
+给定字符串hello,world，对其反转：
+一个数组，存储了hello,world
+设置两个指针，一个指向h，一个指向d
+遍历过程中逐步交换首尾，如h和d进行交换
+交换之后移动指针到对应的下一个字符位置，再进行交换
+退出条件，第一个指针移动到,号，第二个指针移动到,号，所以条件为第一个指针大于等于第二个指针
+
+xcode中实现算法
+
+CharReverse.h
+#import <Foundation/Foundation.h>
+
+@interface CharReverse : NSObject
+// 字符串反转，函数 
+void char_reverse(char* cha);
+@end
+
+
+CharReverse.m
+#import "CharReverse.h"
+
+@implementation CharReverse
+//输入字符指针
+void char_reverse(char* cha)
+{
+    // 指向第一个字符
+    char* begin = cha;
+    // 指向最后一个字符的结尾
+    char* end = cha + strlen(cha) - 1;
+    
+    while (begin < end) {
+        // 交换前后两个字符,同时移动指针
+        char temp = *begin;
+        *(begin++) = *end;//begin交换后向前移动
+        *(end--) = temp;//end交换后向后移动
+    }
+}
+
+@end
+
+调用方法：
+-(void)math
+{
+  char ch[] = "hello,world";
+  char_reverse(ch);
+  printf("%s",ch);
+}
+
+
+
+
+
+13-2 链表反转算法相关面试问题
+
+1->2->3->4->null
+返转后：
+4->3->2->1->null
+
+分析：
+head->1->2->3->4->null
+利用链表头插法思想实现单链表反转
+定义一个newh新的头节点指针，初始化指向null
+定义一个临时指针变量p，进行链表遍列动作，p会先指向1，再2，3，4
+遍历时，先p移动到下一个位置2，再把newh指向1,1的后面指向null，必须先移动p，保证链表不会丢失
+p再移动到3，把newh指向2,2再指向1
+结束条件，直到p指针指向null
+
+代码：
+
+
+ReverseList.h
+#import <Foundation/Foundation.h>
+
+// 定义一个链表的结构体
+struct Node {
+    int data;//节点数据1,2,3,4
+    struct Node *next;//代表链表下一个节点
+};
+
+@interface ReverseList : NSObject
+// 链表反转逻辑
+struct Node* reverseList(struct Node *head);
+// 构造一个链表
+struct Node* constructList(void);
+// 打印链表中的数据
+void printList(struct Node *head);
+
+@end
+
+
+ReverseList.m
+#import "ReverseList.h"
+
+@implementation ReverseList
+//输入参数是原来链表的头节点，返回值是新的链表的头节点
+struct Node* reverseList(struct Node *head)
+{
+    // 定义遍历指针，初始化为原链表头结点
+    struct Node *p = head;
+    // 反转后的链表头部
+    struct Node *newH = NULL;
+    
+    // 遍历链表
+    while (p != NULL) {
+        
+        // 记录p节点的下一个结点，不太明白
+        struct Node *temp = p->next;
+        // 当前结点的next指向新链表头部
+        p->next = newH;
+        // 更改新链表头部为当前结点
+        newH = p;
+        // 移动p指针
+        p = temp;
+    }
+    
+    // 返回反转后的链表头结点
+    return newH;
+}
+
+struct Node* constructList(void)
+{
+    // 头结点定义
+    struct Node *head = NULL;
+    // 记录当前尾结点
+    struct Node *cur = NULL;
+    
+    for (int i = 1; i < 5; i++) {//挂了链表4个元素
+        struct Node *node = malloc(sizeof(struct Node));//创建一个链表结构空间
+        node->data = i;//链表的数据为i  
+        
+        // 头结点为空，新结点即为头结点
+        if (head == NULL) {
+            head = node;
+        }
+        // 当前结点的next为新结点,不太明白？
+        else{
+            cur->next = node;
+        }
+        
+        // 设置当前结点为新结点
+        cur = node;
+    }
+    
+    return head;
+}
+
+void printList(struct Node *head)
+{
+    struct Node* temp = head;
+    while (temp != NULL) {
+        printf("node is %d \n", temp->data);
+        temp = temp->next;//访问链表的下一个节点
+    }
+}
+
+@end
+
+使用方式：
+struct node * head = constructlist();
+printlist(head);
+
+
+
+
+13-3 有序数组合并算法相关面试问题
+
+[1 4  6  7  9]和[2 3 5 6 8 10 11 12]
+合并后仍然是有序的
+
+定义p,q两个指针
+p指针指向每一个数组第一个位置1
+q指针指向每二个数组第一个位置2
+循环遍列两个数组，比较p,q指向的数据大小
+如果p指向的数据小于q，就把p指向的数据填入到新的数组中
+同时移动p指针，q指针不同
+q小于p
+把q指向的数据存入新的数组中
+谁小就存到数组中
+如果q移动下一个为null，就把p余下的数组放到新的数组中
+
+代码：
+
+MergeSortedList.h
+#import <Foundation/Foundation.h>
+
+@interface MergeSortedList : NSObject
+// 将有序数组a和b的值合并到一个数组result当中，且仍然保持有序  参数，被合并的数组a 被合并数组a的长度 被合并的数组b 被合并数组b的长度  合并后的新数组result
+void mergeList(int a[], int aLen, int b[], int bLen, int result[]);
+
+@end
+
+
+MergeSortedList.m
+
+#import "MergeSortedList.h"
+
+@implementation MergeSortedList
+
+void mergeList(int a[], int aLen, int b[], int bLen, int result[])
+{
+    int p = 0; // 遍历数组a的指针
+    int q = 0; // 遍历数组b的指针
+    int i = 0; // 记录当前存储位置，当前比较最小的那个值应该存储到新数组的哪个位置
+    
+    // 任一数组没有到达边界则进行遍历，p,q都不能超过本身数组的长度
+    while (p < aLen && q < bLen) {
+        // 如果a数组对应位置的值小于b数组对应位置的值，就要把a数组的元素放入合并结果中，同时移动a数组
+        if (a[p] <= b[q]) {
+            // 存储a数组的值
+            result[i] = a[p];
+            // 移动a数组的遍历指针
+            p++;
+        }
+        else{//如果a数姐对应的元素大于b数组元素，则把b数元素存到新数组中，同时移动b数组的下一个元素
+            // 存储b数组的值
+            result[i] = b[q];
+            // 移动b数组的遍历指针
+            q++;
+        }
+        // 指向合并结果的下一个存储位置
+        i++;
+    }
+    
+    // 如果a数组有剩余，因为上面 while (p < aLen && q < bLen) ，是与，所以这里肯定会有余下的情况
+    while (p < aLen) {
+        // 将a数组剩余部分拼接到合并结果的后面，移动a数组的指针
+        result[i] = a[p++];
+        i++;
+    }
+    
+    // 如果b数组有剩余
+    while (q < bLen) {
+        // 将b数组剩余部分拼接到合并结果的后面
+        result[i] = b[q++];
+        i++;
+    }
+}
+
+@end
+
+使用：
+-(void)math
+{
+   int a[5] = {1,4,6,7,9};
+   int b[8] = {2,3,5,6,8,10,11,12};
+   int result[13];
+   mergelist(a,5,b,8,result);
+}
+
+
+
+
+13-4 Hash算法相关面试问题
+
+NSString转char*
+NSString * str＝ @“Test”;
+const char * a =[str UTF8String];
+
+不是让你写一个hash算法或它的概念，而是一个应用声景
+
+在一个字符串中找到第一个只出现一次的字符？
+输入'abaccdeff' 输出结果为'b'
+
+思路：
+字符(char)是一个长度为8的数据类型，因此对应的ascii码值总共有256种可能，即字母a，对应的是97  逗号对应的是。。
+每个字母对应的ascii码值作为数组的下标对应数组的一个数字。建立了字母本身和它存储位置的一个映射关系
+数组中存储的每个字符出现的次数，哪个字符出现的次数为1，就可以找到结果。
+
+哈希表的概念
+例：给定值是字母a，对应ascii值是97,数组索引下标为97
+ascii通过hash实现的 a -> f(a) ->97 
+可通过hash函数找到字符所对应的存储位置
+
+
+代码：
+
+HashFind.h
+#import <Foundation/Foundation.h>
+
+@interface HashFind : NSObject
+
+// 查找第一个只出现一次的字符,输入一个字符指针，返回每一次出现的字符
+char findFirstChar(char* cha);
+
+@end
+
+
+HashFind.m
+#import "HashFind.h"
+
+@implementation HashFind
+
+//"abaccdeff";
+char findFirstChar(char* cha)
+{
+    char result = '\0';//初始化为空字符
+    // 定义一个数组 用来存储各个字母出现次数，长度为256的字符，存每一个字母出现次数
+    int array[256];
+    // 对数组进行初始化操作，每一个值0
+    for (int i=0; i<256; i++) {
+        array[i] =0;
+    }
+    // 定义一个指针 指向当前字符串头部
+    char* p = cha;
+    // 遍历每个字符
+    while (*p != '\0') {//遍列直到字符为空作为退出条件
+        // 在字母对应存储位置 进行出现次数+1操作
+        array[*(p++)]++;//p指向的这个字符作为数组的索引下标，作次数加加操作，之后再作p指针向后移动p++操作 完成之后就存储了每一个字母的出现次数
+        //实现的效果为array[97]=1
+    }
+    
+    // 将P指针重新指向字符串头部
+    p = cha;
+    // 遍历每个字母的出现次数
+    while (*p != '\0') {
+        // 遇到第一个出现次数为1的字符，打印结果，根据当前字母的ascii值去找当前字母的次数值
+        if (array[*p] == 1)
+        {
+            result = *p;//找到就把结果返回*ascii码则返回字母
+            break;
+        }
+        // 反之继续向后遍历
+        p++;
+    }
+    
+    return result;
+}
+
+@end
+
+
+使用：
+-(void)math
+{
+   char cha[] = "abaccdeff";
+   char fc = findFirstChar(cha);
+   printf("%c\n",fc);
+}
+
+
+
+13-5 查找两个子视图的共同父视图算法相关面试问题
+
+viewA  viewB 查找两个视图的共同父视图
+
+思路：记录viewA的所有父视图 superView->superView->nil
+把所有父视图查找出来放到一个数组里保存
+再查找b的父视图并保存到另一个数组里保存
+倒序的方式比较superview是不是一样的，如果比较一样的父视图，再遍历下一个进行比较
+直到比较到不一样的父视图，那它们前面的所有父视图则是共同父视图
+
+代码如下：
+
+CommonSuperFind.h
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+@interface CommonSuperFind : NSObject
+
+// 查找两个视图的共同父视图
+- (NSArray<UIView *> *)findCommonSuperView:(UIView *)view other:(UIView *)viewOther;
+
+@end
+
+
+
+
+
+
+CommonSuperFind.m
+#import "CommonSuperFind.h"
+
+@implementation CommonSuperFind
+
+- (NSArray <UIView *> *)findCommonSuperView:(UIView *)viewOne other:(UIView *)viewOther
+{
+    NSMutableArray *result = [NSMutableArray array];
+    
+    // 查找第一个视图的所有父视图 保存到数组中
+    NSArray *arrayOne = [self findSuperViews:viewOne];
+    // 查找第二个视图的所有父视图
+    NSArray *arrayOther = [self findSuperViews:viewOther];
+    
+    int i = 0;
+    // 越界限制条件
+    while (i < MIN((int)arrayOne.count, (int)arrayOther.count)) {
+        // 倒序方式获取各个视图的父视图
+        UIView *superOne = [arrayOne objectAtIndex:arrayOne.count - i - 1];
+        UIView *superOther = [arrayOther objectAtIndex:arrayOther.count - i - 1];
+        
+        // 比较如果相等 则为共同父视图
+        if (superOne == superOther) {
+            [result addObject:superOne];
+            i++;
+        }
+        // 如果不相等，则结束遍历
+        else{
+            break;
+        }
+    }
+    
+    return result;
+}
+
+- (NSArray <UIView *> *)findSuperViews:(UIView *)view
+{
+    // 初始化为第一父视图
+    UIView *temp = view.superview;
+    // 保存结果的数组
+    NSMutableArray *result = [NSMutableArray array];
+    while (temp) {
+        [result addObject:temp];
+        // 顺着superview指针一直向上查找
+        temp = temp.superview;
+    }
+    return result;
+}
+
+
+@end
+
+
+
+13-6 求无序数组当中的中位数算法相关面试问题
+
+排序算法+中位数
+利用快排思想（分治思想）也可实现，加分
+
+排序算法+中位数：
+冒泡排序 快速排序 堆排序
+
+中位数： 当n为奇数的时候，(n+1)/2; 中间数加1
+        当n为偶数的时候，(n/2+(n/2 +1))/2; 中间两个数的一半为中位数
+        
+求中位数需要先排序，如总共有n个数,奇数，它的中位数就是中间数加1，如果是偶数，它的中位数为中间两个数的和除以2
+       
+例1
+找出这组数据：23、29、20、32、23、21、33、25 的中位数。
+解：
+首先将该组数据进行排列（这里按从小到大的顺序），得到：
+20、21、23、23、25、29、32、33
+因为该组数据一共由8个数据组成，即n为偶数，故按中位数的计算方法，得到中位数  ，即第四个数和第五个数的平均数。（23+25）／2
+
+例2
+找出这组数据：10、20、 20、 20、 30的中位数。
+解：
+首先将该组数据进行排列（这里按从小到大的顺序），得到：
+10、 20、 20、 20、 30
+因为该组数据一共由5个数据组成，即n为奇数，故按中位数的计算方法，得到中位数为20，即第3个数。
+
+
+利用快排的思想：
+选取关键字，实现指针的高低交替扫描，实现快排
+
+  12    3   10   8   6  7   11   13    9
+low指针                               high指针
+
+ 两个指针往里遍列
+ 选择一个关键字如121
+ low指针找到比关键字大的第一个数字，那该指针指向的数据就和此关键字的位置进行交换
+ high指针找到比交键字小的第一个数字，那该指针指向的数据就和此关键字的位置进行交换
+ 
+ 
+ 任意挑一个元素，以该元素为支点，划分集合为两部分，支点元素则为关键字
+ 
+ 如果左侧集合长度恰为(n-1)/2，那么支点恰好为中位数
+ 如果左侧长度<(n-1)/2，那么中位数在支点右侧，反之在左侧
+ 进入相应的一侧继续寻找中位数
+ 
+ 
+ 
+ 代码：
+ 
+  MedianFind.h
+ #import <Foundation/Foundation.h>
+
+@interface MedianFind : NSObject
+// 无序数组中位数查找
+int findMedian(int a[], int aLen);
+
+@end
+
+
+
+ MedianFind.m
+ 
+ 
+#import "MedianFind.h"
+
+@implementation MedianFind
+
+//求一个无序数组的中位数
+int findMedian(int a[], int aLen)
+{
+    int low = 0;
+    int high = aLen - 1;//指向数组的一个元素
+    
+    int mid = (aLen - 1) / 2;//中位点位置
+    int div = PartSort(a, low, high);//快排返回支点
+    
+    while (div != mid)
+    {
+    //如果左侧长度<(n-1)/2，那么中位数在支点右侧，反之在左侧
+        if (mid < div)
+        {
+            //左半区间找
+            div = PartSort(a, low, div - 1);
+        }
+        else
+        {
+            //右半区间找
+            div = PartSort(a, div + 1, high);
+        }
+    }
+    //找到了
+    return a[mid];
+}
+
+//快排  数组 高低指针
+int PartSort(int a[], int start, int end)
+{
+    int low = start;
+    int high = end;
+    
+    //选取结尾元素作为关键字
+    int key = a[end];
+    
+    while (low < high)
+    {
+        //左边找比第一个key大的值，移动
+        while (low < high && a[low] <= key)
+        {
+            ++low;
+        }
+        
+        //右边找比key小的值
+        while (low < high && a[high] >= key)
+        {
+            --high;
+        }
+        
+        if (low < high)
+        {
+            //找到之后交换左右的值
+            int temp = a[low];
+            a[low] = a[high]; 
+            a[high] = temp;
+        }
+    }
+    //high指针所指元素和low指针所指元素结尾对换
+    int temp = a[high];
+    a[high] = a[end];
+    a[end] = temp;
+    
+    return low;//把low这个作为支点返回给调用方
+}
+
+@end
+
+
+使用：
+-(void)math
+{
+ // 无序数组查找中位数
+    int list[10] = {12,3,10,8,6,7,11,13,9};
+    // 3 6 7 8 9 10 11 12 13
+    //         ^
+    int median = findMedian(list, 10);
+    printf("the median is %d \n", median);
+}
+
+
+
+ 
+
+
+
+
+
 
 
 
