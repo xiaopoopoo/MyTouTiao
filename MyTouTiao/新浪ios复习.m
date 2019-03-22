@@ -1627,6 +1627,12 @@ setValue的调用流程：
 
 4-11 属性关键字相关面试问题&面试总结
 
+总结：
+
+只要用mutablecopy拷贝的对象都是可变对象
+copy拷贝出来的任何对象都是不可变对象
+copy拷贝不可变对象为浅拷贝，除此情况外的拷贝都是深拷贝
+
 属性关键字的分类：
 
 1：读写权限相关关键字
@@ -1726,19 +1732,72 @@ setter方法，同时把原有类isa指针指向这个子类。
 5-1 Runtime数据结构相关面试题-1
 
 1。编译时语言与obj这种动态语言之间的区别是什么？
+
+运行时语言：将某个函数的决议推迟到运行时
+编译时语言：函数已经在编译期生成，在编译期执行哪个函数，在运行期无法修改。
+
+
 2。消息传递与函数调用之间有什么区别？
+在编译器的处理过程之后，objc_msgsend第一个参数obj ，第二个参数为foo的选择器，编译后就转化为函数调用了，然后进行runtime的消息传递流程
+
+
 3.当一个方法没有实现的时候，系统是怎样实现消息转发过程的？
+  当调用一个未实现的对象方法，或者未实现的类方法，会消息转发
+  第一次机会：类方法调用解决类方法的函数，对象方法调用解决实例方法函数，函数返回yes，代码不报异常，表未已经处理了这个未找到的方法
+  第二次机会：解决实例方法返回no，此时系统调用为选择器转发目标函数，返回值是nil或一个对象，返回一个对象，即把未实现的方法交给这个对象实现，返回nil，则系统调用第三次机会的处理函数
+  第三次机会：为选择器方法签名的函数，此时如果返回方法签名。如告诉系统交由某个对象去处理这个方法，此时会调用转发调用函数，这个函数可打印错误的日志，如果返回nil，不再调用转发调用函数，系统会认为此条消息无发处理，则会闪退，抛出未识别的选择器
 
 想要得到上面答案，
 从runtime的数据结构学起？
+
 类对象与元类对象分别代表什么？
+  类对象存储了该对象的所有方法列表，元类对象存储了所有类方法的方法列表
+  
 实例与类对象之间的关系？
+  实例的isa指针指向类对象
+  
 类对象与元类对象之间的关系？
+   类对象是元类对象的一个实例如uiview *v ，v的类对象是uiview，元类对象的实例是uiview，元类对象存储了类方法列表
+
 消息传递机制是怎样的？
+   消息查找的流程：在缓存中查找，在类对象中查找，如果是类方法，在元类对象中查找，元类对象存储了所有类方法，如果未找到在superclass指向的父类中查找，
+   再到根类中查找，根类superclass指向nil，未找到进入消息转法流程。查找使用已经排序好的方法列表，用二分法，未排序好的列表，遍列查找。
+   
+   
 消息传递过程中，如何进行缓存的方法查找？
+  消息缓存查找流程和步骤：以方法选择器的名称，用hash函数，找出bucket水桶类，并找出index，找到这个类中存方了该方法的实现
+  
 消息转发流程是怎样的？
+  当调用一个未实现的对象方法，或者未实现的类方法，会消息转发
+  第一次机会：类方法调用解决类方法的函数，对象方法调用解决实例方法函数，函数返回yes，代码不报异常，表未已经处理了这个未找到的方法
+  第二次机会：解决实例方法返回no，此时系统调用为选择器转发目标函数，返回值是nil或一个对象，返回一个对象，即把未实现的方法交给这个对象实现，返回nil，则系统调用第三次机会的处理函数
+  第三次机会：为选择器方法签名的函数，此时如果返回方法签名。如告诉系统交由某个对象去处理这个方法，此时会调用转发调用函数，这个函数可打印错误的日志，如果返回nil，不再调用转发调用函数，系统会认为此条消息无发处理，则会闪退，抛出未识别的选择器
+
 method-swizzling 方法混xiao  在运行时去替换一些方法的实现？
+  动态容器一般链表实现的，在增删改的时候，会去判断如果不为nil就存放到这个容器中，为此可实现一个分类，当用addobject方法时，替换掉它的实现，在里面判断是否为nil
+  两种交换方式：
+  1：
+   //获取test方法的结构体
+    Method test = class_getInstanceMethod(self,@selector(test));
+    //获取otherTest方法的结构体
+    Method otherTest = class_getInstanceMethod(self,@selector(otherTest));
+    //交换两个方法的实现
+    method_exchangeImplementations(test,otherTest);
+    
+   2：
+
+    dispatch_once(&onceToken, ^{
+        id obj = [[self alloc] init];
+        [obj swizzleMethod:@selector(addObject:) withMethod:@selector(safeAddObject:)];//交换这个方法
+    });
+    
+    
 动态添加方法，动态方法解析？
+
+   performSelector这个去调用一个test方法，如果未在.h中声明此方法，调用时xcode不会提示报错，运行时才会提示
+   而[self test]直接会提示报错
+   在消息转发流程解决实例方法函数中添加如下代码去处理，调用test的时候就会执行testImp。
+   class_addMethod(self, @selector(test), testImp, "v@:");
 
 
 
@@ -1808,6 +1867,7 @@ method_t:
 
 
 5-2 Runtime数据结构相关面试题-2
+
 method_t数据结构：
 函数四要素：名称，返回值，参数，函数体
 method_t：
@@ -1833,6 +1893,11 @@ class_ro_t包含分类相关的 name（类名称）,methodList,ivars(变量列�
 
 
 5-3 类对象与元类对象&消息传递相关面试问题
+总结：类对象存储所有对象方法 元类对象存储所有类方法  类对象的isa指针指向当前类对象，uiview* v ,v的isa指向uiview ，元类对象无论是子元类，还是元类它的
+isa指针指向根元类对象，根元类对象的isa指针指向它本身，但无论是类对象，还是元类对象，它们的superclass指针都指向了父类，uiview所属objc_class,
+objc_class又继承自objc_object，objc_object包含了所有的属性，方法，分类方法，协议等内容。objc_class里面主要有superclass指针。
+[self class]会转成void objc_msgSend(void/*id self, SEL OP,...*)  会从当前类对象去查找方法，消息接收者为self
+[super class]会转成void objc_msgSendSuper(void/*struct objc_super *super,SEL op,...*) 会从当前类的父类对象去查找方法，消息接收者为self
 
 
 1。类对象和元类对象分别是什么，类对象和元类对象有什么区别？
@@ -1905,6 +1970,13 @@ struct objc_super{
 
 
 5-4 方法缓存查找相关面试问题
+
+总结：
+消息缓存查找流程和步骤：以方法选择器的名称，用hash函数，找出bucket水桶类，这个类中存方了该方法的实现
+消息查找的流程：在缓存中查找，在类对象中查找，如果是类方法，在元类对象中查找，元类对象存储了所有类方法，如果未找到在superclass指向的父类中查找，
+再到根类中查找，根类superclass指向nil，未找到进入消息转法流程。查找使用已经排序好的方法列表，用二分法，未排序好的列表，遍列查找。
+
+
 消息传递机制重要的一个流程，消息缓存查找。它的流程和步骤：
 
 步骤1缓存查找：
@@ -1925,18 +1997,22 @@ struct objc_super{
 
 
 5-5 消息转发相关面试问题
-
+总结：
+  当调用一个未实现的对象方法，或者未实现的类方法，会消息转发
+  第一次机会：类方法调用解决类方法的函数，对象方法调用解决实例方法函数，函数返回yes，代码不报异常，表未已经处理了这个未找到的方法
+  第二次机会：解决实例方法返回no，此时系统调用为选择器转发目标函数，返回值是nil或一个对象，返回一个对象，即把未实现的方法交给这个对象实现，返回nil，则系统调用第三次机会的处理函数
+  第三次机会：为选择器方法签名的函数，此时如果返回方法签名。如告诉系统交由某个对象去处理这个方法，此时会调用转发调用函数，这个函数可打印错误的日志，如果返回nil，不再调用转发调用函数，系统会认为此条消息无发处理，则会闪退，抛出未识别的选择器
 消息转发流程是怎样的：
 对于实例消息转发流程，系统会回调：resolveInstanceMethod:
 对于类方法消息转发流程，系统会回调：resolveClassMethod:
 主要研究实例消息转发流程：
-类方法resolveInstanceMethod有一个参数sel消息选择器，返回值是bool，告诉系统要不要解决当前实例方法的实现，返回yes，
+类方法resolveInstanceMethod（解决实例方法）有一个参数sel消息选择器，返回值是bool，告诉系统要不要解决当前实例方法的实现，返回yes，
 通知系统消息已经处理，结束消息转发流程，如果说返回no，系统会回调forwardingTargetForSelector:这个方法，给每二次机会
 处理消息。、
 第二次处理机会：
-forwardingTargetForSelector:参数也是sel，返回值id,告诉系统这次系统实例的方法调用应该由哪个对象来处理，如果指定转发目标，系统
+forwardingTargetForSelector:（转发目标选择器）参数也是sel，返回值id,告诉系统这次系统实例的方法调用应该由哪个对象来处理，如果指定转发目标，系统
 会把这条消息指定给此转发目标，系统结束消息转发流程，如果每二次机会返回nil，未给转发目标，系统会给我们第三次处理消息的机会，系统会调用
-methodSignatureForSelector:
+methodSignatureForSelector:（方法签名选择器）
 第三次处理机会：
 methodSignatureForSelector:参数也是sel，返回是一个类或一个对象，这个对象是对于方法这个方法选择器sel返回值的类型，以及参数个数，类型的封装，
 些时如果返回了方法签名，那系统会调用forwardInvocation:如果forwardInvocation:方法能处理这条消息，那消息转发流程结束，如果methodSignatureForSelector返
@@ -2051,7 +2127,55 @@ AppDelegate.m
 
 
 
-5-6 Method-Swizzling相关面试问题
+5-6 Method-Swizzlin（方法飞溅）相关面试问题
+
+总结：
+使用场景1:ios可变容器内部是一个链表，在进行增删改容器的时候，如果是nil，会闪退
+  if (obj) {
+        [dic setObject:obj forKey:@"key"];
+    }
+会写很多这样的代码
+通过这个方去可这样处理：
+在分类中
++ (void)load
+{
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        id obj = [[self alloc] init];
+        [obj swizzleMethod:@selector(addObject:) withMethod:@selector(safeAddObject:)];//交换这个方法
+    });
+}
+- (void)safeAddObject:(id)anObject
+{
+    if (anObject) {
+        [self safeAddObject:anObject];
+    }else{
+        NSLog(@"obj is nil");
+
+    }
+}
+
+使用场景2:NSLOG调用的时候可替换成NSINFOLOG;这个方法中打印时可以再写一些打印的其它内容
+两种交换方式：
+1：
+   //获取test方法的结构体
+    Method test = class_getInstanceMethod(self,@selector(test));
+    //获取otherTest方法的结构体
+    Method otherTest = class_getInstanceMethod(self,@selector(otherTest));
+    //交换两个方法的实现
+    method_exchangeImplementations(test,otherTest);
+    
+2：
+
+    dispatch_once(&onceToken, ^{
+        id obj = [[self alloc] init];
+        [obj swizzleMethod:@selector(addObject:) withMethod:@selector(safeAddObject:)];//交换这个方法
+    });
+  
+
+
+
+
 
 在现有的类中有两个方法：
 方法slelector1   对应的实现  imp1 
@@ -2116,6 +2240,12 @@ RuntimeObject.m
 
 
 5-7 动态添加方法相关面试问题
+
+总结：
+performSelector这个去调用一个test方法，如果未在.h中声明此方法，调用时xcode不会提示报错，运行时才会提示
+而[self test]直接会提示报错
+在消息转发流程解决实例方法函数中添加如下代码去处理，调用test的时候就会执行testImp。
+class_addMethod(self, @selector(test), testImp, "v@:");
 
 你是否有使用过performSelector:方法？
 主要考runtime动态添加方法的特性
@@ -2215,6 +2345,17 @@ void testImp (void)
 
 
 5-8 动态方法解析相关面试问题&面试总结
+总结：
+@property 自动生成get set方法
+@synthesize 指定了成员变量，需重写set get 方法。
+    如.m中 @synthesize name = _name;  
+    - (void)setName:(NSString *)name
+    {
+       _name = name;
+    }
+@dynamic 编译时不生成get，set方法， 而是在运行时的时候添加，由用户添加的。
+运行时语言：将某个函数的决议推迟到运行时
+编译时语言：函数已经在编译期生成，在编译期执行哪个函数，在运行期无法修改。
 
 你使用过@dynamic这个编译器关键字吗？
 声明的属性用@dynamic这个关键字修饰的时候，实际上对应的set,get方法不是在编译时去声明好实现的，而是运行时添加的。
@@ -2225,7 +2366,7 @@ void testImp (void)
 
 runtime实战问题：
 1。[obj foo]向obj对象发送foo这个消息和objc_msgsend()函数之间有什么关系？
-在编译器的处理过程之后，objc_msgsend第一个参数obj ，第二个参数为foo的选择器，编译后就转化为函数调用了，然后进行runtime的消息传递流程ru
+在编译器的处理过程之后，objc_msgsend第一个参数obj ，第二个参数为foo的选择器，编译后就转化为函数调用了，然后进行runtime的消息传递流程
 
 2。runtime如何通过selector找到对应的imp地址的？
 消息传递机制是查找当前实例对象缓存是否有imp实现，没命中，查当前类方法列表，
@@ -2266,15 +2407,20 @@ arc & mrc
 
 
 6-2 内存管理方案相关面试问题
-
+  总结：
+    用非指针型和指针型管理内存，指针型，所有内容表示的只是内存这个地址，非指针型，除了表示内存地址，还表示内存管理方案内容，如有散列表
+    中包含的引用计数表和弱引用表。
+    sidetable数据结构去存相关引用计数
+    
+    
 问题：ios是怎样对内存进行管理的？
 分析：ios会根据不同的场景提供内存管理方案：
 答：
-比如对一些小对象如nsnumber这种，采用的是taggedpointer管理方案
+比如对一些小对象如nsnumber这种，采用的是taggedpointer（标记指针）管理方案
 
-对于64位架构下的ios程序，采用的是nonpointer_isa管理方案，在这种架构下，isa指针是是这个比特位的
+对于64位架构下的ios程序，采用的是nonpointer_isa（非标记指针）管理方案，在这种架构下，isa指针是是这个比特位的
 其实有32个bit位就够用了，其它是浪费的，苹果为了提高这内存的利用率，isa余下的bit位中存储了内存管理相关的内容
-所以这叫非指针型isa管理方案
+所以这叫非指针型isa管理方案。sidetables的本质是一张hash表，有64张sideTable存储。
 
 散列表内存管理方案 散列表是一个复杂的数据结构，其中包括了引用计数表和弱引用表
 
@@ -2292,7 +2438,7 @@ nonpointer_isa（非指针型）管理方案：
 0  0  0 0  0  0  0  0  0  0  0  0            0                        0                                 0
 （            shifcls            ）    （has_cxx_dtor）          （第1位has_assoc）                    （第0位）
 如果这里第0位是0，表示此isa指针是一个纯的isa指针，那它其它16位的地址内容就代表了当前纯对象的ios地址
-如果第0位是1,就表示它不仅是一个对象地址，里面还包含了一些类对象的管理数据，第1位表示当前对象是否有关联对象，0代理没有，1代表有
+如果第0位是1,就表示它不仅是一个对象地址，里面还包含了一些类对象的管理数据，第1位表示当前对象是否有关联对象，0代表没有，1代表有
 第2位has_cxx_dtor表示当前对象是否有使用c++方面的代码或c++方面的内容，也可表示有些对象是通过arc管理的
 第3-15位 shifcls 表示当前对象类对象的指针地址
   
@@ -2306,7 +2452,7 @@ shifcls  表示当前对象类对象的指针地址
 47位
 0  0  0 0  0  0  0  0  0  0  0  0            0                        0 
 （extra_rc 引用计数未上限存到散列表中）   
-（has_sidetable_rc当前isa指针当中引用计数如果达上线，需外挂一个sidetable数据结构去存相关引用计数，也就是闪列表）       
+（has_sidetable_rc当前isa指针当中引用计数如果达上线，需外挂一个sidetable数据结构去存相关引用计数，也就是散列表）       
 （  deallocating标志当前对象是否在进行dealloc操作  ）     
 （  weakly_referenced范围的位数表示对象是否有弱引用指针    ）   
  （  magic位段不作解释    ）
@@ -2351,6 +2497,10 @@ f(ptr) = (uintptr_t)ptr % array.count 取余计算
 
 6-3 自旋锁，引用计数表，弱引用计数表数据结构相关面试问题 
 
+总结：
+  自旋锁，线程不断尝试去获取这把锁，轻量级的，如加1操作用的锁，与信号量不同，信号量获取不到锁会休眠，等线程释放锁再唤醒。
+  弱引用表也是一张hash表。
+
 spinlock_t自旋锁（spinlock_t多线程资源竞争相关）
 是忙等的锁，如果当前锁已被其它线程获取，当前线程会不断探寻锁是否被释放
 其它锁，如信号量，当获取不到锁会把这个线程阻塞休眠，等到其它线程释放锁唤醒线程
@@ -2372,11 +2522,22 @@ spinlock_t自旋锁（spinlock_t多线程资源竞争相关）
 
 
 6-4 MRC&ARC相关面试问题
+总结：
+  mrc： 
+    alloc retain 浅拷贝 引用计数加1 autorelease在autoreleasepool结束的时候调用它的release操作
+    retaincount获取对象的引用计数值  dealloc必须有 super dealloc来释放父类的相关成员变量
+  arc：
+    需要runtime和编译器共同协作才能组成，编译器自动插入retain,release ，retain release retaincount autorelease dealloc会引起编译报错
+    dealloc方法，但不能调用super dealloc
+    strong alloc 浅拷贝 引用计数加1  weak 引用计数减1，内存释放后设为nil
+    assign：在arc和mrc中 用于修饰基本数据类型和oc数据类型的关键字。修饰对象xcode不报错，但会产生野指针，因为对象在堆上。基本数据类型在栈上，由系统自动分配。
+  
+
 
 mrc是手动引用计数进行管理内存
 alloc分配一个内存空间  retain 引用计数加1  release引用计数减1
 retaincount获取对象的引用计数值   autorelease 这个对象会在autoreleasepool结束的时候调用它的release操作，引用计数减1
-dealloc 在mac当中调用这个需要显示调用 super dealloc来释放父类的相关成员变量
+dealloc 在mrc当中调用这个需要显示调用 super dealloc来释放父类的相关成员变量
 
 
 arc是自动引用计数进行管理内存
@@ -2402,6 +2563,18 @@ arc中新增weak,strong属性关键字
 
 
 6-5 引用计数管理相关面试问题
+
+总结：
+  alloc实现：在retaincount时才引用计数加1 
+  引用计数查找：
+     第一次：通过hash算法找到sidetable，
+     第二次：对象指针在sidetable引用计数表中中获取引用计数成员变量，
+     再对引用计数加1
+  dealloc实现：
+     判断是非指针型的isa ，是否有weak指针，有则将指向该对象的弱引用指针置为nil，是否有关联对象，有则移除关联对象，是否使用c++代码， 是否有额外的引用计数表sidetable，最后才能调用c函数free()
+     
+
+
 实现原理分析：
 
 alloc实现：
@@ -2413,7 +2586,7 @@ retain实现：
 这是objc680原码，这里是通过当前对象的指针到sidetables中获取它所属的sidetable，关于sidetables是由多个sidetable组成的hash表，可通过hash函数指针
 通过hash函数计算，可快速找到对应的sidetable。
 size_t& refcntstorage = table.refcnts[this];
-在sidetable结构中获取引用计数map的成员变量，通过当前对象的指针在这个sidetable引用计数表中去获取当前对象的引用计数人土目土
+在sidetable结构中获取引用计数map的成员变量，通过当前对象的指针在这个sidetable引用计数表中去获取当前对象的引用计
 这个查找过程也是一次hash查找
 refcntstorage += side_table_rc_one;
 size_t是一个无符号的引用计数值，我们对这个值进行引用计数加1操作,这里加的是一个宏定义，而不是1，因为在存引用计数的时候前两位
@@ -2477,6 +2650,7 @@ has_sidetable_rc 当前对象的引用计数是否是通过sidetable表来维护
  
  6-6 弱引用管理相关面试问题
  一个weak变量是怎样添加到弱引用表中的？
+ 具体通过hash算法查找弱引用表，再找到弱引用数组，把新弱引用指针加入弱引用表
  id __weak obj1 = obj;此时产生了一个弱引用指针，经过编译后会生成下面代码：
  id obj1;
  objc_initweak(&obj1,obj);//&obj1弱引用变量，obj是弱引用的修饰对象，
