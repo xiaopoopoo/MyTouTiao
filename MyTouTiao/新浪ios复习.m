@@ -2677,6 +2677,12 @@ has_sidetable_rc 当前对象的引用计数是否是通过sidetable表来维护
   
   
   6-7 自动释放池相关面试问题
+  总结：
+  runloop将要结束的时候会将上一次autoreleasepool中的对象释放，会调用autoreleastpoolpage::pop方法，会push一个新的autoreleasepool
+  为什么autoreleasepool可以嵌套？因为每次autoreleasepool中的代码创建后，会创建autoreleasepoolPage，实现机制是一个双向链表，有多个
+  autoreleasepoolPage，就会多次释放。autoreleasepoolPage是和线程一一对应的
+  autoreleasepool中的autoreleasepool是双向链表结构，双向链表是头节点的父指针指向nil，子指针指向下一个节点,最后一个节点的子指针指向nil。
+  所有的autoreleasepoolPage又放在栈中，所以最后添加的最先弹出栈
   
   -(void)viewDidLoad
   {
@@ -2724,7 +2730,7 @@ childptr 子指针
    子指针指向下一个节点，尾结点的子指针指向一个空。
    
 栈结构：
-栈是向下增长的，下面高地址，上面是高地址
+栈是向下增长的，下面低地址，上面是高地址
 
 栈顶 从栈顶后加入的对象先弹出来， 后入先出
 
@@ -2772,6 +2778,43 @@ autoreleasepool的实现原理是怎样的？
 
 
 6-8 循环引用相关面试问题&面试总结-1
+总结：
+
+自循环引用：
+
+类中有一个属性strong修饰，这个属性又=self
+相互循环引用：
+
+类a的属性ida=类b
+类b的属性idb=类a
+
+多循环引用：
+每个类的属性强引用下一个对象，产生多循环
+
+
+
+代理：不能用strong，会相互循环。
+
+
+
+如何破除循环引用呢：
+避免产生循环引用  如代理设为weak
+在合适的时机手动断环 
+
+
+nstimer的循环引用：
+nstimer会被runloop强引用，造成不能释放。
+
+nstimer有重复定时器和非重复定时器的区分：
+如果创建的这个nstimer是非重复定时器，即只调用一次回调方法，那么会在定时器回调方法中调用nstimer invalidate()方法，停止定时器，然后nstimer=nil
+如果创建的这个nstimer是一个重复多产回调方法的定时器，就不能作nvalidate()，nstimer=nil的操作，
+解决方案：增加一个中间对象，nstimer不再指向这个obj，而是强引用中间对象，中间对象弱引用nstimer,和obj.  在中间对象的类中，nstimer回调方法中
+判断弱引用的obj是否为nil，如果为nil，表示vc控制器消毁，及广告栏消毁，则可在回调方法中设置nvalidate()，nstimer=nil的操作
+
+
+
+
+
 循环引用分为三种类型：
 
 自循环引用：
@@ -2805,7 +2848,7 @@ autoreleasepool的实现原理是怎样的？
 具体解决方案有哪些？
 __weak 在代理 block中会用到
 __block 一般使用在block中解决循环引用问题
-__unsafe_unretained 修饰的关键字是未增加引用计数的
+__unsafe_unretained 修饰的关键字是未增加引用计数的  不建议使用
 
 __weak破解循环引用的解决方案：
 对象a，它有一个成员变量 id weak obj
@@ -2819,6 +2862,8 @@ arc下，__block修饰对象会被强引用，无法避免循环引用，需手�
 __unsafe_unretained方式破解循环引用：
 修饰对象不会增加其引用计数，避免了循环引用。
 如果被修饰对象在某一时机被释放，会产生悬垂指针！这会访问对象会出错，所以不建议使用这种方式
+
+
 
 
 循环引用示例：
@@ -3593,10 +3638,439 @@ GroupObject.m
     });
 }
 
+@end
 
 
+
+
+GCD全称Grand Central Dispatch  大中央调度 多核编程的解决方案
+
+GCD的任务：
+需要执行的代码块，一个方法或一个block
+
+GCD的队列：
+串行队列: GCD底层只维护一个线程，任务只能串行依次执行。
+并发队列: GCD底层使用线程池维护多个线程，任务可并发执行。
+
+两者都是FIFO 先进先出来管理任务
+
+
+
+
+队列的方法:
+
+//获取当前执行该方法的队列，被废弃了，最好不要使用
+dispatch_queue_t dispatch_get_current_queue(void);
+
+/*
+主队列是串行队列因为只维护主线程一个线程
+*/
+dispatch_queue_t dispatch_get_main_queue(void);
+
+/*
+获取一个全局的并发队列
+identifier指定该队列的优先级可选值有:
+    DISPATCH_QUEUE_PRIORITY_HIGH 2
+    DISPATCH_QUEUE_PRIORITY_DEFAULT 0
+    DISPATCH_QUEUE_PRIORITY_LOW (-2)
+    DISPATCH_QUEUE_PRIORITY_BACKGROUND INT16_MIN
+flags未用到传个0得了
+*/
+dispatch_queue_t dispatch_get_global_queue(long identifier, unsigned long flags);
+
+
+/*
+创建一个队列
+label 队列的名称
+attr 队列的属性可选值有:
+    DISPATCH_QUEUE_SERIAL 创建一个串行队列
+    DISPATCH_QUEUE_CONCURRENT 创建一个并发队列
+通过这种方式可以自己维护一个队列
+*/
+dispatch_queue_t dispatch_queue_create(const char *_Nullable label, dispatch_queue_attr_t _Nullable attr);
+
+
+
+
+
+具体获取相关队列的方法如下:
+
+//获取串行主队列
+dispatch_queue_t mainQueue = dispatch_get_mian_queue();
+
+//获取一个默认优先级的并发队列
+dispatch_queue_t concurrentQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT);
+
+//自定义创建一个名称为myConcurrentQueue的并发队列
+dispatch_queue_t myConcurrentQueue = dispatch_queue_create("myConcurrentQueue", DISPATCH_QUEUE_CONCURRENT);
+
+
+
+同步执行:在当前线程下执行，当前线程其它任务完成才可以执行
+异步执行: 在当前线程下开启其他线程来执行任务，不需要等待当前线程任务完成即可执行
+
+
+
+
+
+
+任务的相关方法：
+/*
+以异步方式执行任务，不阻塞当前线程
+queue 管理任务的队列，任务最终交由该队列来执行
+block block形式的任务，该block返回值、形参都为void
+*/
+void dispatch_async(dispatch_queue_t queue, dispatch_block_t block);
+
+
+/*
+同上
+使用起来不方便，一般不怎么用，需要使用C函数，也可以使用OC方法通过传递IMP来执行但是会有编译警告
+context 是一个void*的指针，作为work的第一个形参
+work 是一个函数指针，指向返回值为void 形参为void*的函数，且形参不能为NULL，也就是说context一定要传
+*/
+void dispatch_async_f(dispatch_queue_t queue, void *_Nullable context, dispatch_function_t work);
+
+
+/*
+以同步方式执行任务，阻塞当前线程，必须等待任务完成当前线程才可继续执行
+*/
+void dispatch_sync(dispatch_queue_t queue, DISPATCH_NOESCAPE dispatch_block_t block);
+
+//同上
+void dispatch_sync_f(dispatch_queue_t queue, void *_Nullable context, dispatch_function_t work);
+
+
+/*
+以同步方式提交任务，并重复执行iterations次
+iterations 迭代执行次数
+queue 管理任务的队列，任务最终交由该队列来执行
+block block形式的任务，该block返回值为void形参为iterations迭代次数
+*/
+void dispatch_apply(size_t iterations, dispatch_queue_t queue,  DISPATCH_NOESCAPE void (^block)(size_t));
+
+//同上
+void dispatch_apply_f(size_t iterations, dispatch_queue_t queue, void *_Nullable context, void (*work)(void *_Nullable, size_t));
+
+
+/*
+以异步方式提交任务，在when时间点提交任务
+queue 管理任务的队列，任务最终交由该队列来执行
+block block形式的任务，该block返回值、形参都为void
+*/
+void dispatch_after(dispatch_time_t when, dispatch_queue_t queue, dispatch_block_t block);
+
+//同上
+void dispatch_after_f(dispatch_time_t when, dispatch_queue_t queue, void *_Nullable context, dispatch_function_t work);
+
+
+
+/*
+以异步方式提交任务，会阻塞queue队列，但不阻塞当前线程
+queue 管理任务的队列，任务最终交由该队列来执行
+需要说明的是，即时使用并发队列，该队列也会被阻塞，前一个任务执行完成才能执行下一个任务
+block block形式的任务，该block返回值、形参都为void
+*/
+void dispatch_barrier_async(dispatch_queue_t queue, dispatch_block_t block);
+
+//同上
+void dispatch_barrier_async_f(dispatch_queue_t queue, void *_Nullable context, dispatch_function_t work);
+
+
+
+/*
+以异步方式提交任务，会阻塞queue队列，但不阻塞当前线程
+queue 管理任务的队列，任务最终交由该队列来执行
+需要说明的是，即时使用并发队列，该队列也会被阻塞，前一个任务执行完成才能执行下一个任务
+block block形式的任务，该block返回值、形参都为void
+*/
+void dispatch_barrier_async(dispatch_queue_t queue, dispatch_block_t block);
+
+//同上
+void dispatch_barrier_async_f(dispatch_queue_t queue, void *_Nullable context, dispatch_function_t work);
+
+
+/*
+以同步方式提交任务，会阻塞queue队列，也会阻塞当前线程
+queue 管理任务的队列，任务最终交由该队列来执行
+同样的，即时是并发队列该队列也会被阻塞，需要等待前一个任务完成，同时线程也会阻塞
+block block形式的任务，该block返回值、形参都为void
+*/
+void dispatch_barrier_sync(dispatch_queue_t queue, DISPATCH_NOESCAPE dispatch_block_t block);
+
+//同上
+void dispatch_barrier_sync_f(dispatch_queue_t queue, void *_Nullable context, dispatch_function_t work);
+
+
+
+/*
+底层线程池控制block任务在整个应用的生命周期内只执行一次
+predicate 实际为long类型，用于判断是否执行过
+block block形式的任务，该block返回值、形参都为void
+该方法常用于实现单例类，以及结合RunLoop创建一个常驻内存的线程
+*/
+void dispatch_once(dispatch_once_t *predicate, dispatch_block_t block);
+
+
+
+例：
+   //使用传递函数指针的方式有点复杂，以后的栗子不再赘述
+    int context = 0;
+    dispatch_async_f(concurrentQueue, &context, cFuncTask);
+    //也可以使用OC方法，传入IMP，但会有警告
+    //dispatch_async_f(concurrentQueue, &context, [self methodForSelector:@selector(ocFuncTask:)]);
+//该函数是C函数
+void cFuncTask(void* context)
+{
+
+}
+//OC方法
+- (void)ocFuncTask:(void*) context
+{
+
+}
+
+
+
+
+dispatch_apply：同步执行多少次
+
+ //执行该方法的是主线程，不能传入主队列否则会死锁，
+    dispatch_apply(20000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(size_t t) {
+        NSLog(@"Task %@ %ld", [NSThread currentThread], t);／／打印为主线程
+    });
+    
+
+dispatch_after：异步在多少时间后提交任务，打印的不是主线程
+
+dispatch_after(dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 5), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NSLog(@"In %@", [NSThread currentThread]);
+    });
+    NSLog(@"After");
+    
+    
+    
+dispatch_barrier _ (a)sync:    
+
+dispatch_queue_t concurrentQueue = dispatch_queue_create("myConcurrentQueue", DISPATCH_QUEUE_CONCURRENT);
+ dispatch_async(concurrentQueue, ^{
+
+    });    
+dispatch_barrier_async(concurrentQueue, ^{
+        //阻塞上面的队列，如果是dispatch_barrier_sync，阻塞队列的同时还阻塞线程
+    });
+    
+    
+dispatch_once：
+
+@interface MyUtil: NSObject <NSCopying>
+
++ (instancetype)sharedUtil;
 
 @end
+
+@implementation MyUtil
+
+static MyUtil *staticMyUtil = nil;
+
++ (instancetype)sharedUtil
+{
+    //保证初始化创建只执行一次
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        staticMyUtil = [[MyUtil alloc] init];
+    });
+    return staticMyUtil;
+}
+
+//防止通过alloc或new直接创建对象
++ (instancetype)allocWithZone:(struct _NSZone *)zone
+{
+    //保证alloc函数只执行一次
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        staticMyUtil = [super allocWithZone:zone];
+    });
+    return staticMyUtil;
+}
+
+//实现NSCopying协议的方法，防止通过copy获取副本对象
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+    return staticMyUtil;
+}
+
+@end
+
+
+
+dispatch_ group_ t   将各个同步或异步提交任务都加入到同一个组中，当所有任务都完成后会收到通知
+
+dispatch_group_t group = dispatch_group_create();
+dispatch_group_async(group, concurrentQueue, ^{
+
+ });
+ dispatch_group_notify(group, concurrentQueue, ^{
+        NSLog(@"All Task Complete");
+ });
+ 
+ 
+防止GCD产生死锁:
+- (void)viewWillAppear:(BOOL)animated
+{
+    NSLog(@"Before");
+
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        NSLog(@"In");//会死锁，因为viewWillAppear也在主队列中
+    });
+
+    NSLog(@"After");
+}
+
+dispatch_apply(1, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(size_t t) {
+    dispatch_apply(2000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(size_t t) {
+        NSLog(@"===== %@ %ld", [NSThread currentThread], t);//同步执行多少次，都在同一个线程上，里面的需要等外面的执行完成
+    });
+ });
+ 
+ 
+ 
+ 实现定时器的三种方法：
+ NSTimer、GCD以及CADisplayLink，CADisplayLink是其中精度最高的，因为它试图与屏幕刷新率保持一致
+ 
+ NSTimer实现定时器：
+ - (void)viewWillAppear:(BOOL)animated
+{
+    //倒计时次数
+    __block int count = 10;
+    //间隔1s执行一次
+    NSTimer *timer = [[NSTimer alloc] initWithFireDate:[NSDate date] interval:1 repeats:YES block:^(NSTimer * _Nonnull timer) {
+        //如果还在倒计时次数内
+        if (count > 0)
+        {
+            //执行相关工作，如果有UI更新的操作需要放到主线程
+            dispatch_async(dispatch_get_main_queue(), ^{
+
+            });
+            //次数--
+            count --;
+        }
+        else
+        {   
+            //次数到达，取消定时器
+            [timer invalidate];
+        }
+    }];
+    //加入到RunLoop中，使用NSRunLoopCommonModes在滑动时也可以继续执行，runloop强引用timer，需要[timer invalidate]破除强引用
+    [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes]；
+    
+    
+
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    self.count = 10;
+    //传入了self，会强引用timer，需要[timer invalidate]破除强引用
+    NSTimer *timer = [[NSTimer alloc] initWithFireDate:[NSDate date] interval:1 target:self selector:@selector(countDown:) userInfo:nil repeats:YES];
+    [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
+}
+
+- (void)countDown:(NSTimer*)timer
+{
+    if (self.count > 0)
+    {
+        //执行相关工作，如果有UI更新的操作需要放到主线程
+        dispatch_async(dispatch_get_main_queue(), ^{
+
+        });
+        self.count --;
+    }
+    else
+    {
+        //取消定时器
+        [timer invalidate];
+    }
+}
+
+
+
+GCD实现定时器:
+
+dispatch_source_create:timer的创建
+dispatch_source_set_timer  设置timer对象和间隔时间，设置每秒执行一次
+dispatch_source_set_event_handler(_timer, ^{   设置timer执行事件的block块
+
+- (void)viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:YES];
+    //执行次数
+    __block int count = 10;
+    //获取一个全局并发队列
+    dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    //这里不能使用局部变量，因为当viewDidAppear函数返回后timer就会被释放
+    _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+    //设置timer的执行时间和间隔时间，设置每秒执行一次
+    dispatch_source_set_timer(_timer, dispatch_time(DISPATCH_TIME_NOW, 0), 1 * NSEC_PER_SEC, 0); 
+    //设置timer执行事件的block块
+    dispatch_source_set_event_handler(_timer, ^{
+        if (count > 0)
+        {
+            //要执行的任务，更新UI需要放到主线程
+            dispatch_async(dispatch_get_main_queue(), ^{
+
+            });
+            count --;
+        }
+        else
+        {
+            //执行次数达到预期就取消timer
+            dispatch_source_cancel(_timer);
+        }
+    });
+    //启动timer
+    dispatch_resume(_timer);
+}
+
+
+
+CADisplayLink实现定时器：
+
+displayLinkWithTarget:
+CADisplayLink *timer = CADisplayLink displayLinkWithTarget创建定时器
+timer.preferredFramesPerSecond = 1;
+
+
+- (void)viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:YES];
+
+    self.count = 10;
+    //CADisplayLink只有这一个构造方法
+    CADisplayLink *timer = [CADisplayLink displayLinkWithTarget:self selector:@selector(countDown:)];
+    //每秒对多少帧感兴趣，也就是每秒要执行多少次回调方法
+    timer.preferredFramesPerSecond = 1;
+    //必须要添加进RunLoop才开始执行
+    [timer addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
+
+}
+
+- (void)countDown:(CADisplayLink*)timer
+{
+    if (self.count > 0)
+    {
+        //执行相关工作，如果有UI更新的操作需要放到主线程
+        dispatch_async(dispatch_get_main_queue(), ^{
+
+        });
+        self.count --;
+    }
+    else
+    {
+        //取消定时器
+        [timer invalidate];
+    }
+
+}
 
 
 
@@ -3637,6 +4111,444 @@ GroupObject.m
  通过kvo的方式来移除operationqueue中所对应的operation的。来达到正常退出消毁operation这个对象。
  
  
+
+//https://blog.csdn.net/u014205968/article/details/78323182
+可定制性 
+NSOperation提供任务的封装
+NSOperationQueue 提供执行队列 多核并行计算 供了更多可定制的开发方式
+自动管理线程的生命周期 gcd NSOperationQueue都可
+串行只需要将队列的并发数设置为一
+
+NSOperation：
+NSOperation类的自定义：
+非并发队列：
+子类需重写main方法，最好不要只实现一个main方法就交给队列去执行，没有实现finished属性，所以获取finished属性时只会返回NO，任务加入到队列后不会被队列删除，一直会保存，而且任务执行完成后的回调块也不会执行
+
+并发队列：
+重写start方法
+子类需重写BOOL executing，BOOL finished =YES后，队列会将任务移除出队列
+自定义并发任务子类重写- (BOOL)isAsynchronous 返回yes
+
+BOOL ready =yes 任务即将开始执行 不需要重写
+//添加一个依赖
+- (void)addDependency:(NSOperation *)op;
+//删除一个依赖
+- (void)removeDependency:(NSOperation *)op;
+//任务在队列里的优先级
+NSOperationQueuePriority： NSOperationQueuePriorityVeryLow = -8L,Low，Normal，High，VeryHigh
+@property NSOperationQueuePriority queuePriority;//优先级
+//finished属性设置为YES时才会执行该回调
+@property (nullable, copy) void (^completionBlock)(void);
+
+实现GCD那样的功能，NSBlockOperation和NSInvocationOperation（Invocation调用）
+
+NSBlockOperation *operation = [NSBlockOperation blockOperationWithBlock:^{
+   //这里面不能添加异步线程，需定制，如果添加了，block或方法会立即返回，此时就会将finished设置为YES，executing设置为NO，但是其实任务并没有完成，
+}];
+NSInvocationOperation *invocationOperation = [[NSInvocationOperation alloc] initWithTarget:self selector:@selector(task:) object:@"Hello, World!"];
+
+
+
+NSOperationQueue
+
+//向队列添加任务
+- (void)addOperation:(NSOperation *)op;
+
+/*
+向队列中添加一组任务
+YES，则阻塞当前线程直到所有任务完成
+如果为False，不阻塞当前线程
+*/
+- (void)addOperations:(NSArray<NSOperation *> *)ops waitUntilFinished:(BOOL)wait;
+
+/／向队列中添加一个任务，任务以block的形式传
+- (void)addOperationWithBlock:(void (^)(void))block;
+
+//获取所有任务
+@property (readonly, copy) NSArray<__kindof NSOperation *> *operations;
+
+/获取队列中的任务数量
+@property (readonly) NSUInteger operationCount;
+
+/*
+最大任务并发数
+1串行队列，主队列就是串行队列 主线程执行任务
+大于1 并发队列，底层线程池管理多个线程来执行任务
+*/
+@property NSInteger maxConcurrentOperationCount;
+
+
+/／队列是否挂起
+@property (getter=isSuspended) BOOL suspended;
+
+/队列的名称
+@property (nullable, copy) NSString *name;
+
+／*
+取消队列中的所有任务
+所有任务的cancelled属性都置为YES
+*/
+- (void)cancelAllOperations;
+
+//阻塞当前线程直到所有任务完成
+- (void)waitUntilAllOperationsAreFinished;
+
+//类属性，获取当前队列
+@property (class, readonly, strong, nullable) NSOperationQueue *currentQueue;
+
+//类属性，获取主队列 任务并发数为1，即串行队列
+@property (class, readonly, strong) NSOperationQueue *mainQueue;
+
+
+
+
+
+
+非并发的NSOperation自定义子类：
+
+TestOperation: NSOperation
+重写：
+- (void)main
+{
+
+}
+最好不要只实现一个main方法就交给队列去执行，没有实现finished属性，所以获取finished属性时只会返回NO，任务加入到队列后不会被队列删除，一直会保存，而且任务执行完成后的回调块也不会执行
+
+
+并发的NSOperation自定义子类
+重写以下几个方法或属性:
+start方法:start方法中是我们编写的任务，要保证不允许调用父类的start方法
+isExecuting:手动调用KVO方法通知任务是否在执行
+isFinished: 手动调用KVO方法通知任务是否完成，任务是异步的，start方法返回不一定代表任务就结束了，开发者手动修改该属性，队列就可以正常的移除任务
+isAsynchronous: 是否并发执行，之前需要使用isConcurrent，但isConcurrent被废弃了，该属性标识是否并发
+
+例子：
+@interface MyOperation: NSOperation
+
+@property (nonatomic, assign, getter=isExecuting) BOOL executing;
+@property (nonatomic, assign, getter=isFinished) BOOL finished;
+
+@end
+
+@implementation MyOperation
+
+@synthesize executing = _executing;
+@synthesize finished = _finished;
+
+- (void)start
+{
+    //在任务开始前设置executing为YES，在此之前可能会进行一些初始化操作
+    self.executing = YES;
+    for (int i = 0; i < 500; i++)
+    {
+        /*
+        需要在适当的位置判断外部是否调用了cancel方法
+        如果被cancel了需要正确的结束任务
+        */
+        if (self.isCancelled)
+        {
+            //任务被取消正确结束前手动设置状态
+            self.executing = NO;
+            self.finished = YES;
+            return;
+        }
+        //输出任务的各个状态以及队列的任务数
+        NSLog(@"Task %d %@ Cancel:%d Executing:%d Finished:%d QueueOperationCount:%ld", i, [NSThread currentThread], self.cancelled, self.executing, self.finished, [[NSOperationQueue currentQueue] operationCount]);
+        [NSThread sleepForTimeInterval:0.1];
+    }
+    NSLog(@"Task Complete.");
+    //任务执行完成后手动设置状态
+    self.executing = NO;
+    self.finished = YES;
+}
+
+- (void)setExecuting:(BOOL)executing
+{
+    //调用KVO通知
+    [self willChangeValueForKey:@"isExecuting"];
+    _executing = executing;
+    //调用KVO通知
+    [self didChangeValueForKey:@"isExecuting"];
+}
+
+- (BOOL)isExecuting
+{
+    return _executing;
+}
+
+- (void)setFinished:(BOOL)finished
+{
+    //调用KVO通知
+    [self willChangeValueForKey:@"isFinished"];
+    _finished = finished;
+    //调用KVO通知
+    [self didChangeValueForKey:@"isFinished"];
+}
+
+- (BOOL)isFinished
+{
+    return _finished;
+}
+
+- (BOOL)isAsynchronous
+{
+    return YES;
+}
+
+@end
+
+
+使用它的类：
+  self.queue = [[NSOperationQueue alloc] init];
+    [self.queue setMaxConcurrentOperationCount:1];
+
+    self.myOperation = [[MyOperation alloc] init];
+    [self.queue addOperation:self.myOperation]
+    
+//一旦MyOperation的value值有变化，就会进入这个方法
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context{
+    //判断是不是被监听的成员对象以及成员变量
+    if ([object isKindOfClass:[MyOperation class]] &&
+         [keyPath isEqualToString:@"isFinished"]) {
+        
+        // 获取value的新值
+        NSNumber *valueNum = [change valueForKey:NSKeyValueChangeNewKey];
+        NSLog(@"MyOperation Cancel:%d Executing:%d Finished:%d QueueOperationCount:%ld", self.myOperation.isCancelled, self.myOperation.isExecuting, self.myOperation.isFinished, self.queue.operationCount);    
+
+    }
+}
+
+
+
+
+一个下载文件的例子：
+
+
+FileDownloadOperation.h:
+
+
+@class FileDownloadOperation;
+//定义一个协议，用于反馈下载状态
+@protocol FileDownloadDelegate <NSObject>
+
+@optional
+- (void)fileDownloadOperation:(FileDownloadOperation *)downloadOperation downloadProgress:(double)progress;
+- (void)fileDownloadOperation:(FileDownloadOperation *)downloadOperation didFinishWithData:(NSData *)data;
+- (void)fileDownloadOperation:(FileDownloadOperation *)downloadOperation didFailWithError:(NSError *)error;
+@end
+
+@interface FileDownloadOperation: NSOperation
+//定义代理对象
+@property (nonatomic, weak) id<FileDownloadDelegate> delegate;
+//初始化构造函数，文件URL
+- (instancetype)initWithURL:(NSURL*)url;
+@end
+
+
+FileDownloadOperation.m
+
+
+#import "FileDownloadOperation.h"
+
+@interface FileDownloadOperation() <NSURLConnectionDelegate>
+
+//定义executing属性
+@property (nonatomic, assign, getter=isExecuting) BOOL executing;
+//定义finished属性
+@property (nonatomic, assign, getter=isFinished) BOOL finished;
+
+//要下载的文件的URL
+@property (nonatomic, strong) NSURL *fileURL;
+//使用NSURLConnection进行网络数据的获取
+@property (nonatomic, strong) NSURLConnection *connection;
+//定义一个可变的NSMutableData对象，用于添加获取的数据
+@property (nonatomic, strong) NSMutableData *fileMutableData;
+//记录要下载文件的总长度
+@property (nonatomic, assign) NSUInteger fileTotalLength;
+//记录已经下载了的文件的长度
+@property (nonatomic, assign) NSUInteger downloadedLength;
+
+@end
+
+
+@implementation FileDownloadOperation
+
+@synthesize delegate = _delegate;
+
+@synthesize executing = _executing;
+@synthesize finished = _finished;
+
+@synthesize fileURL = _fileURL;
+@synthesize connection = _connection;
+@synthesize fileMutableData = _fileMutableData;
+@synthesize fileTotalLength = _fileTotalLength;
+@synthesize downloadedLength = _downloadedLength;
+
+//executing属性的setter
+- (void)setExecuting:(BOOL)executing
+{
+    //设置executing属性需要手动触发KVO方法进行通知
+    [self willChangeValueForKey:@"executing"];
+    _executing = executing;
+    [self didChangeValueForKey:@"executing"];
+}
+//executing属性的getter
+- (BOOL)isExecuting
+{
+    return _executing;
+}
+//finished属性的setter
+- (void)setFinished:(BOOL)finished
+{
+    //同上，需要手动触发KVO方法进行通知
+    [self willChangeValueForKey:@"finished"];
+    _finished = finished;
+    [self didChangeValueForKey:@"finished"];
+}
+//finished属性的getter
+- (BOOL)isFinished
+{
+    return _finished;
+}
+//返回YES标识为并发Operation
+- (BOOL)isAsynchronous
+{
+    return YES;
+}
+//内部函数，用于结束任务
+- (void)finishTask
+{
+    //中断网络连接
+    [self.connection cancel];
+    //设置finished属性为YES，将任务从队列中移除
+    //会调用setter方法，并触发KVO方法进行通知
+    self.finished = YES;
+    //设置executing属性为NO
+    self.executing = NO;
+}
+//初始化构造函数
+- (instancetype)initWithURL:(NSURL *)url
+{
+    if (self = [super init])
+    {
+        self.fileURL = url;
+
+        self.fileMutableData = [[NSMutableData alloc] init];
+        self.fileTotalLength = 0;
+        self.downloadedLength = 0;
+    }
+    return self;
+}
+//重写start方法
+- (void)start
+{
+    //任务开始执行前检查是否被取消，取消就结束任务
+    if (self.isCancelled)
+    {
+        [self finishTask];
+        return;
+    }
+    //构造NSURLConnection对象，并设置不立即开始，手动开始
+    self.connection = [[NSURLConnection alloc] initWithRequest:[[NSURLRequest alloc] initWithURL:self.fileURL cachePolicy:NSURLRequestReloadIgnoringCacheData timeoutInterval:25] delegate:self startImmediately:NO];
+    //判断是否连接，没有连接就结束任务
+    if (self.connection == nil)
+    {
+        [self finishTask];
+        return;
+    }
+    //成功连接到服务器后检查是否取消任务，取消任务就结束
+    if (self.isCancelled)
+    {
+        [self finishTask];
+        return;
+    }
+    //设置任务开始执行
+    self.executing = YES;
+    //获取当前RunLoop
+    NSRunLoop *currentRunLoop = [NSRunLoop currentRunLoop];
+    //将任务交由RunLoop规划
+    [self.connection scheduleInRunLoop:currentRunLoop forMode:NSRunLoopCommonModes];
+    //开始从服务端获取数据
+    [self.connection start];
+    //判断执行任务的是否为主线程
+    if (currentRunLoop != [NSRunLoop mainRunLoop])
+    {
+        //不为主线程启动RunLoop
+        CFRunLoopRun();
+    }
+}
+
+//MARK - NSURLConnectionDelegate 方法
+
+- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
+{
+    //获取并设置将要下载文件的长度大小
+    self.fileTotalLength = response.expectedContentLength;
+}
+
+- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error
+{
+    //网络获取失败，调用代理方法
+    if ([self.delegate respondsToSelector:@selector(fileDownloadOperation:didFailWithError:)])
+    {
+        //需要将代理方法放到主线程中执行，防止代理方法需要修改UI
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate fileDownloadOperation:self didFailWithError:error];
+        });
+    }
+}
+
+- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data
+{
+    //收到数据包后判断任务是否取消，取消则结束任务
+    if (self.isCancelled)
+    {
+        [self finishTask];
+        return;
+    }
+    //添加获取的数据
+    [self.fileMutableData appendData:data];
+    //修改已下载文件长度
+    self.downloadedLength += [data length];
+    //调用回调函数
+    if ([self.delegate respondsToSelector:@selector(fileDownloadOperation:downloadProgress:)])
+    {
+        //计算下载比例
+        double progress = self.downloadedLength * 1.0 / self.fileTotalLength;
+        //同上，放在主线程中调用，防止主线程有修改UI的操作
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate fileDownloadOperation:self downloadProgress:progress];
+        });
+    }
+}
+
+- (void)connectionDidFinishLoading:(NSURLConnection *)connection
+{
+    //网络下载完成前检查是否取消任务，取消就结束任务
+    if (self.isCancelled)
+    {
+        [self finishTask];
+        return;
+    }
+    //调用回调函数
+    if ([self.delegate respondsToSelector:@selector(fileDownloadOperation:didFinishWithData:)])
+    {
+        //同理，放在主线程中调用
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate fileDownloadOperation:self didFinishWithData:self.fileMutableData];
+        });
+    }
+    //下载完成，任务结束
+    [self finishTask];
+}
+
+@end
+
+
+
+
+ 
+ 
  
  
  
@@ -3661,6 +4573,412 @@ GroupObject.m
  [target performSelector:selector]又调用了NSThread中指定的方法，target和selector是怎样和NSThread绑定的，因为
  NSThread中的类方法+(void)detachNewThreadSelector:(SEL)aSelector toTarget:(id)aTarget 会传入target和selector参数，所以绑定在一起。
  initWithTarget方法同样会传入target和selector参数，所以绑定在一起。
+ 
+ 
+ 
+ NSThread是Foundation框架提供 最基础的多线程类
+一个NSThread类对象即代表一个线程
+GCD相比于NSThread来说不需要再关注于管理线程的生命周期，不需要自行管理一个线程池用于线程的复用，GCD是以C函数对外提供接口
+Foundation框架在GCD的基础上进行了面向对象的封装，多线程类NSOperation和NSOperationQueue
+POSIX标准的线程pthread，pthread和NSThread都是对内核mach kernel的mach thread的封装，所以在开发时一般不会使用pthread。
+RunLoop是与线程相关的一个基本组成，线程在执行完任务后不退出，长驻线程需要runloop
+NSThread是对内核mach kernel中的mach thread的封装
+
+执行完任务执行体后该线程就退出并被自动销毁了，无法复用NSThread，尽管线程的创建相比进程更加轻量级，但创建一个线程远比创建一个普通对象要消耗资源
+启动线程start方法，仅仅是将线程的状态从新建转为就绪，何时执行该线程的任务需要系统自行调度。
+
+方法如下：
+
+/*
+需要手动调用start方法来启动线程执行任务，执行完任务执行体后该线程就退出并被销毁
+使用target对象的selector作为线程的任务执行体，该selector方法最多可以接收一个参数，该参数即为argument，
+*/
+- (instancetype)initWithTarget:(id)target selector:(SEL)selector object:(nullable id)argument API_AVAILABLE(macos(10.5), ios(2.0), watchos(2.0), tvos(9.0));
+
+/*
+需要手动调用start方法来启动线程执行任务
+使用block作为线程的任务执行体
+*/
+- (instancetype)initWithBlock:(void (^)(void))block API_AVAILABLE(macosx(10.12), ios(10.0), watchos(3.0), tvos(10.0));
+
+/*
+不需要手动触发
+类方法，返回值为void
+使用一个block作为线程的执行体，并直接启动线程
+上面的实例方法返回NSThread对象需要手动调用start方法来启动线程执行任务
+*/
++ (void)detachNewThreadWithBlock:(void (^)(void))block API_AVAILABLE(macosx(10.12), ios(10.0), watchos(3.0), tvos(10.0));
+
+/*
+detachNewThreadSelector不需要手动触发
+类方法，返回值为void
+使用target对象的selector作为线程的任务执行体，该selector方法最多接收一个参数，该参数即为argument
+同样的，该方法创建完县城后会自动启动线程不需要手动触发
+*/
++ (void)detachNewThreadSelector:(SEL)selector toTarget:(id)target withObject:(nullable id)argument；
+
+//栗子1:
+NSThread *thread = [[NSThread alloc] initWithTarget:self selector:@selector(firstThread:) object:@"Hello, World"];
+    //设置线程的名字，方便查看
+    [thread setName:@"firstThread"];
+    //启动线程
+    [thread start];  
+    
+//栗子2:
+/*
+通过传入block的方式创建一个线程，线程执行体即为block的内容
+但该方式创建线程无法传入参数
+*/
+NSThread *thread = [[NSThread alloc] initWithBlock:^{
+    for (int i = 0; i < 100; i++)
+    {
+        NSLog(@"Task %@", [NSThread currentThread]);
+    }
+}];
+//设置线程名称
+[thread setName:@"firstThread"];
+//启动线程
+[thread start];
+
+//栗子3:
+/*
+通过类方法创建并自动启动一个线程
+该线程的执行体即为传入的block
+*/
+[NSThread detachNewThreadWithBlock:^{
+    for (int i = 0; i < 100; i++)
+    {
+        NSLog(@"Task %@", [NSThread currentThread]);
+    }
+}];
+
+//栗子4:
+/*
+通过类方法创建并自动启动一个线程
+该线程的执行体为self的firstThread:方法，并传入相关参数
+*/
+[NSThread detachNewThreadSelector:@selector(firstThread:) toTarget:self withObject:@"Hello, World!"];
+
+
+
+
+NSThread中几个比较常用的属性和方法
+/*
+类属性，用于获取当前线程
+如果是在主线程调用则返回主线程对象
+如果在其他线程调用则返回其他的当前线程
+什么线程调用，就返回什么线程
+*/
+@property (class, readonly, strong) NSThread *currentThread;
+
+//类属性，用于返回主线程，不论在什么线程调用都返回主线程
+@property (class, readonly, strong) NSThread *mainThread;
+
+/*
+设置线程的优先级，范围为0-1的doule类型，数字越大优先级越高
+我们知道，系统在进行线程调度时，优先级越高被选中到执行状态的可能性越大
+但是我们不能仅仅依靠优先级来判断多线程的执行顺序，多线程的执行顺序无法预测
+*/
+@property double threadPriority;
+
+//线程的名称，前面的栗子已经介绍过了
+@property (nullable, copy) NSString *name
+
+//判断线程是否正在执行
+@property (readonly, getter=isExecuting) BOOL executing;
+
+//判断线程是否结束
+@property (readonly, getter=isFinished) BOOL finished;
+
+//判断线程是否被取消
+@property (readonly, getter=isCancelled) BOOL cancelled;
+
+/*
+让线程睡眠多长时间，立即让出当前时间片，让出CPU资源，进入阻塞状态
+类方法，什么线程执行该方法，什么线程就会睡眠
+*/
++ (void)sleepUntilDate:(NSDate *)date;
+
+//同上，这里传入时间
++ (void)sleepForTimeInterval:(NSTimeInterval)ti;
+
+//退出当前线程，什么线程执行，什么线程就退出
++ (void)exit;
+
+/*
+实例方法，取消线程
+调用该方法会设置cancelled属性为YES，但并不退出线程
+*/
+- (void)cancel
+
+
+
+例二：
+
+//按钮点击事件处理器
+- (void)btnClicked
+{
+    //取消线程
+    [self.thread cancel];
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{    
+     self.thread = [[NSThread alloc] initWithBlock:^{
+        for (int i = 0; i < 100; i++)
+        {
+            //获取当前正在执行的线程，即self.thread
+            NSThread *currentThread = [NSThread currentThread];
+            //判断线程是否被取消
+            if ([currentThread isCancelled])
+            {
+                //如果被取消就退出当前正在执行的线程，即self.thread
+                [NSThread exit];
+            }
+            NSLog(@"Task %@", currentThread);
+            //循环内，每次循环睡1s
+            [NSThread sleepForTimeInterval:1];
+        }
+    }];
+    [self.thread setName:@"firstThread"];
+    //启动线程
+    [self.thread start];    
+}
+
+退出线程有如下三种情况:
+
+任务执行体执行完成后正常退出
+任务执行体执行过程中发生异常也会导致当前线程退出
+执行NSThread类的exit方法退出当前线程
+
+优先级高的线程获取到时间片即能够执行输出的机会高于优先级低的
+
+
+例三：
+//更新ui操作需要在主线程中进行   
+    NSThread *thread = [[NSThread alloc] initWithBlock:^{
+        UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:@"https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1508398116220&di=ba2b7c9bf32d0ecef49de4fb19741edb&imgtype=0&src=http%3A%2F%2Fwscont2.apps.microsoft.com%2Fwinstore%2F1x%2Fea9a3c59-bb26-4086-b823-4a4869ffd9f2%2FScreenshot.398115.100000.jpg"]]];
+        //图片下载完成之后使用主线程来执行更新UI的操作
+        [self performSelectorOnMainThread:@selector(updateImage:) withObject:image waitUntilDone:NO];
+    }];
+    //启动线程
+    [thread start];
+    
+
+锁操作：
+
+//栗子2: 同步代码块解决
+- (void)draw:(id)money
+{
+    @synchronized (self) {
+        double drawMoney = [money doubleValue];
+
+        if (self.balance >= drawMoney)
+        {
+            [NSThread sleepForTimeInterval:0.001];
+            self.balance -= drawMoney;
+            NSLog(@"%@ draw money %lf balance left %lf", [[NSThread currentThread] name], drawMoney, self.balance);
+        }
+        else
+        {
+            NSLog(@"%@ Balance Not Enouth", [[NSThread currentThread] name]);
+        }
+    }
+}
+
+
+//栗子3:NSLOCK的解决方案
+- (void)draw:(id)money
+{
+    /*
+    self.lock在ViewController的初始化函数中进行初始化操作
+    self.lock = [[NSLock alloc] init];
+    */
+    [self.lock lock];
+    double drawMoney = [money doubleValue];
+
+    if (self.balance >= drawMoney)
+    {
+        [NSThread sleepForTimeInterval:0.001];
+        self.balance -= drawMoney;
+        NSLog(@"%@ draw money %lf balance left %lf", [[NSThread currentThread] name], drawMoney, self.balance);
+    }
+    else
+    {
+        NSLog(@"%@ Balance Not Enouth", [[NSThread currentThread] name]);
+    }
+    [self.lock unlock];
+}
+
+
+
+
+条件锁： 需要线程按照一定条件来执行，这时就需要线程间进行通信，NSCondition就提供了线程间通信的方法
+
+NSCondition的声明文件:
+
+NS_CLASS_AVAILABLE(10_5, 2_0)
+@interface NSCondition : NSObject <NSLocking> {
+@private
+    void *_priv;
+}
+
+/*
+wait 阻塞 休眠线程
+signal方法或broadcast 唤醒
+
+调用NSCondition对象wait方法的线程会阻塞，直到其他线程调用该对象的signal方法或broadcast方法来唤醒
+唤醒后该线程从阻塞态改为就绪态，交由系统进行线程调度
+执行wait方法时内部会自动执行unlock方法释放锁，并阻塞线程
+*/
+- (void)wait;
+
+//阻塞，到某个时刻再唤醒。同上，只是该方法是在limit到达时唤醒线程
+- (BOOL)waitUntilDate:(NSDate *)limit;
+
+/*
+唤醒在当前NSCondition对象上阻塞的一个线程 唤醒当前阻塞线程
+如果在该对象上wait的有多个线程则随机挑选一个，被挑选的线程则从阻塞态进入就绪态
+*/
+- (void)signal;
+
+/*
+同上，该方法会唤醒在当前NSCondition对象上阻塞的所有线程  唤醒所有线程
+*/
+- (void)broadcast;
+
+@property (nullable, copy) NSString *name API_AVAILABLE(macos(10.5), ios(2.0), watchos(2.0), tvos(9.0));
+
+@end
+
+NS_ASSUME_NONNULL_END
+
+
+存钱取钱案例：没钱了阻塞，有钱唤醒
+@interface Account: NSObject
+
+@property (nonatomic, strong) NSString *accountNumber;
+@property (nonatomic, assign) double balance;
+@property (nonatomic, strong) NSCondition *condition;
+@property (nonatomic, assign) BOOL haveMoney;
+
+- (void)deposite:(id)money;
+- (void)draw:(id)money;
+
+@end
+
+@implementation Account
+
+@synthesize accountNumber = _accountNumber;
+@synthesize balance = _balance;
+@synthesize condition = _condition;
+@synthesize haveMoney = _haveMoney;
+
+//NSCondition的getter，用于创建NSCondition对象
+- (NSCondition*)condition
+{
+    if (_condition == nil)
+    {
+        _condition = [[NSCondition alloc] init];
+    }
+    return _condition;
+}
+
+- (void)draw:(id)money
+{
+    //设置消费者取钱20次
+    int count = 0;
+    while (count < 20)
+    {
+        //首先使用condition上锁，如果其他线程已经上锁则阻塞
+        [self.condition lock];
+        //判断是否有钱
+        if (self.haveMoney)
+        {
+            //有钱则进行取钱的操作，并设置haveMoney为NO
+            self.balance -= [money doubleValue];
+            self.haveMoney = NO;
+            count += 1;
+            NSLog(@"%@ draw money %lf %lf", [[NSThread currentThread] name], [money doubleValue], self.balance);
+            //取钱操作完成后唤醒其他在次condition上等待的线程
+            [self.condition broadcast];
+        }
+        else
+        {
+            //如果没有钱则在次condition上等待，并阻塞
+            [self.condition wait];
+            //如果阻塞的线程被唤醒后会继续执行代码
+            NSLog(@"%@ wake up", [[NSThread currentThread] name]);
+        }
+        //释放锁
+        [self.condition unlock];
+    }
+}
+
+- (void)deposite:(id)money
+{
+    //创建了三个取钱线程，每个取钱20次，则存钱60次
+    int count = 0;
+    while (count < 60)
+    {   
+        //上锁，如果其他线程上锁了则阻塞
+        [self.condition lock];
+        //判断如果没有钱则进行存钱操作
+        if (!self.haveMoney)
+        {
+            //进行存钱操作，并设置haveMoney为YES
+            self.balance += [money doubleValue];
+            self.haveMoney = YES;
+            count += 1;
+            NSLog(@"Deposite money %lf %lf", [money doubleValue], self.balance);
+            //唤醒其他所有在condition上等待的线程
+            [self.condition broadcast];
+        }
+        else
+        {
+            //如果有钱则等待
+            [self.condition wait];
+            NSLog(@"Deposite Thread wake up");
+        }
+        //释放锁
+        [self.condition unlock];
+    }
+}
+
+@end
+
+- (void)viewWillAppear:(BOOL)animate
+{
+
+    [super viewWillAppear:YES];
+
+    Account *account = [[Account alloc] init];
+    account.accountNumber = @"1603121434";
+    account.balance = 0;
+    //消费者线程1，每次取1000元
+    NSThread *thread = [[NSThread alloc] initWithTarget:account selector:@selector(draw:) object:@(1000)];
+    [thread setName:@"consumer1"];
+
+    //消费者线程2，每次取1000元
+    NSThread *thread2 = [[NSThread alloc] initWithTarget:account selector:@selector(draw:) object:@(1000)];
+    [thread2 setName:@"consumer2"];
+
+    //消费者线程3，每次取1000元
+    NSThread *thread3 = [[NSThread alloc] initWithTarget:account selector:@selector(draw:) object:@(1000)];
+    [thread3 setName:@"consumer3"];
+
+    //生产者线程，每次存1000元
+    NSThread *thread4 = [[NSThread alloc] initWithTarget:account selector:@selector(deposite:) object:@(1000)];
+    [thread4 setName:@"productor"];
+
+    [thread start];
+    [thread2 start];
+    [thread3 start];
+    [thread4 start];
+}
+
+
+
  
  
  8-6 多线程与锁相关面试问题&面试总结
@@ -3821,7 +5139,7 @@ runloop是通过内部维护的事件循环，来对事件/消息管理的一个
 int main()是程序的入口，main函数顺着代码依次执行，然后退出。
 main函数为什么会不保持不退出？
 在main函数中会调用uiapplicaion函数，在这个函数内部会启动一个runloop
-这个runloop会不断执着收事件消息，比如点击屏幕，滑动列表，网络请求返回
+这个runloop会不断接收事件消息，比如点击屏幕，滑动列表，网络请求返回
 接收消息之后对事件进行处理，处理完后再会进等待，这个循环不是一个单纯的
 循环，而是从用户态到内核态的相互切换，这里的等待并不等于死循环。
 
@@ -4177,6 +5495,285 @@ UIInitializationRunLoopMode：在刚启动 App 时进入的第一个 Mode，启�
 GSEventReceiveRunLoopMode：接受系统事件的内部 Mode，通常用不到(绘图服务)
 NSRunLoopCommonModes：这是一个占位用的 Mode，不是一种真正的 Mode (只是对添加的model作了一个标记，通过这个标记把对应的runloop和commonmodeitem取出来，
 commonmodeitem中再添加当前的事件源到这个mode中，实现一个事件源可以在多个model中运行)
+
+
+
+第二篇补充：
+线程执行完一个任务后，就会退出，再执行另一个任务，又创建一个资源，这样比较浪费，如果线程常在内存，有任务的时候执行，没任务休息，这就是
+runloop实现常驻线程
+大致如下：
+int retVal = Running;
+do {
+     // 执行各种任务，处理各种事件
+     // ......
+} while (retVal != Stop && retVal != Timeout);
+
+一个RunLoop对应一个线程，是一种事件处理环，用来安排和协调到来的事件，关联的线程在有事件到达时时刻保持运行状态，而当没有事件需要处理时进入睡眠状态从而节约资源
+获取RunLoop相当于创建RunLoop。
+
+int main(int argc, char * argv[]) {
+    @autoreleasepool {
+        return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
+    }
+}
+UIApplicationMain函数,内部就会第一次获取RunLoop对象,在没有满足特定条件的时候该主线程不会退出，应用就可以持续运行而不会退出。
+
+RunLoop对象检测并负责处理以下事件：
+source0：开发者提交的各种事件，需要手动唤醒线程，把当前线程从内核态切换到用户态，如点击按钮。
+source1: Port-Based Sources 基于端口的事件，基于端口的，通过内核和其他线程通信事件后包装为source0事件后分发给其他线程处理，系统自动唤醒线程
+performSelector:onThread:   Cocoa Perform Selector Sources 方法事件
+Timer sources：CFRunLoopTimerRef 常用的定时器事件，在注册的定时器时间到达时唤醒关联的线程对象来执行定时器的回调
+
+
+//获得当前线程关联的RunLoop对象
+CFRunLoopGetCurrent(); 
+// 获得主线程关联的RunLoop对象
+CFRunLoopGetMain();
+
+RunLoop对象保存在一个全局的字典中，，该字典以线程对象pthread_t为key，以RunLoop对象为value，
+线程销毁，则会从字典移除它对应的runloop。
+
+
+一个runloop对应多个mode，每个model对应（source0，source1，performSelector:onThread， Timer sources）
+可通过commonMode实现model与事件源多对多关系。
+
+
+Observer： CFRunLoopObserverRef
+就是监听器，用来监听RunLoop的各种状态
+typedef CF_OPTIONS(CFOptionFlags, CFRunLoopActivity) {
+    //即将进入RunLoop的执行循环
+    kCFRunLoopEntry = (1UL << 0),
+    //即将处理Timer事件
+    kCFRunLoopBeforeTimers = (1UL << 1),
+    //即将处理Source事件
+    kCFRunLoopBeforeSources = (1UL << 2),
+    //RunLoop即将进入休眠状态
+    kCFRunLoopBeforeWaiting = (1UL << 5),
+    //RunLoop即将被唤醒
+    kCFRunLoopAfterWaiting = (1UL << 6),
+    //RunLoop即将退出
+    kCFRunLoopExit = (1UL << 7),
+    //监听RunLoop的全部状态
+    kCFRunLoopAllActivities = 0x0FFFFFFFU
+};
+
+
+Mode: CFRunLoopModeRef
+kCFRunLoopDefaultMode 即 NSDefaultRunLoopMode，默认运行模式
+UITrackingRunLoopMode 跟踪UIScrollView滑动时使用的运行模式，保证滑动时不受其他事件处理的影响，保证丝滑
+UIInitializationRunLoopMode 启动应用时的运行模式，应用启动完成后就不会再使用
+GSEventReceiveRunLoopMode 事件接收运行模式
+kCFRunLoopCommonModes 即 NSRunLoopCommonModes 是一种标记的模式，把事件源添加到不同的model中，还需要上述四种模式的支持
+
+
+Mode内部管理了一个_source0的事件集合，一个_source1的事件集合，一个_observers的数组以及_timers的数组
+
+runloop的数据结构有重要的几个：
+_commonModes：
+    如果一个model需要添加其它_commonModeItems中包含的Source/Observer/Timer，需要把model的名字加入到commonModes，从commonModes取出
+    所有被标记的model添加commonModeItems中包含的Source/Observer/Timer ,实现model与事件源多对多关系
+
+
+_commonModeItems：
+
+
+_currentMode：
+    runLoop对象正在执行的Mode 即CFRunLoopModeRef
+    
+    
+_modes：
+
+
+将NSTimer加入到commonModeItems集合中，滑动时就会自动取出commonModeItems集合中的事件源同步添加到其它模式如UITrackingRunLoopMode模式下
+系统默认将kCFRunLoopDefaultMode和UITrackingRunLoopMode添加到了_commonModes中，即标识为Common属性，所以当RunLoop运行在这两种模式中会自动同步添加_commonModeItems中的Source/Timer/Observer。
+代码：
+  NSTimer *timer = [[NSTimer alloc] initWithFireDate:[NSDate date] interval:2 repeats:YES block:^(NSTimer * _Nonnull timer) {
+        NSLog(@"Hello, World");
+    }];
+
+    [[NSRunLoop currentRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
+    
+    
+NSTimer其实是不那么精确的，RunLoop一次循环的执行延迟，线程接收timer事件延迟，就不会太精准
+
+
+
+
+RunLoop 执行逻辑:
+
+1.通知监听器RunLoop进入循环
+
+2.通知监听器即将处理Timer事件
+
+3.通知监听器即将处理source0(不是基于端口的)事件
+
+4.执行source0事件
+
+5.如果有source1(基于端口的)事件则立即执行跳转到第九步
+
+6.通知监听器RunLoop即将进入休眠状态
+
+7.将线程休眠，直到以下事件发生才会被唤醒:
+
+有source1事件到达
+定时器触发时间到达
+RunLoop对象的超时时间过期
+被外部显示唤醒
+
+
+8.通知监听器RunLoop对象即将被唤醒
+
+9.处理添加进来的事件，包括:
+
+如果用户定义的定时器时间到达，执行定时器时间并重启循环，跳转到第二步
+如果有source1事件，传递这个事件处理完成之后又回到第二步
+如果RunLoop被显示唤醒并且没有超时则重启RunLoop，跳转到第二步
+
+10.通知监听器RunLoop退出循环
+
+
+
+ runloop整个事件循环机制这个解释更简洁：
+  
+  当runloop启动的时候会发送一个通知给observer告诉观察者runloop即将启动
+  将要处理timer/source0事件（手动唤醒线程）
+  正事处理source0事件
+  如果有source1事件（自动唤醒线程）要处理，会跳过休眠。可通过goto语句来进行代码跳转处理source1自动唤醒时收到的消息
+  如果没有source1要处理，线程会休眠，同时发送通知给observer,告诉observer要休眠
+  正事休眠，等待唤醒，正式发生从用户态到内核态的切换
+  等待唤醒的条件有三个：source1唤醒 timer事件的回调到了  外部手动唤醒
+  线程被唤醒也发一个通知给observer通知已经唤醒
+  处理唤醒后接收到的消息，再回到将要处理timer/source0事件（手动唤醒线程）的步骤
+  
+  
+  RunLoop对象退出循环，只有切换model的时候，runloop会退出当前model的循环而再次进入新model的事件循环
+  
+  runloop对应的所有model中都没有事件源，这时候runloop就会退出。
+  
+  
+  三种启动RunLoop的方式：
+  如果没有一个输入源或者timer附加于runloop上，runloop就会立刻退出。前两种启动方式会重复调用runMode:beforeDate:方法。
+  
+ 1。在此期间会处理来自输入源的数据 
+ - (void)run;  
+
+2。超时时间到达前处理事件源，超时runloop退出
+- (void)runUntilDate:(NSDate *)limitDate；
+
+
+3。超时时间到达或者第一个input source被处理，则runloop就会退出。
+- (void)runMode:(NSString *)mode beforeDate:(NSDate *)limitDate;
+
+
+
+二. 退出RunLoop的方式
+
+  1。runloop没有input sources或者附加的timer，runloop就会退出，系统内部有可能会在当前线程的runloop中添加一些输入源，所以手动移除源不一定保证退出
+  2。第二种启动方式runUntilDate:可以通过设置超时时间来退出runloop。
+  3。runloop会运行一次，当超时时间到达或者第一个输入源被处理，runloop就会退出。或者使用CFRunLoopStop方法来退出。
+  
+  
+想控制runloop的退出时机，而不是在处理完一个输入源事件之后就退出，那么就要重复调用runMode:beforeDate:，退出使用CFRunLoopStop(CFRunLoopGetCurrent());
+  
+NSRunLoop *myLoop  = [NSRunLoop currentRunLoop];
+ myPort = (NSMachPort *)[NSMachPort port];
+ [myLoop addPort:_port forMode:NSDefaultRunLoopMode];
+
+BOOL isLoopRunning = YES; // global
+
+while (isLoopRunning && [myLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]]);
+
+//关闭runloop的地方
+- (void)quitLoop
+ {
+    isLoopRunning = NO;
+    CFRunLoopStop(CFRunLoopGetCurrent());
+}
+链接：https://www.jianshu.com/p/24f875775336
+
+
+常驻线程，创建一个线程，回调方法中创建事件源，model，添加给runloop，while循环bool变量yes，中不断去运行这个事件源，在while循环外，移除runloop事件源，release事件源。
+  
+
+
+RunLoop与GCD、AutoreleasePool
+
+RunLoop与GCD：
+只有主队列的任务会交给runloop执行，其它队列任务由gcd自行处理
+dispatchPort = _dispatch_get_main_queue_port_4CF();／／获取主队列端口号，作为事件源交给runloop去处理。
+
+
+RunLoop与AutoreleasePool
+任何代码最终都需添加到AutoreleasePool进行释放，为了保证这点，需要在任何代码前先创建AutoreleasePool
+两个CFRunLoopObserver，一个监听RunLoop对象进入循环的事件，回调函数中先调用_wrapRunLoopWithAutoreleasePoolHandler函数，
+这个函数优先级最高，内部_objc_autoreleasePoolPush函数来创建AutoreleasePool，保证自动释放池最先创建。
+
+另一个监听器监听RunLoop对象进入休眠和退出循环的事件，同样回调_wrapRunLoopWithAutoreleasePoolHandler函数，这时设置优先级最低，保证先
+调用其它指令，最后_objc_autoreleasePoolPop函数来释放其它指令的对象。
+
+main函数就是被@autoreleasepool包围着，所以在主线程中创建的任何对象都会及时被释放。
+
+autoreleasepool需要通过runloop才能释放旧的并创建新的autoreleasepool
+
+
+为什么会有如下代码？
+
+urls（有很多个）
+- (void)btnClickedHandler
+{
+    NSArray *urls = ;
+    for (NSURL *url in urls) {
+        @autoreleasepool {//相当于把占内存的代码交给autoreleasepool释放，autoreleasepool又由runloop去创建或释放
+            NSError *error;
+            NSString *fileContents = [NSString stringWithContentsOfURL:url
+                                        encoding:NSUTF8StringEncoding error:&error];//每一个url占用内存很大，占用资源
+    }
+}
+
+
+RunLoop实现常驻内存的线程：
++ (void)entryPoint
+{
+    //设置当前线程名为MyThread
+    [[NSThread currentThread] setName:@"MyThread"];
+    //获取NSRunLoop对象，第一次获取不存在时系统会创建一个
+    NSRunLoop *runloop = [NSRunLoop currentRunLoop];
+    /*
+    添加一个Source1事件的监听端口，会一直监听是否有事件过来，由于Mode的Source/Observer/Timer中的Observer不为空
+    RunLoop对象会一直监听这个端口，由于这个端口不会有任何事件到来所以不会产生影响
+    监听模式是默认模式，可以修改为Common
+    */
+    [runloop addPort:[NSPort port] forMode:NSDefaultRunLoopMode];
+    //启动RunLoop
+    [runloop run];
+}
+
++ (NSThread *)longTermThread
+{
+    //静态变量保存常驻内存的线程对象
+    static NSThread *longTermThread = nil;
+    //使用GCD dispatch_once 在应用生命周期只执行一次常驻线程的创建工作
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        //创建一个线程对象，并执行entryPoint方法
+        longTermThread = [[NSThread alloc] initWithTarget:self selector:@selector(entryPoint) object:nil];
+        //启动线程，启动后就会执行entryPoint方法
+        [longTermThread start];
+    });
+    return longTermThread;
+} 
+
+- (void)viewDidLoad
+{
+    //获取这个常驻内存的线程
+    NSThread *thread =  [ViewController longTermThread];
+    //在该线程上提交任务
+    [self performSelector:@selector(test) onThread:thread withObject:nil waitUntilDone:NO];
+}
+上面的栗子很好理解，主要利用了一个source1事件的监听，由于Mode的Source/Observer/Timer中的Observer不为空，所以RunLoop不会退出循环，能够常驻内存。
+原文：https://blog.csdn.net/u014205968/article/details/78323201 
+
+
 
 
 
