@@ -195,3 +195,250 @@ pod setup 这时重新安装检索资源库
 
 
 
+
+
+
+
+
+
+
+
+
+                          第2章  潭州EV版流   流媒体
+                          
+                            
+一 课程介绍与OpenCV初体验
+
+
+1  内容一： 课程介绍
+    
+    第一点： 四个部分组成
+       第一部分：shell脚本语言 3节课
+       
+       第二部分：音视频技术ffmpeg  8节课
+       
+       第三部分： c++语言面象对象 opencv库是用c++实现的 （3-4节课）
+       
+       第四部分： opencv开发  MAP矩阵是c++语言  12节课
+       
+       共26 节课
+       
+内容二：  OpenCV初体验
+
+
+
+
+2   OpenCV-内容介绍
+      
+      跨平台处理技术
+      
+      第一步： 了解什么是OpenCV
+      
+      1 OpenCV 是跨平台开源框架
+      2 c/c++ java python oc  swift(直接可调用c/c++，所以支持) ruby
+      3 windows平台 mac平台 ios平台  android平台
+      4 开源稳定的图片框架 1999年发布更新到2017年
+      5 支持的模块多 机器学习 无人架驶 人脸识别 人脸检测 物体追踪  图象分隔 图象拼接 视频处理
+      
+      案例：以ios android 举例  码赛克
+      
+      下载开发包，后面教大家怎么编译这个库导入到项目中，暂时用开发包
+      学习shell脚本，才能上手对此库写一些编译脚本，以及改脚本
+      
+      在官网https://opencv.org/opencv-4-0-0.html 打开news ，找到一个版本，在最下端
+      ios pack 为编译好的代码 文件名：OpenCV-4.00-ios-framwork.zip
+      sources  为源码 文件名：OpenCV-4.00.zip
+      
+
+3   OpenCV-马赛克-原理分析
+
+      马赛克原理：图像由很多像素点组成，这些点组成一个大矩型，马赛克是3*3像素点组成的矩型，这个矩型把图片象素分隔成多个矩型区，并取出每个
+      矩型区的左上角起始象素点的颜色，把马赛克矩型区内的象素全替换成这一个颜色。
+      
+
+      打开OpenCV源码库大致开一些模块：
+          modules - imgcodecs 文件夹包含：
+          include文件夹
+          src文件夹下：
+             ios_conversions.mm  包含ios很多处理转换
+             
+          modules - core  -src  文件夹包含：
+             matrix.cpp  这里面是很多mat矩阵
+             
+        第二步： 配置环境
+           把下载好的opencv.framework导入xcode项目中
+           
+           创建一个工具类 ImageUtils
+           
+           ImageUtils.h：  倒入OpenCV框架  核心头文件  对iOS支持  C++命名空间 导入矩阵帮助类（如opencv的rect ）
+           
+           #import <UIKit/UIKit.h>
+			//倒入OpenCV框架
+			//核心头文件
+			#import <opencv2/opencv.hpp>
+			//对iOS支持
+			#import <opencv2/imgcodecs/ios.h>
+			//导入矩阵帮助类 高级gui绘制类
+			#import <opencv2/highgui.hpp>
+			#import <opencv2/core/types.hpp>
+
+			//导入C++命名空间
+			using namespace cv;
+
+			@interface ImageUtils : NSObject
+
+			//定义方法:处理图片
+			+(UIImage*)opencvImage:(UIImage*)image level:(int)level;
+
+
+			@end
+			
+			
+			
+			
+			
+			ImageUtils.m： 把ios图片转成opencv图片，拿到它的宽高
+			#import "ImageUtils.h"   
+
+			@implementation ImageUtils
+
+				+(UIImage*)opencvImage:(UIImage*)image level:(int)level{
+					//实现功能
+					//第一步：将iOS图片转成OpenCV图片(Mat矩阵就是处理这个)
+					Mat mat_image_src;
+					UIImageToMat(image, mat_image_src);
+		
+					//第二步：确定宽高
+					int width = mat_image_src.cols;
+					int height = mat_image_src.rows;
+		
+		
+		            //码赛克处理
+					//图片类型->进行转换
+					//在OpenCV里面
+					//坑隐藏
+					//OPENCV只支持RGB处理 需将ARGB转换成RGB
+					//图片ARGB  a代表透明度
+					//将ARGB->RGB
+					Mat mat_image_dst;//定义了rgb图片
+					cvtColor(mat_image_src, mat_image_dst, CV_RGBA2RGB, 3);//ARGB->RGB 是3个通道 无透明度
+		
+					//研究OpenCV时候，如何发现巨坑？
+					//观察规律
+					//看到了OpenCV官方网站->每次进行图像处理时候，规律->每一次都会调用cvtColor保持一致(RGB)
+					//所以：每一次你在进行转换的时候，一定要记得转换类型
+		
+					//为了不影响原始图片，把转换后的opencv克隆一张图片
+					Mat mat_image_clone = mat_image_dst.clone();
+		
+					//第三步：马赛克处理
+					//分析马赛克算法原理 一块区域 一块区域处理的
+					//level = 3 表示马赛克矩阵为 3 * 3象素点组成的矩形
+					//动态的处理 level可以改
+					int x = width - level;//x坐标等于图片宽度减去马赛克级别
+					int y = height - level;
+		
+					for (int i = 0; i < y; i += level) { //y坐标以level=3 去移动
+						for (int j = 0; j < x; j += level) { //x坐标以level=3 的像素去移动
+							//创建一个矩形区域
+							Rect2i mosaicRect = Rect2i(j, i, level, level);
+				
+							//给填Rect2i区域->填充数据->原始数据  给上面的矩形区域填充数据
+							Mat roi = mat_image_dst(mosaicRect);//roi为获取到的这块区域
+				
+				        
+							//让整个矩形区域颜色值保持一致 把左上角像素的颜色值填到这个区域
+							//mat_image_clone.at<Vec3b>(i, j) 会得到mat_image_clone这张图片中每一个矩型开始的像素点 <Vec3b>是存颜色值的集合
+							//像素点由多个颜色值组成如由ARGB颜色值组成，ARGB是存储到数组中的，
+							//所以mat_image_clone.at<Vec3b>(i, j)返回的是颜条值数组
+							//mat_image_clone.at<Vec3b>(i, j)->像素点（颜色值组成->多个）->ARGB->数组
+							//mat_image_clone.at<Vec3b>(i, j)[0]->R值
+							//mat_image_clone.at<Vec3b>(i, j)[1]->G值
+							//mat_image_clone.at<Vec3b>(i, j)[2]->B值
+							
+							//存放了颜色
+							Scalar scalar = Scalar(
+								   mat_image_clone.at<Vec3b>(i, j)[0],
+								   mat_image_clone.at<Vec3b>(i, j)[1],
+								   mat_image_clone.at<Vec3b>(i, j)[2]);
+				
+							//把矩形区域（被马赛克分隔的图片区域）上第一个像素点的颜色值数组，数组中里面包含所有颜色值，拷贝到这个马赛克矩型区域上
+							//CV_8UC3：代表它是32位相素 是无符号类型0-255颜色值 有rgb 3个通道
+							//CV_8UC3解释一下->后面也会讲到
+							//CV_:表示框架命名空间
+							//8表示：32位色->ARGB->A 8位 R 8位 G 8位 B 8位 = 1字节 -> 4个字节
+							//U分析
+							//两种类型：有符号类型(Sign->有正负数->简写"S")、无符号类型(Unsign->正数->"U")
+							//无符号类型：颜色值 0-255(通常情况)
+							//有符号类型：颜色值 -128-127
+							//C分析：char类型
+							//3表示：3个通道->RGB
+							
+							//mosaicRect.size() 矩型区域的大小  CV_8UC3上面注解中有讲到
+							Mat roiCopy = Mat(mosaicRect.size(), CV_8UC3, scalar);//获取到马塞克的分隔矩型区，这个区域已经存放了颜色
+							roiCopy.copyTo(roi);//把这块马赛克拷贝到分隔的roi原始图片上
+						}
+					}
+		
+					//第四步：将OpenCV图片->iOS图片
+					return MatToUIImage(mat_image_dst);
+				}
+	
+			@end
+			
+			
+			
+			
+			ViewController.mm ： //c++混合编程需修改为.mm
+			#import "ViewController.h"
+			#import "ImageUtils.h"
+
+			@interface ViewController ()
+			@property (weak, nonatomic) IBOutlet UIImageView *imageView;
+
+			@end
+
+			@implementation ViewController
+
+			- (void)viewDidLoad {
+				[super viewDidLoad];
+			}
+
+			//正常图片
+			- (IBAction)clickNormal:(id)sender {
+				_imageView.image = [UIImage imageNamed:@"Test.jpeg"];
+			}
+
+			//马赛克图片
+			- (IBAction)clickMosaic:(id)sender {
+				_imageView.image = [ImageUtils opencvImage:_imageView.image level:20];
+			}
+
+			- (void)didReceiveMemoryWarning {
+				[super didReceiveMemoryWarning];
+			}
+
+
+			@end
+      
+       
+                            
+            
+
+4  OpenCV-马赛克-Android平台实现
+
+   android底层开发 ndk技术（底层代码搞明白 上层java代码不需要关心）
+   android studio开发 ndk技术
+   
+  第一步:  android studio 新建一个项目
+   选中 include c++ support 支持c++
+   下一步 下一步 最后完成的时候 customiz c++ support界面 勾上 exception support(异常捕获) | runtime type infomation support
+   在maniactivity中提示改版本号 ，把minsdkversion 改为14版本
+   
+  第二步： 配置opencv的开发环境
+    1。导入.so动态库，类似ios的库
+      在src / main / 创建jniLibs目录，放入armeabi库
+
+
+
+

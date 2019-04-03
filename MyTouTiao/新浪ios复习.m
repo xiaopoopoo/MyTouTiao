@@ -2379,6 +2379,26 @@ runtime实战问题：
 
 
 
+其它：
+runtime实现机制是什么，怎么用，一般用于嘛，你还能记得你所使用的相关头文件或者某些方法的名称吗？
+回答：运行时机制，runtime库里面包含了跟类/成员变量/方法相关的API,比如获取类里面的所有成员变量，为类动态添加成员变量，动态改变类的方法实现，为类动态添加新的方法等，需要导入<ObJc/message.h>,<objc/runtime>
+1>runtime,运行时机制，它是一套C语言库
+什么是runtime?
+2>实际上我们编写的所有OC代码，最终都是转成了runtime库的东西，比如类转成了runtime库里面的结构体等数据类型，方法转成了runtime库里面的C语言函数，平时调方法都是转成了objc_msgSend函数(所以说OC有个消息发送机制)
+3>因此，可以说runtime是OC的底层实现，是OC的幕后执行者
+runtime有啥用?
+1>能动态产生一个类、一个成员变量、一个方法
+2>能动态修改一个类、一个成员变量、一个方法
+3>能动态删除一个类、一个成员变量、一个方法
+常见的函数、头文件
+import  : 成员变量、类、方法
+class_copyIvarList : 获得某个类内部的所有成员变量
+class_copyMethodList : 获得某个类内部的所有方法
+class_getInstanceMethod : 获得某个具体的实例方法(对象方法，减号开头)
+class_getClassMethod : 获得某个具体的类方法 （加号）
+method_exchangeImplementations : 交换2个方法的实现
+
+
 
 
 第六章   内存相关
@@ -9689,7 +9709,6 @@ extern NSString *const name；
 
 
 
-第19章
 
 第19章
 
@@ -10072,6 +10091,1659 @@ int sqlite3_busy_timeout(sqlite3*, 60);
 当ms<=0时，清除busy handle，申请不到锁直接返回
 
 
+
+
+
+第20章  UI 面试题
+
+1。动态的去拉伸图片
+    方法1：代码拉伸
+    设置topCapHeight、leftCapWidth、bottomCapHeight、lerightCapWidth,图中的黑色区域就是图片拉伸的范围，也就是说边上的不会被拉伸
+    iOS6： 
+    
+   // UIImageResizingModeTile, // 平铺模式，通过重复显示UIEdgeInsets指定的矩形区域来填充图片
+    //UIImageResizingModeStretch, // 拉伸模式，通过拉伸UIEdgeInsets指定的矩形区域来填充图片
+        // 加载图片
+    UIImage *image = [UIImage imageNamed:@"chat_send_nor"];
+    
+    // 设置端盖的值
+    CGFloat top = image.size.height * 0.5;
+    CGFloat left = image.size.width * 0.5;
+    CGFloat bottom = image.size.height * 0.5;
+    CGFloat right = image.size.width * 0.5;
+    
+    // 设置端盖的值
+    UIEdgeInsets edgeInsets = UIEdgeInsetsMake(top, left, bottom, right);
+    // 设置拉伸的模式
+    UIImageResizingMode mode = UIImageResizingModeStretch;
+    
+    // 拉伸图片
+    UIImage *newImage = [image resizableImageWithCapInsets:edgeInsets resizingMode:mode];
+    
+    // 设置按钮的背景图片
+    [btn setBackgroundImage:newImage forState:UIControlStateNormal];
+
+   方法2：
+   1。重做一张较小的图片，只做左上角的小尾巴!
+   2。选中此图片，在xcode右边属性silcing中设置参数即可拉伸
+   
+   
+2。控制器 View的生命周期及相关函数是什么？你在开发中是如何用的？
+     每次访问UIViewController的view，如果view为nil就会调用loadView方法
+     如删除绑定一个控制器的xib view，就会不断的调用loadView方法
+     loadView方法，就是给我们自定义UIViewController的view用的，在loadView方法中写自己创建的view，不需要[super loadView]
+     [super loadView]会自动创建一个空白的view
+1.首先判断控制器是否有视图，如果没有就调用loadView方法创建：通过storyboard或者代码；
+2.随后调用viewDidLoad，可以进行下一步的初始化操作；只会被调用一次；
+3.在视图显示之前调用viewWillAppear；该函数可以多次调用；
+4.视图viewDidAppear
+5.在视图消失之前调用viewWillDisappear；该函数可以多次调用；
+如需要）；
+6.在布局变化前后，调用viewWill/DidLayoutSubviews处理相关信息；
+
+
+3.Size Classes 具体使用
+对屏幕进行分类
+
+4.使用 drawRect有什么影响？
+displayIfNeeded立即执行drawRect
+drawRect 方法依赖 Core Graphics 框架来进行自定义的绘制
+缺点：它处理 touch 事件时每次按钮被点击后，都会用 setNeddsDisplay 进行强制重绘；
+而且不止一次，每次单点事件触发两次执行。这样的话从性能的角度来说，对 CPU 和内存来说都是欠佳的
+。这个方法的调用机制也是非常特别. 当你调用 setNeedsDisplay 方法时, UIKit 将会把当前图层标记为 dirty,
+但还是会显示原来的内容,直到何适的时间下一次的视图渲染周期,才会将标记为 dirty 的图层重新建立 Core Graphics 上下文,
+然后将内存中的数据恢复出来, 再使用 CGContextRef 进行绘制
+
+drawrect方法不调用：
+UIView初始化时没有设置rect大小
+设置contentMode属性值为UIViewContentModeRedraw
+通过设置contentMode属性值为UIViewContentModeRedraw，那么将在每次设置或更改frame的时候自动调用drawRect:
+rect不能为0不调用
+初始化一个view的时候，没有使用initWithFrame，不调用
+
+
+
+
+3。描述下 SDWebImage里面给 UIImageView加载图片的逻辑
+
+1.入口setImageWithURL:placeholderImage:options: 会先把placeholderImage 显示，然后 SDWebImageManager 根据 URL 开始处理图片。
+2.进入 SDWebImageManager-downloadWithURL:delegate:options:userInfo: 交给 SDImageCache 从缓存查找图片是否已经下载queryDiskCacheForKey:delegate:userInfo:
+3.先从内存图片缓存查找是否有图片，如果内存中已经有图片缓存，SDImageCacheDelegate 回调 imageCache:didFindImage:forKey:userInfo: 到 SDWebImageManager。
+4.SDWebImageManagerDelegate 回调 webImageManager:didFinishWithImage: 到UIImageView+WebCache 等前端展示图片。
+5.如果内存缓存中没有，生成 NSInvocationOperation 添加到队列开始从硬盘查找图片是否已经缓存。
+6.根据 URLKey 在硬盘缓存目录下尝试读取图片文件。这一步是在 NSOperation 进行的操作，所以回主线程进行结果回调notifyDelegate:
+7.如果上一操作从硬盘读取到了图片，将图片添加到内存缓存中（如果空闲内存过小，会先清空内存缓存）。SDImageCacheDelegate 回调imageCache:didFindImage:forKey:userInfo: 进而回调展示图片。
+8.如果从硬盘缓存目录读取不到图片，说明所有缓存都不存在该图片，需要下载图片，回调 imageCache:didNotFindImageForKey:userInfo:
+9.共享或重新生成一个下载器 SDWebImageDownloader 开始下载图片。
+10.图片下载由 NSURLConnection 来做，实现相关 delegate 来判断图片下载中、下载完成和下载失败。
+11.connection:didReceiveData: 中利用 ImageIO 做了按图片下载进度加载效果。
+12.connectionDidFinishLoading: 数据下载完成后交给 SDWebImageDecoder 做图片解码处理。
+13.图片解码处理在一个 NSOperationQueue 完成，不会拖慢主线程 UI。如果有需要对下载的图片进行二次处理，最好也在这里完成，效率会好很多。
+14.在主线程notifyDelegateOnMainThreadWithInfo: 宣告解码完成，imageDecoder:didFinishDecodingImage:userInfo: 回调给 SDWebImageDownloader。
+15.imageDownloader:didFinishWithImage: 回调给 SDWebImageManager 告知图片下载完成。
+16.通知所有的 downloadDelegates 下载完成，回调给需要的地方展示图片。
+17.将图片保存到 SDImageCache 中，内存缓存和硬盘缓存同时保存。写文件到硬盘也在以单独 NSInvocationOperation 完成，避免拖慢主线程。
+18.SDImageCache 在初始化的时候会注册一些消息通知，在内存警告或退到后台的时候清理内存图片缓存，应用结束的时候清理过期图片。
+19.SDWebImage 也提供了UIButton+WebCache 和 MKAnnotationView+WebCache，方便使用。
+20.SDWebImagePrefetcher 可以预先下载图片，方便后续使用。
+
+4。控制器的生命周期
+-[ViewController initWithNibName:bundle:]；
+-[ViewController init]；
+-[ViewController loadView]；
+-[ViewController viewDidLoad]；
+-[ViewController viewWillAppear:]；
+-[ViewController viewDidAppear:]；
+-[ViewController viewWillDisappear:]；
+-[ViewController viewDidDisappear:]；
+
+// 自定义控制器 view，这个方法只有实现了才会执行
+- (void)loadView
+{
+self.view = [[UIView alloc] init];
+self.view.backgroundColor = [UIColor orangeColor];
+}
+// view 是懒加载，只要 view 加载完毕就调用这个方法
+- (void)viewDidLoad
+{
+[super viewDidLoad];
+
+NSLog(@"%s",__func__);
+}
+
+// view 即将显示
+- (void)viewWillAppear:(BOOL)animated
+{
+[super viewWillAppear:animated];
+
+NSLog(@"%s",__func__);
+}
+// view 即将开始布局子控件
+- (void)viewWillLayoutSubviews
+{
+[super viewWillLayoutSubviews];
+
+NSLog(@"%s",__func__);
+}
+// view 已经完成子控件的布局
+- (void)viewDidLayoutSubviews
+{
+[super viewDidLayoutSubviews];
+
+NSLog(@"%s",__func__);
+}
+// view 已经出现
+- (void)viewDidAppear:(BOOL)animated
+{
+[super viewDidAppear:animated];
+
+NSLog(@"%s",__func__);
+}
+// view 即将消失
+- (void)viewWillDisappear:(BOOL)animated
+{
+[super viewWillDisappear:animated];
+
+NSLog(@"%s",__func__);
+}
+// view 已经消失
+- (void)viewDidDisappear:(BOOL)animated
+{
+[super viewDidDisappear:animated];
+
+NSLog(@"%s",__func__);
+}
+// 收到内存警告
+- (void)didReceiveMemoryWarning
+{
+[super didReceiveMemoryWarning];
+
+NSLog(@"%s",__func__);
+}
+// 方法已过期，即将销毁 view
+- (void)viewWillUnload
+{
+}
+// 方法已过期，已经销毁 view
+- (void)viewDidUnload
+{
+}
+
+
+5。你是怎么封装一个 view的
+可以通过纯代码或者 xib 的方式来封装子控件
+建立一个跟 view 相关的模型，然后将模型数据传给 view，通过模型上的数据给 view的子控件赋值
+/**
+* 纯代码初始化控件时一定会走这个方法
+*/
+- (instancetype)initWithFrame:(CGRect)frame
+{
+if(self = [super initWithFrame:frame])
+{
+[self setup];
+}
+
+return self;
+}
+
+/**
+* 通过 xib初始化控件时一定会走这个方法
+*/
+- (id)initWithCoder:(NSCoder *)aDecoder
+{
+if(self = [super initWithCoder:aDecoder])
+{
+[self setup];
+}
+
+return self;
+}
+
+- (void)setup
+{
+// 初始化代码
+}
+
+
+6。如何进行适配
+通过判断版本来控制，来执行响应的代码
+功能适配：保证同一个功能在哪里都能用
+UI 适配：保证各自的显示风格
+// iOS版本适配
+#define iOS11 ([[UIDevice currentDevice].systemVersion
+doubleValue]>=11.0)
+
+7。如何渲染 UILabel的文字？
+
+通过 NSAttributedString/NSMutableAttributedString（富文本）
+
+8。UIScrollView 的 contentSize能否在viewDidLoad中设置？
+能
+因为 UIScrollView 的内容尺寸是根据其内部的内容来决定的，所以是可以在viewDidLoad 中设置的。
+补充：（这仅仅是一种特殊情况）
+前提，控制器 B 是控制器 A 的一个子控制器，且控制器 B 的内容只在控制器 A 的view 的部分区域中显示。
+假设控制器 B 的 view 中有一个 UIScrollView 这样一个子控件。
+如果此时在控制器 B 的 viewDidLoad 中设置 UIScrollView 的 contentSize 的话会导致不准确的问题。
+因为任何控制器的 view 在 viewDidLoad 的时候的尺寸都是不准确的，
+如果有子控件的尺寸依赖父控件的尺寸，在这个方法中设置会导致子控件的 frame 不准确，所以这时应该-(void)viewDidLayoutSubviews;方法中设置子控件的尺寸。
+
+
+
+9。iOS 循环渐进轮播
+
+用UICollectionView实现的支持水平和垂直两个方向上的的分页和渐进循环轮播效果
+偏移量设置成初始状态并不代表scrollview会发生滚动，但是必须把动画关掉
+思路	1：
+图0  图1  图2
+将middle的图片设为"图1", 然后将scrollView的偏移量设置成初始状态(注意,不能开启动画, 否则露馅);
+将left的图片设置成"图0", 将right的图片设置成"图2";
+然后就变成了这样的:
+
+思路2：
+  图3   图0  图1   图2   图3  图0
+  in0  in1  in2   in3  in4  in5
+  
+  标号为0-3的四张图来轮播，在首位置多插入一张图3，在末位置多插入一张图0
+  
+  当处在上图所示的位置, 并且向右滑动之后, 显示的是"图3"(也就是index = 0);
+  这时候, 后台需要做的事情是:
+  悄悄地将index = 0 变成 index = 4;
+   同样的, 当向左滑到最右侧的"图3"的时候, 后台需要做的是:
+   悄悄地将index = 5 变成 index = 1;
+    通过这种思路实现无线轮播.
+
+3,两种思路的优劣对比
+其实两种思路差别并不是很大, 主要的优劣是这样的:
+思路A :  
+优点: 只需要创建三个图片框, 占用内存少;
+缺点: 实现思路稍微复杂一点, 而且代码比较多; 在实际使用里面, 当网速比较慢的时候, 首次加载图片变慢的话可能会出现滚动灰色背景的画面.
+思路B :
+优点: 实现思路比较简单, 而且代码量少, 容易理解一点, 而且相对于A,网速慢的情况下出现轮播灰色背景框的几率少一点;
+缺点: 创建比较多的图片框, 占用内存比较多一点
+
+
+
+
+10.iOS 全屏侧滑手势/UIScrollView/UISlider间滑动手势冲突
+https://www.jianshu.com/p/a9a322052f26
+问题1：一个侧滑控件，右边是一个控制器a，点击控制器a push到控制器b，控制器b是一个uiscrollview，当uiscrollview偏移是0的时候，
+右滑，应该pop到控制器a,但是结果不然，而是在scrollview上出现空白的区域
+
+如果你了解事件的传递和响应链机制的话，应该能想到，是由于UIScrollView的内部手势方法阻断了全屏侧滑返回手势的的响应，
+那我们就找到这个方法，代码如下 ；
+创建一个UIScrollView的类别UIScrollView+GestureConflict，重写如下方法：
+
+//处理UIScrollView上的手势和侧滑返回手势的冲突
+-(BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer{
+
+    // 首先判断otherGestureRecognizer是不是系统pop手势
+    if ([otherGestureRecognizer.view isKindOfClass:NSClassFromString(@"UILayoutContainerView")]) {
+        // 再判断系统手势的state是began还是fail，同时判断scrollView的位置是不是正好在最左边
+        if (otherGestureRecognizer.state == UIGestureRecognizerStateBegan && self.contentOffset.x == 0) {
+            return YES;//则scrollview支持这个全屏侧滑返回手势
+        }
+    }
+    return NO;
+}
+
+
+问题2：控制器b是一个uiscrollview,scrollview上添加了一个uislider,点击uislider滑杆滑动时没反应，必须长按滑杆150秒后拖动才有反应
+
+方案一：这个跟UIScrollView的一个属性delaysContentTouches有关。
+scrollView.delaysContentTouches = NO;
+delaysContentTouches 默认值为YES 表示延迟scrollView上子视图的响应，所以当直接拖动UISlider时，如果此时touch时间在150ms以内，UIScrollView会认为是拖动自己，从而拦截了event，导致UISlider接收不到滑动的event。但是只要长按住UISlider一会儿再拖动，此时touch时间超过150ms，因此滑动的event会发送到UISlider上，然后UISlider再作出响应；设置为NO后，拖动UISlider时就可以直接做出响应，解决了UISlider与UIScrollView之间的冲突，同时也解决了向右拖拽时却触发了全屏侧滑pop返回的问题。
+
+
+方案二： 重写类别UIScrollView+GestureConflict中的如下方法来解决UISlider与UIScrollView之间的冲突，然后还需要执行下面 问题补充 中的操作来处理UISlider的滑动与全屏侧滑pop返回事件的冲突。
+//拦截事件的处理 事件传递给谁，就会调用谁的hitTest:withEvent:方法。
+//处理UISlider的滑动与UIScrollView的滑动事件冲突
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    /*
+     直接拖动UISlider，此时touch时间在150ms以内，UIScrollView会认为是拖动自己，从而拦截了event，导致UISlider接受不到滑动的event。但是只要按住UISlider一会再拖动，此时此时touch时间超过150ms，因此滑动的event会发送到UISlider上。
+     */
+    UIView *view = [super hitTest:point withEvent:event];
+    
+    if([view isKindOfClass:[UISlider class]]) {
+        //如果接收事件view是UISlider,则scrollview禁止响应滑动
+        self.scrollEnabled = NO;
+    } else {   //如果不是,则恢复滑动
+        self.scrollEnabled = YES;
+    }
+    return view;
+}
+
+示例Demo中的UISlider是在UIScrollView上的，如果UISlider不是在UIScrollView上，
+而是直接就在ViewControllerb.view上，那也就会出现拖拽UISlider时却响应了全屏侧滑pop返回手势的问题。
+
+
+
+在支持全屏侧滑返回的UINavigationController的子类WSLNavigatioController中，遵守协议<UIGestureRecognizerDelegate>,实现如下方法：
+
+#pragma mark -- UIGestureRecognizerDelegate
+//触发之后是否响应手势事件
+//处理侧滑返回与UISlider的拖动手势冲突
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch{
+    //如果手势是触摸的UISlider滑块触发的，侧滑返回手势就不响应
+    if ([touch.view isKindOfClass:[UISlider class]]) {
+        return NO;
+    }
+    return YES;
+}
+
+
+11.WKWebView
+
+在开发过程中，iOS 中实现加载 web 页面主要有两种控件，UIWebView 和 WKWebview，两种控件对应具体的实现方法不同。WKWebView 是苹果在iOS 8中引入的新组件，目的是提供一个现代的支持最新Webkit功能的网页浏览控件，摆脱过去 UIWebView的老、旧、笨，特别是内存占用量巨大的问题。它使用与Safari中一样的Nitro JavaScript引擎，大大提高了页面js执行速度。的。 
+相比于UIWebView的优势： 
+在性能、稳定性、占用内存方面有很大提升； 
+允许JavaScript的Nitro库加载并使用（UIWebView中限制） 
+增加加载进度属性：estimatedProgress，不用在自己写假进度条了 
+支持了更多的HTML的属性
+
+具体分析WKWebView的优劣势 
+1.内存占用是UIWebView的1/4~1/3 
+2.页面加载速度有提升，有的文章说它的加载速度比UIWebView提升了一倍左右。 
+3.更为细致地拆分了 UIWebViewDelegate 中的方法 
+4.自带进度条。不需要像UIWebView一样自己做假进度条（通过NJKWebViewProgress和双层代理技术实现），技术复杂度和代码量，根贴近实际加载进度优化好的多。 
+5.允许JavaScript的Nitro库加载并使用（UIWebView中限制） 
+6.可以和js直接互调函数，不像UIWebView需要第三方库WebViewJavascriptBridge来协助处理和js的交互。 
+7.不支持页面缓存，需要自己注入cookie,而UIWebView是自动注入cookie。 
+8.无法发送POST参数问题
+
+最近项目中的UIWebView被替换为了WKWebView，因此来总结一下。
+示例Demo：WKWebView的使用
+本文将从以下几方面介绍WKWebView：
+
+1、WKWebView涉及的一些类
+2、WKWebView涉及的代理方法
+3、网页内容加载进度条和title的实现
+4、JS和OC的交互
+5、本地HTML文件的实现
+
+
+一、WKWebView涉及的一些类
+
+WKWebView：网页的渲染与展示
+
+    注意： #import <WebKit/WebKit.h>
+     //初始化
+       _webView = [[WKWebView alloc] initWithFrame:CGRectMake(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT) configuration:config];
+        // UI代理
+        _webView.UIDelegate = self;
+        // 导航代理
+        _webView.navigationDelegate = self;
+        // 是否允许手势左滑返回上一级, 类似导航控制的左滑返回
+        _webView.allowsBackForwardNavigationGestures = YES;
+        //可返回的页面列表, 存储已打开过的网页 
+       WKBackForwardList * backForwardList = [_webView backForwardList];
+
+        //        NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"http://www.chinadaily.com.cn"]];
+        //        [request addValue:[self readCurrentCookieWithDomain:@"http://www.chinadaily.com.cn"] forHTTPHeaderField:@"Cookie"];
+        //        [_webView loadRequest:request];
+        //页面后退
+        [_webView goBack];
+        //页面前进
+         [_webView goForward];
+        //刷新当前页面
+        [_webView reload];
+        
+        NSString *path = [[NSBundle mainBundle] pathForResource:@"JStoOC.html" ofType:nil];
+        NSString *htmlString = [[NSString alloc]initWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
+      //加载本地html文件
+        [_webView loadHTMLString:htmlString baseURL:[NSURL fileURLWithPath:[[NSBundle mainBundle] bundlePath]]];
+        
+
+
+
+WKWebViewConfiguration：为添加WKWebView配置信息
+
+       //创建网页配置对象
+        WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
+        
+        // 创建设置对象
+        WKPreferences *preference = [[WKPreferences alloc]init];
+        //最小字体大小 当将javaScriptEnabled属性设置为NO时，可以看到明显的效果
+        preference.minimumFontSize = 0;
+        //设置是否支持javaScript 默认是支持的
+        preference.javaScriptEnabled = YES;
+        // 在iOS上默认为NO，表示是否允许不经过用户交互由javaScript自动打开窗口
+        preference.javaScriptCanOpenWindowsAutomatically = YES;
+        config.preferences = preference;
+        
+        // 是使用h5的视频播放器在线播放, 还是使用原生播放器全屏播放
+        config.allowsInlineMediaPlayback = YES;
+        //设置视频是否需要用户手动播放  设置为NO则会允许自动播放
+        config.requiresUserActionForMediaPlayback = YES;
+        //设置是否允许画中画技术 在特定设备上有效
+        config.allowsPictureInPictureMediaPlayback = YES;
+        //设置请求的User-Agent信息中应用程序名称 iOS9后可用
+        config.applicationNameForUserAgent = @"ChinaDailyForiPad";
+         //自定义的WKScriptMessageHandler 是为了解决内存不释放的问题
+        WeakWebViewScriptMessageDelegate *weakScriptMessageDelegate = [[WeakWebViewScriptMessageDelegate alloc] initWithDelegate:self];
+        //这个类主要用来做native与JavaScript的交互管理
+        WKUserContentController * wkUController = [[WKUserContentController alloc] init];
+        //注册一个name为jsToOcNoPrams的js方法
+        [wkUController addScriptMessageHandler:weakScriptMessageDelegate  name:@"jsToOcNoPrams"];
+        [wkUController addScriptMessageHandler:weakScriptMessageDelegate  name:@"jsToOcWithPrams"]; 
+       config.userContentController = wkUController;
+        
+
+
+WKUserScript：用于进行JavaScript注入
+
+    //以下代码适配文本大小，由UIWebView换为WKWebView后，会发现字体小了很多，这应该是WKWebView与html的兼容问题，解决办法是修改原网页，要么我们手动注入JS
+        NSString *jSString = @"var meta = document.createElement('meta'); meta.setAttribute('name', 'viewport'); meta.setAttribute('content', 'width=device-width'); document.getElementsByTagName('head')[0].appendChild(meta);";
+        //用于进行JavaScript注入
+        WKUserScript *wkUScript = [[WKUserScript alloc] initWithSource:jSString injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES];
+        [config.userContentController addUserScript:wkUScript];
+
+
+
+WKUserContentController：这个类主要用来做native与JavaScript的交互管理
+
+
+      //这个类主要用来做native与JavaScript的交互管理
+        WKUserContentController * wkUController = [[WKUserContentController alloc] init];
+        //注册一个name为jsToOcNoPrams的js方法，设置处理接收JS方法的代理
+        [wkUController addScriptMessageHandler:self  name:@"jsToOcNoPrams"];
+        [wkUController addScriptMessageHandler:self  name:@"jsToOcWithPrams"];
+        config.userContentController = wkUController;
+       //用完记得移除
+       //移除注册的js方法
+        [[_webView configuration].userContentController removeScriptMessageHandlerForName:@"jsToOcNoPrams"];
+       [[_webView configuration].userContentController removeScriptMessageHandlerForName:@"jsToOcWithPrams"];
+
+
+WKScriptMessageHandler：这个协议类专门用来处理监听JavaScript方法从而调用原生OC方法，和WKUserContentController搭配使用。
+
+注意：遵守WKScriptMessageHandler协议，代理是由WKUserContentControl设置
+
+   //通过接收JS传出消息的name进行捕捉的回调方法
+- (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message{
+    NSLog(@"name:%@\\\\n body:%@\\\\n frameInfo:%@\\\\n",message.name,message.body,message.frameInfo);
+    //用message.body获得JS传出的参数体
+    NSDictionary * parameter = message.body;
+    //JS调用OC
+    if([message.name isEqualToString:@"jsToOcNoPrams"]){
+        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"js调用到了oc" message:@"不带参数" preferredStyle:UIAlertControllerStyleAlert];
+        [alertController addAction:([UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        }])];
+        [self presentViewController:alertController animated:YES completion:nil];
+        
+    }else if([message.name isEqualToString:@"jsToOcWithPrams"]){
+        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"js调用到了oc" message:parameter[@"params"] preferredStyle:UIAlertControllerStyleAlert];
+        [alertController addAction:([UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        }])];
+        [self presentViewController:alertController animated:YES completion:nil];
+    }
+}
+
+
+二、WKWebView涉及的代理方法
+
+WKNavigationDelegate  ：主要处理一些跳转、加载处理操作
+
+
+    // 页面开始加载时调用
+- (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation {
+}
+    // 页面加载失败时调用
+- (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(null_unspecified WKNavigation *)navigation withError:(NSError *)error {
+    [self.progressView setProgress:0.0f animated:NO];
+} 
+    // 当内容开始返回时调用
+- (void)webView:(WKWebView *)webView didCommitNavigation:(WKNavigation *)navigation {
+}
+    // 页面加载完成之后调用
+- (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
+    [self getCookie];
+}
+    //提交发生错误时调用
+- (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error {
+    [self.progressView setProgress:0.0f animated:NO];
+}  
+   // 接收到服务器跳转请求即服务重定向时之后调用
+- (void)webView:(WKWebView *)webView didReceiveServerRedirectForProvisionalNavigation:(WKNavigation *)navigation {
+}
+    // 根据WebView对于即将跳转的HTTP请求头信息和相关信息来决定是否跳转
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+    
+    NSString * urlStr = navigationAction.request.URL.absoluteString;
+    NSLog(@"发送跳转请求：%@",urlStr);
+    //自己定义的协议头
+    NSString *htmlHeadString = @"github://";
+    if([urlStr hasPrefix:htmlHeadString]){
+        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"通过截取URL调用OC" message:@"你想前往我的Github主页?" preferredStyle:UIAlertControllerStyleAlert];
+        [alertController addAction:([UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {   
+        }])];
+        [alertController addAction:([UIAlertAction actionWithTitle:@"打开" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            NSURL * url = [NSURL URLWithString:[urlStr stringByReplacingOccurrencesOfString:@"github://callName_?" withString:@""]];
+            [[UIApplication sharedApplication] openURL:url];
+        }])];
+        [self presentViewController:alertController animated:YES completion:nil];
+        decisionHandler(WKNavigationActionPolicyCancel);
+    }else{
+        decisionHandler(WKNavigationActionPolicyAllow);
+    }
+}
+    
+    // 根据客户端受到的服务器响应头以及response相关信息来决定是否可以跳转
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationResponse:(WKNavigationResponse *)navigationResponse decisionHandler:(void (^)(WKNavigationResponsePolicy))decisionHandler{
+    NSString * urlStr = navigationResponse.response.URL.absoluteString;
+    NSLog(@"当前跳转地址：%@",urlStr);
+    //允许跳转
+    decisionHandler(WKNavigationResponsePolicyAllow);
+    //不允许跳转
+    //decisionHandler(WKNavigationResponsePolicyCancel);
+} 
+    //需要响应身份验证时调用 同样在block中需要传入用户身份凭证
+- (void)webView:(WKWebView *)webView didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler{
+    //用户身份信息
+    NSURLCredential * newCred = [[NSURLCredential alloc] initWithUser:@"user123" password:@"123" persistence:NSURLCredentialPersistenceNone];
+    //为 challenge 的发送方提供 credential
+    [challenge.sender useCredential:newCred forAuthenticationChallenge:challenge];
+    completionHandler(NSURLSessionAuthChallengeUseCredential,newCred);
+}
+    //进程被终止时调用
+- (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView{
+}
+
+
+
+WKUIDelegate ：主要处理JS脚本，确认框，警告框等
+
+
+ /**
+     *  web界面中有弹出警告框时调用
+     *
+     *  @param webView           实现该代理的webview
+     *  @param message           警告框中的内容
+     *  @param completionHandler 警告框消失调用
+     */
+- (void)webView:(WKWebView *)webView runJavaScriptAlertPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(void))completionHandler {
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"HTML的弹出框" message:message?:@"" preferredStyle:UIAlertControllerStyleAlert];
+    [alertController addAction:([UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        completionHandler();
+    }])];
+    [self presentViewController:alertController animated:YES completion:nil];
+}
+    // 确认框
+    //JavaScript调用confirm方法后回调的方法 confirm是js中的确定框，需要在block中把用户选择的情况传递进去
+- (void)webView:(WKWebView *)webView runJavaScriptConfirmPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completionHandler{
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"" message:message?:@"" preferredStyle:UIAlertControllerStyleAlert];
+    [alertController addAction:([UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+        completionHandler(NO);
+    }])];
+    [alertController addAction:([UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        completionHandler(YES);
+    }])];
+    [self presentViewController:alertController animated:YES completion:nil];
+}
+    // 输入框
+    //JavaScript调用prompt方法后回调的方法 prompt是js中的输入框 需要在block中把用户输入的信息传入
+- (void)webView:(WKWebView *)webView runJavaScriptTextInputPanelWithPrompt:(NSString *)prompt defaultText:(NSString *)defaultText initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(NSString * _Nullable))completionHandler{
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:prompt message:@"" preferredStyle:UIAlertControllerStyleAlert];
+    [alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+        textField.text = defaultText;
+    }];
+    [alertController addAction:([UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        completionHandler(alertController.textFields[0].text?:@"");
+    }])];
+    [self presentViewController:alertController animated:YES completion:nil];
+}
+    // 页面是弹出窗口 _blank 处理
+- (WKWebView *)webView:(WKWebView *)webView createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration forNavigationAction:(WKNavigationAction *)navigationAction windowFeatures:(WKWindowFeatures *)windowFeatures {
+    if (!navigationAction.targetFrame.isMainFrame) {
+        [webView loadRequest:navigationAction.request];
+    }
+    return nil;
+}
+
+
+三、网页内容加载进度条和title的实现
+   //添加监测网页加载进度的观察者
+    [self.webView addObserver:self
+                   forKeyPath:@"estimatedProgress"
+                      options:0
+                      context:nil];
+   //添加监测网页标题title的观察者
+    [self.webView addObserver:self
+                   forKeyPath:@"title"
+                      options:NSKeyValueObservingOptionNew
+                      context:nil];
+
+   //kvo 监听进度 必须实现此方法
+-(void)observeValueForKeyPath:(NSString *)keyPath
+                     ofObject:(id)object
+                       change:(NSDictionary<NSKeyValueChangeKey,id> *)change
+                      context:(void *)context{
+    if ([keyPath isEqualToString:NSStringFromSelector(@selector(estimatedProgress))]
+        && object == _webView) {
+       NSLog(@"网页加载进度 = %f",_webView.estimatedProgress);
+        self.progressView.progress = _webView.estimatedProgress;
+        if (_webView.estimatedProgress >= 1.0f) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                self.progressView.progress = 0;
+            });
+        } 
+    }else if([keyPath isEqualToString:@"title"]
+             && object == _webView){
+        self.navigationItem.title = _webView.title;
+    }else{
+        [super observeValueForKeyPath:keyPath
+                             ofObject:object
+                               change:change
+                              context:context];
+    }
+}
+    //移除观察者
+    [_webView removeObserver:self
+                  forKeyPath:NSStringFromSelector(@selector(estimatedProgress))];
+    [_webView removeObserver:self
+                  forKeyPath:NSStringFromSelector(@selector(title))];
+
+
+四、JS和OC的交互
+
+JS调用OC
+
+
+这个实现主要是依靠WKScriptMessageHandler协议类和WKUserContentController两个类：WKUserContentController对象负责注册JS方法，设置处理接收JS方法的代理，代理遵守WKScriptMessageHandler，实现捕捉到JS消息的回调方法，详情可以看第一步中对这两个类的介绍。
+
+ //这个类主要用来做native与JavaScript的交互管理
+        WKUserContentController * wkUController = [[WKUserContentController alloc] init];
+        //注册一个name为jsToOcNoPrams的js方法，设置处理接收JS方法的代理
+        [wkUController addScriptMessageHandler:self  name:@"jsToOcNoPrams"];
+        [wkUController addScriptMessageHandler:self  name:@"jsToOcWithPrams"];
+        config.userContentController = wkUController;
+
+注意：遵守WKScriptMessageHandler协议，代理是由WKUserContentControl设置
+ //通过接收JS传出消息的name进行捕捉的回调方法  js调OC
+- (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message{
+    NSLog(@"name:%@\\\\n body:%@\\\\n frameInfo:%@\\\\n",message.name,message.body,message.frameInfo);
+}
+
+
+
+
+
+OC调用JS
+
+
+ //OC调用JS  changeColor()是JS方法名，completionHandler是异步回调block
+    NSString *jsString = [NSString stringWithFormat:@"changeColor('%@')", @"Js参数"];
+    [_webView evaluateJavaScript:jsString completionHandler:^(id _Nullable data, NSError * _Nullable error) {
+        NSLog(@"改变HTML的背景色");
+    }];
+    
+    //改变字体大小 调用原生JS方法
+    NSString *jsFont = [NSString stringWithFormat:@"document.getElementsByTagName('body')[0].style.webkitTextSizeAdjust= '%d%%'", arc4random()%99 + 100];
+    [_webView evaluateJavaScript:jsFont completionHandler:nil];
+
+
+
+12。iOS UITableView/UICollectionView获取特定位置的cell
+
+获取偏移后顶部cell的index
+
+方案一(不推荐原因会在后面提到)：获得当前可见的所有cell，然后取可见cell数组中的第一个cell就是目标cell，再根据cell获得indexPath。代码如下
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView{
+    
+  if (scrollView == _rightTableView && _isSelected == NO) {
+      //返回tableView可见的cell数组
+        NSArray * array = [_rightTableView visibleCells];
+       //返回cell的IndexPath
+        NSIndexPath * indexPath = [_rightTableView indexPathForCell:array.firstObject];
+        NSLog(@"滑到了第 %ld 组 %ld个",indexPath.section, indexPath.row);
+        _currentIndexPath = [NSIndexPath indexPathForRow:0 inSection:indexPath.section];
+        [_leftTableView reloadData];
+        [_leftTableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:indexPath.section] atScrollPosition:UITableViewScrollPositionMiddle animated:NO];
+    }
+    
+}
+
+
+方案二(推荐使用)：利用偏移量！偏移量的值实际上可以代表当时处于tableView顶部的cell在tableView上的相对位置， 那么我们就可以根据偏移量获得处于顶部的cell的indexPath。代码如下
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView{
+    
+   if (scrollView == _rightTableView && _isSelected == NO) {
+       //系统方法返回处于tableView某坐标处的cell的indexPath
+        NSIndexPath * indexPath = [_rightTableView indexPathForRowAtPoint:scrollView.contentOffset];
+        NSLog(@"滑到了第 %ld 组 %ld个",indexPath.section, indexPath.row);
+        _currentIndexPath = [NSIndexPath indexPathForRow:0 inSection:indexPath.section];
+        [_leftTableView reloadData];
+        [_leftTableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:indexPath.section] atScrollPosition:UITableViewScrollPositionMiddle animated:NO];
+    }
+    
+}
+
+
+二、 获取处于UITableView中心的cell
+
+获取处于tableView中间cell的效果，用上述方案一比较麻烦：要考虑可见cell 的奇、偶个数问题，还有cell是否等高的情况；方案二用起来就快捷方便多了，取的cell的位置的纵坐标相当于在偏移量的基础上又增加了tableView高度的一半。代码如下：
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView{
+
+    //获取处于UITableView中心的cell
+    //系统方法返回处于tableView某坐标处的cell的indexPath
+    NSIndexPath * middleIndexPath = [_rightTableView  indexPathForRowAtPoint:CGPointMake(0, scrollView.contentOffset.y + _rightTableView.frame.size.height/2)];
+    NSLog(@"中间的cell：第 %ld 组 %ld个",middleIndexPath.section, middleIndexPath.row);
+}
+
+
+
+UICollectionView获取特定位置的item与UITableView相似，仅仅是获取的方法名不同，如下：
+
+ NSIndexPath * indexPath = [_collectionView  indexPathForItemAtPoint:scrollView.contentOffset];
+ NSLog(@"滑到了第 %ld 组 %ld个",indexPath.section, indexPath.row);
+
+
+获取某个cell在当前tableView/collectionView上的坐标位置
+
+ //获取某个cell在当前tableView上的坐标位置
+    CGRect rectInTableView = [_rightTableView rectForRowAtIndexPath:middleIndexPath];
+    //获取cell在当前屏幕的位置
+    CGRect rectInSuperview = [_rightTableView convertRect:rectInTableView toView:[_rightTableView superview]];
+    NSLog(@"中间的cell处于tableView上的位置: %@ /n 中间cell在当前屏幕的位置：%@", NSStringFromCGRect(rectInTableView), NSStringFromCGRect(rectInSuperview));
+    
+     //获取cell在当前collection的位置
+     CGRect cellInCollection = [_collectionView convertRect:item.frame toView:_collectionView];
+     UICollectionViewCell * item = [_collectionView cellForItemAtIndexPath:indexPath]];
+     //获取cell在当前屏幕的位置
+     CGRect cellInSuperview = [_collectionView convertRect:item.frame toView:[_collectionView superview]];
+     NSLog(@"获取cell在当前collection的位置: %@ /n 获取cell在当前屏幕的位置：%@", NSStringFromCGRect(cellInCollection), NSStringFromCGRect(cellInSuperview));
+    
+
+13。iOS 自定义转场动画
+本文记录分享下自定义转场动画的实现方法，具体到动画效果：新浪微博图集浏览转场效果、手势过渡动画、网易音乐启动屏转场动画、开关门动画、全屏侧滑返回效果 的代码可以到Github WSLTransferAnimation下载查看，注释还算清晰。
+
+模态化present和dismiss 自定义转场
+1、创建一个遵循<UIViewControllerAnimatedTransitioning>协议的动画过渡管理对象，并实现如下两个方法：
+//返回动画事件
+- (NSTimeInterval)transitionDuration:(nullable id <UIViewControllerContextTransitioning>)transitionContext{
+    return 0.3;
+}
+//所有的过渡动画事务都在这个方法里面完成
+- (void)animateTransition:(id <UIViewControllerContextTransitioning>)transitionContext{
+
+ //取出转场前后的视图控制器
+  UIViewController * fromVC = (UIViewController *)[transitionContext viewControllerForKey:UITransitionContextFromViewControllerKey];
+  UIViewController * toVC = (UIViewController *)[transitionContext viewControllerForKey:UITransitionContextToViewControllerKey];
+
+ //取出转场前后视图控制器上的视图view
+    UIView * toView = [transitionContext viewForKey:UITransitionContextToViewKey];
+    UIView * fromView = [transitionContext viewForKey:UITransitionContextFromViewKey];
+
+ //这里有个重要的概念containerView，要做转场动画的视图就必须要加入containerView上才能进行，可以理解containerView管理着所有做转场动画的视图
+    UIView *containerView = [transitionContext containerView];
+
+  //如果加入了手势交互转场，就需要根据手势交互动作是否完成/取消来做操作，完成标记YES，取消标记NO，必须标记，否则系统认为还处于动画过程中，会出现无法交互之类的bug
+   [transitionContext completeTransition:![transitionContext transitionWasCancelled]];
+     if ([transitionContext transitionWasCancelled]) { 
+    //如果取消转场
+          }else{
+   //完成转场
+     }
+}
+
+2、自定义一个继承于UIPercentDrivenInteractiveTransition的手势过渡管理对象，可以根据手势需要设置控制动画转场进度的百分比。
+//必要调用实现的系统方法
+
+//手势过程中，通过updateInteractiveTransition设置转场过程动画进行的百分比，然后系统会根据百分比自动布局动画控件，不用我们控制了
+ [self updateInteractiveTransition:percentComplete];
+//完成转场操作
+ [self finishInteractiveTransition];
+//取消转场操作
+ [self cancelInteractiveTransition];
+
+
+3、转场时最上层的视图控制器需要遵循<UIViewControllerTransitioningDelegate>的协议，并设置为代理，并实现如下代理方法：
+//设置转场代理
+self.transitioningDelegate = self;
+
+#pragma mark -- UIViewControllerTransitioningDelegate
+
+//返回一个处理present动画过渡的对象
+-(id<UIViewControllerAnimatedTransitioning>)animationControllerForPresentedController:(UIViewController *)presented presentingController:(UIViewController *)presenting sourceController:(UIViewController *)source{
+    return self.transitionAnimation;
+}
+//返回一个处理dismiss动画过渡的对象
+- (id<UIViewControllerAnimatedTransitioning>)animationControllerForDismissedController:(UIViewController *)dismissed{
+    //这里我们初始化dismissType
+    self.transitionAnimation.transitionType = WSLTransitionOneTypeDissmiss;
+    return self.transitionAnimation;
+}
+//返回一个处理present手势过渡的对象 
+- (nullable id <UIViewControllerInteractiveTransitioning>)interactionControllerForPresentation:(id <UIViewControllerAnimatedTransitioning>)animator{
+    return self.transitionInteractive;
+}
+//返回一个处理dismiss手势过渡的对象
+- (nullable id <UIViewControllerInteractiveTransitioning>)interactionControllerForDismissal:(id <UIViewControllerAnimatedTransitioning>)animator{
+    return self.transitionInteractive;
+}
+
+导航控制器push和pop 自定义转场
+1、略...同上
+2、略... 同上
+3、在push动画之前设置导航控制器的转场动画代理，转场时最上层的视图控制器需要遵循<UINavigationControllerDelegate>的协议，并设置为代理，并实现如下代理方法：
+ //在push动画之前设置转场动画代理
+ self.navigationController.delegate = animationFour;
+
+#pragma mark -- UINavigationControllerDelegate
+//返回处理push/pop动画过渡的对象
+- (nullable id <UIViewControllerAnimatedTransitioning>)navigationController:(UINavigationController *)navigationController
+                                            animationControllerForOperation:(UINavigationControllerOperation)operation
+                                                         fromViewController:(UIViewController *)fromVC
+                                                           toViewController:(UIViewController *)toVC{
+    
+    if (operation == UINavigationControllerOperationPush) {
+        self.transitionAnimation.transitionType = WSLTransitionTwoTypePush;
+        return self.transitionAnimation;
+    }else if (operation == UINavigationControllerOperationPop){
+        self.transitionAnimation.transitionType = WSLTransitionTwoTypePop;
+    }
+    return self.transitionAnimation;
+}
+
+//返回处理push/pop手势过渡的对象 这个代理方法依赖于上方的方法 ，这个代理实际上是根据交互百分比来控制上方的动画过程百分比
+- (nullable id <UIViewControllerInteractiveTransitioning>)navigationController:(UINavigationController *)navigationController
+                                   interactionControllerForAnimationController:(id <UIViewControllerAnimatedTransitioning>) animationController{
+    
+    //手势开始的时候才需要传入手势过渡代理，如果直接pop或push，应该返回nil，否者无法正常完成pop/push动作
+    if ( self.transitionAnimation.transitionType == WSLTransitionTwoTypePop) {
+        return self.transitionInteractive.isInteractive == YES ? self.transitionInteractive : nil;
+    }
+    return nil;
+}
+
+
+全屏侧滑返回
+
+创建一个继承于UINavigationController的一个对象WSLNavigatioController，遵守协议<UIGestureRecognizerDelegate>,实现如下方法：
+
+  // 获取系统自带滑动手势的target对象
+    id target = self.interactivePopGestureRecognizer.delegate;
+    // 创建全屏滑动手势，调用系统自带滑动手势的target的action方法
+    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:target action:@selector(handleNavigationTransition:)];
+    // 设置手势代理，拦截手势触发
+    pan.delegate = self;
+    // 给导航控制器的view添加全屏滑动手势
+    [self.view addGestureRecognizer:pan];
+    // 禁止使用系统自带的滑动手势
+    self.interactivePopGestureRecognizer.enabled = NO;
+
+#pragma mark -- UIGestureRecognizerDelegate
+// 什么时候调用：每次触发手势之前都会询问下代理，是否触发。
+// 作用：拦截手势触发
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
+{
+    // 注意：只有非根控制器才有滑动返回功能，根控制器没有。
+    // 判断导航控制器是否只有一个子控制器，如果只有一个子控制器，肯定是根控制器
+    if (self.childViewControllers.count == 1) {
+        // 表示用户在根控制器界面，就不需要触发滑动手势，
+        return NO;
+    }
+    return YES;
+}
+
+
+解决UIScrollView的滑动手势与全屏侧滑手势的冲突
+
+创建一个UIScrollView的类别UIScrollView+GestureConflict，重写如下方法：
+
+-(BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer{
+    
+    // 首先判断otherGestureRecognizer是不是系统pop手势
+    if ([otherGestureRecognizer.view isKindOfClass:NSClassFromString(@"UILayoutContainerView")]) {
+        // 再判断系统手势的state是began还是fail，同时判断scrollView的位置是不是正好在最左边
+        if (otherGestureRecognizer.state == UIGestureRecognizerStateBegan && self.contentOffset.x == 0) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+作者：且行且珍惜_iOS
+链接：https://www.jianshu.com/p/a9b1307b305b
+来源：简书
+简书著作权归作者所有，任何形式的转载都请联系作者获得授权并注明出处。
+
+
+
+
+                             网络 swift nfnetworking reactivecocoa
+
+afnetworking：
+
+https分单向验证和双向验证两种方式，一般经常说的https是单向验证的
+
+SSL、TLS区别：https://blog.csdn.net/enweitech/article/details/81781405
+ssl：安全套接层。
+tls：在SSL更新到3.0时，IETF对SSL3.0进行了标准化，并添加了少数机制，最后成熟以后成了安全传输层协议，由一个安全层变为了协议，相当于
+ssl是tls的升级版本，无区别，只是人们习惯叫ssl。
+
+单向验证：
+1  客户端向服务端发送SSL协议版本号、加密算法种类、客户端随机数等信息
+2  服务端给客户端返回SSL协议版本号、加密算法种类、服务器随机数等信息，同时也返回服务器端的ca证书，该证书中包含公钥和私钥，
+这里只带公钥的证书返给客户端
+3  客户端使用服务端返回的信息验证服务器的合法性，包括：证书是否过期  服务器证书CA是否可靠  证书中的公钥是否能解开证书的签名  
+服务器域名是否和服务器相同
+4  解开公钥，再生成一个客户端随机数，用公钥加密后生成证书发给服务端
+5  服务端用私钥解密客户端证书，得到客户端最后一次生成的随机数
+6  此时客户端和服务器都有三个随机数 ，在请求和响应的过程中，通过使用前面的三个随机数，生成"对话密钥"（ session key ）
+谈话内容再通过这个对话密钥加密及解密
+
+双向验证： 增加了客户端向服务端发送证书，证书带公钥和私钥，同时发送证书公钥加密的对称加密方案。服务端通过客户端的证书对加密方案解密。
+
+1  客户端向服务端发送SSL协议版本号、加密算法种类、随机数等信息。
+2  服务端给客户端返回SSL协议版本号、加密算法种类、服务器随机数等信息，同时也返回服务器端的ca证书，该证书中包含公钥和私钥，
+这里只带公钥的证书返给客户端
+3  客户端使用服务端返回的信息验证服务器的合法性，包括：证书是否过期  服务器证书CA是否可靠  证书中的公钥是否能解开证书的签名  
+服务器域名是否和服务器相同
+4  验证通过后，客户端保存了服务端带公钥的ca证书，客户端会将自己的证书（只带公钥）发送至服务端，客户端证书中包含公钥和私钥
+6  服务端验证客户端的证书，验证包括：客户端的证书是否过期 提供的客户端证书CA是否可靠  证书中的公钥是否能解开证书的签名 证书是否在证书废止列表（CRL）中。
+通过验证后，会获得客户端的公钥
+7  客户端向服务端发送自己所能支持的对称加密方案，供服务器端进行选择
+8  服务器端在客户端提供的加密方案中选择加密程度最高的加密方式，通过客户端公钥进行加密，返回给客户端
+10 客户端收到服务端返回的加密方案密文后，使用自己的私钥进行解密，得到加密的方式，生成一个随机数，再使用服务端的公钥进行随机数加密，发送给服务端
+11  此时客户端和服务器都有三个随机数 ，在请求和响应的过程中，通过使用前面的三个随机数，生成"对话密钥"（ session key ）
+谈话内容再通过这个对话密钥加密及解密
+
+
+afn单向验证：
+
+一。afn中对ca机构证书非自建证书的单向验证：
+使用AFN时只需要拼接上https://即可，AFN的网络请求配置中默认使用CA认证访问HTTPS地址，所以afn不需要任何设置
+
+二。afn中对自签名证书的单向验证：
+1。从服务器要来.crt格式的证书，然后用Mac钥匙串打开，然后导出 .cer格式的证书
+2。把.cer证书导入程序的中
+3。验证证书的代码：
+
++(AFSecurityPolicy*)customSecurityPolicy
+{
+    //先导入证书，转换成NSSet
+    NSString *cerPath = [[NSBundle mainBundle] pathForResource:@"test" ofType:@"cer"];
+    NSData *certData = [NSData dataWithContentsOfFile:cerPath];
+    NSSet  *dataSet = [NSSet setWithArray:@[certData]];
+    
+    //AFSSLPinningModeCertificate 公钥和其它内容都需要验证
+    //AFSSLPinningModePublicKey 只验证公钥是否通过
+    //AFSSLPinningModeNone 不做任何验证 可理解为证书未在工程文件下  这种模式自签名证书请求https是不成功的
+    
+    AFSecurityPolicy *securityPolicy = [AFSecurityPolicy policyWithPinningMode:AFSSLPinningModeCertificate];
+    
+    //allowInvalidCertificates 如果是自建证书，需要设置为YES 不是自建证书无所。
+    securityPolicy.allowInvalidCertificates = YES;
+    
+    //validatesDomainName 是否需要验证域名，默认为YES；如置为NO，建议自己添加对应域名的校验逻辑
+    securityPolicy.validatesDomainName = NO;
+    
+    securityPolicy.pinnedCertificates = dataSet ;//不是自建证书不需要
+    return securityPolicy;
+}
+
+
+afn双向验证：太复杂请看此文https://www.jianshu.com/p/e66eacc24dbe iOS基于AFNetworking使用自签名证书实现HTTPS请求
+
+
+
+NSURLConnection 和 NSURLSession 区别：
+
+NSURLConnection:
+NSURLConnection在foundation框架中的一个类，它与这个框架中很多类关联：NSURLRequest、NSURLResponse、NSURLProtocol、NSHTTPCookieStorage、NSURLCredentialStorage
+
+NSURLSession:
+在iOS 7.0 推出了 NSURLSession，对foundation框架中url模块进行彻底重构。
+支持 http2.0 协议 
+支持直接下载到硬盘，而非先下载到内存再到硬盘 
+一个NSURLSession对象发送多个请求 
+下载使多线程异步处理，如一个文件开启多个线程加速下载
+提供全局的 session 并可以统一配置等等，提高了 NSURLSession 的易用性、灵活性，更加地适合移动开发的需求。
+
+http2.0 协议 ：
+HTTP/2采用二进制格式而非文本格式
+HTTP/2是完全多路复用的，而非有序并阻塞的——只需一个连接即可实现并行
+使用报头压缩，HTTP/2降低了开销
+HTTP/2让服务器可以将响应主动“推送”到客户端缓存中
+
+区别：从iOS9 开始，NSURLConnection 中同步请求，异步请求方法过期
+
+NSURLSession：
+普通请求：NSURLSessionDataTask
+上传请求：NSURLSessionUploadTask 
+下载请求：NSURLSessionDownloadTask
+三个请求任务会挂起需要时再启动
+
+上传任务：
+NSURLSession 与 NSURLConnection 再上传任务时，都需要设置post请求体。
+
+下载任务：
+NSURLConnection;先是将整个文件下载到内存，然后再写入到沙盒，如果文件比较大，就会出现内存暴涨的情况。
+ NSURLSessionDownloadTask：会默认下载到沙盒中 tmp文件中，不会出现内存暴涨的情况，
+下载完成后会把 tmp 中的临时文件删除，需要在初始化任务方法时，在 completionHandler 回调中增加保存文件的代码。
+
+取消，暂停，继续 状态：
+NSURLConnection 默认发送同步请求，不需要调用 start 方法，一但调用cancel，停止下载，下次下载重新开始
+NSURLSession  取消(cancel)、暂停(suspend)、继续(resume) 继续会接着上次的下载
+
+断点续传的方式：
+NSURLConnection  设置访问请求的 HTTPHeaderField 的 Range 属性，下载的代理方法不断调用，下载完成使用 NSOutputStream 管道流进行数据保存。
+NSURLSession  开启下载，会调用cancelByProducingResumeData:(void (^)(NSData *resumeData))completionHandler，
+resumeData表示下载完成的数据，暂停后继续下载，[self.session downloadTaskWithResumeData:self.resumeData] resume]传入上次下载的resumeData
+
+配置方面：
+NSURLSession  NSURLSession的初始化方法sessionWithConfiguration:delegate:delegateQueue中有个参数NSURLSessionConfiguration，
+此参数可配置 cookie，安全和高速缓存策略，最大主机连接数，资源管理，网络超时等
+
+NSURLConnection  依赖与一个全局的配置对象，不能自定义配置，不够灵活
+
+基本介绍：
+
+NSURLConnection  
+
+1. 异步处理代理
+
+NSURLRequest对象作为参数，传递给NSURLConnection，代理方法NSURLConnectionDelegate返回NSURLResponse， 代理方法NSURLConnectionDataDelegate
+返回NSData
+
+2. 请求策略
+请求发送到服务器之前，检查有无缓存，缓存是否过期，无过期直接返回内容，如果无缓存，已经过期，我们可以指定缓存策略来再次请求
+
+3. 认证策略
+如认证cookie中的用户名，密码是否可自动登陆，通过共享cookie和机密存储来认证区别请求的用户
+
+4. 下载过程
+
+NSURLConnection下载文件时，先是将整个文件下载到内存，然后再写入到沙盒，如果文件比较大，就会出现内存暴涨的情况
+
+二、使用步骤
+创建request：get请求NSURLRequest post请求NSMutableURLRequest
+设置请求方式：get不用设置  post需设置request.HTTPMethod = @"POST";
+设置请求体： get不用设置 post需设置request.HTTPBody
+请求方法：
+   get: NSData *data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];//该方法是阻塞式的，会卡住线程
+   post：
+   [NSURLConnection sendAsynchronousRequest:request queue:[[NSOperationQueue alloc]init] 
+   completionHandler:^(NSURLResponse * __nullable response, NSData * __nullable data, 
+   NSError * __nullable connectionError) {
+代理方法：
+    建立连接成功
+   /*
+    1.当接收到服务器响应的时候调用，该方法只会调用一次
+    第一个参数connection：监听的是哪个NSURLConnection对象
+    第二个参数response：接收到的服务器返回的响应头信息
+   */
+   [NSURLConnection sendAsynchronousRequest:request queue:[[NSOperationQueue alloc]init] completionHandler
+:^(NSURLResponse * __nullable response, NSData * __nullable data, NSError * __nullable connectionError) {
+
+    下载的数据回调多次
+   /*
+    2.当接收到数据的时候调用，该方法会被调用多次
+    第一个参数connection：监听的是哪个NSURLConnection对象
+    第二个参数data：本次接收到的服务端返回的二进制数据（可能是片段）
+    */
+   - (void)connection:(nonnull NSURLConnection *)connection didReceiveData:(nonnull NSData *)data
+   
+   下载的数据完毕
+    /*
+      3.当服务端返回的数据接收完毕之后会调用
+      通常在该方法中解析服务器返回的数据
+    */
+   - (void)connectionDidFinishLoading:(nonnull NSURLConnection *)connection
+   
+   下载的错误
+    /*
+     4.当请求错误的时候调用（比如请求超时）
+     第一个参数connection：NSURLConnection对象
+     第二个参数：网络请求的错误信息，如果请求失败，则error有值
+    */
+   - (void)connection:(nonnull NSURLConnection *)connection didFailWithError:(nonnull NSError *)error
+   
+   
+   
+   发送请求：
+   
+   
+      get同步请求:
+      
+      //1.确定请求路径
+      NSURL *url = [NSURL URLWithString:@""];
+    
+      //2.创建一个请求对象
+      NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    
+     //3.把请求发送给服务器
+     //sendSynchronousRequest  阻塞式的方法，会卡住线程
+    
+     NSHTTPURLResponse *response = nil;
+     NSError *error = nil;
+    
+     /*
+      第一个参数：请求对象
+      第二个参数：响应头信息，当该方法执行完毕之后，该参数被赋值
+      第三个参数：错误信息，如果请求失败，则error有值
+      */
+     //该方法是阻塞式的，会卡住线程
+     NSData *data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
+     
+     
+     
+     
+     
+     
+     post异步请求：
+     
+     //1.确定请求路径
+     NSURL *url = [NSURL URLWithString:@""];
+    
+     //2.创建一个请求对象
+     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    
+     // 2.1设置请求方式
+     // 注意: POST一定要大写
+     request.HTTPMethod = @"POST";
+     // 2.2设置请求体
+     // 注意: 如果是给POST请求传递参数: 那么不需要写?号
+     request.HTTPBody = [@"username=Mitchell&pwd=123456&type=JSON" dataUsingEncoding:NSUTF8StringEncoding];
+    
+     //3.把请求发送给服务器,发送一个异步请求
+     /*
+     第一个参数：请求对象
+     第二个参数：回调方法在哪个线程中执行，如果是主队列则block在主线程中执行，非主队列则在子线程中执行
+     第三个参数： completionHandlerBlock块：接受到响应的时候执行该block中的代码
+            response：响应头信息
+             data：响应体
+            connectionError：错误信息，如果请求失败，那么该参数有值
+      */
+ 
+    [NSURLConnection sendAsynchronousRequest:request queue:[[NSOperationQueue alloc]init] completionHandler:^(NSURLResponse * __nullable response, NSData * __nullable data, NSError * __nullable connectionError) {
+
+       //4.解析服务器返回的数据
+       NSString *str = [[NSString alloc]initWithData:data encoding:NSUTF8StringEncoding];
+       //转换并打印响应头信息
+       NSHTTPURLResponse *r = (NSHTTPURLResponse *)response;
+    }];
+    
+    
+    
+    
+创建代理：
+    
+     第一种代理方式，自动发送请求：
+    [[NSURLConnection alloc]initWithRequest:request delegate:self];
+    
+     第二种代理方式，自动发送请求：
+     /*
+     第一个参数：请求对象
+     第二个参数：谁成为NSURLConnetion对象的代理
+     第三个参数：是否马上发送网络请求，如果该值为YES则立刻发送，如果为NO则不会发送网路请求
+     */
+     NSURLConnection *conn = [[NSURLConnection alloc]initWithRequest:request delegate:self startImmediately:NO];
+    
+    //在startImmediately为NO时，调用该方法控制网络请求的发送
+    [conn start];
+    
+    // 第一种代理方式，自动发送请求：
+    //设置代理的第三种方式：使用类方法设置代理，会自动发送网络请求
+    NSURLConnection *conn = [NSURLConnection connectionWithRequest:request delegate:self];
+    
+    //取消网络请求
+    //[conn cancel];
+    
+    
+3. NSURLConnection 与 NSRunLoop 的关联使用
+    [[NSURLConnection alloc]initWithRequest:request delegate:self];异步请求时，回到代理方法中是在主线程的，主线程默认有一个
+    runloop，会把NSURLConnection加入到这个runloop中，所以它的代理回调在主线程，如何让回调在子线程，需要开启一个子线程，并在子线程
+    创建一个runloop。
+    
+    // 如果按照如下设置，那么回调的代理方法也会运行在子线程中
+    NSURL *url = [NSURL URLWithString:@"http://mvvideo1.meitudata.com/55d99e5939342913.mp4"];
+    NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    //2.2 设置回调方法也在子线程中运行
+    NSURLConnection *conn = [[NSURLConnection alloc]initWithRequest:request delegate:self startImmediately:NO];
+    [conn setDelegateQueue:[[NSOperationQueue alloc] init]];//开启子线程
+    [conn start];//内部在子线程中创建一个runloop，所有代理回调都会在这个runloop所处的线程中执行
+    
+    setDelegateQueue，start方法内部作的事：
+    dispatch_async(dispatch_get_global_queue(0, 0), ^{// setDelegateQueue开启子线程
+
+    NSRunLoop *loop = [NSRunLoop currentRunLoop];//start方法创建runloop
+    [NSURLConnection connectionWithRequest:request delegate:self];
+    [loop run];
+    
+    // 下面这样无法发送请求
+    // [NSURLConnection connectionWithRequest:request delegate:self];
+   });
+      
+      
+      
+NSURLSession：
+
+   一、 session类型
+   三个类方法，分别返回三种不同的配置类型，每种类型都是属于session类型的
+   
+   标准的配置类型： configuration 与NSURLConnection的共享配置一样
+   类方法：+defaultSessionConfiguration
+   返回共享NSHTTPCookieStorage，共享 NSURLCache 和共享 NSURLCredentialStorage（存储）
+   
+   预设配置类型： Ephemeral session  稍稍访问网站
+   不会对缓存Cookie 和证书进行持久性的存储，存储一段时间会清除，对于相稍稍访问一些网站而不被记录访客信息很有用
+   
+   后台session配置： Background session 对后台下载有用
+   可以在应用程序挂起，退出或者崩溃的情况下进行上传和下载任务，区别于任何进程外的传输守护进程。
+   
+   二、配置属性
+   
+   HTTPAdditionalHeaders ：可以设置请求头信息，如数据格式，语言，用户代理，身份认证
+   
+   // 设置请求的header
+   NSString *userPasswordString = [NSString stringWithFormat:@"%@:%@", user, password];
+   NSData * userPasswordData = [userPasswordString dataUsingEncoding:NSUTF8StringEncoding];
+   NSString *base64EncodedCredential = [userPasswordData base64EncodedStringWithOptions:0];
+   NSString *authString = [NSString stringWithFormat:@"Basic %@", base64EncodedCredential];
+   NSString *userAgentString = @"AppName/com.example.app (iPhone 5s; iOS 7.0.2; Scale/2.0)";
+   configuration.HTTPAdditionalHeaders = @{@"Accept": @"application/json",
+                                        @"Accept-Language": @"en",
+                                        @"Authorization": authString,
+                                        @"User-Agent": userAgentString}  
+                                        
+                                        
+                                        
+                                        
+                                        
+    networkServiceType： 对不同功能使用的流量进行划分，如语音，视频，网络电话流量，一般不会用
+    
+    
+    
+    
+    allowsCellularAccess 和 discretionary ：在蜂窝网络时，会根据电量情况等去减少增加网络带宽，使用  discretionary不会考虑电量问题
+    所以带宽会好些
+    
+    
+    
+    timeoutIntervalForRequest 和 timeoutIntervalForResource： 网络请求超时，限制在多少秒内请求，超出时间则停止请求。
+    
+    
+    
+    HTTPMaximumConnectionsPerHost：最多可以同时建立多少个连接来连接服务器
+    
+    
+    
+    
+    HTTPShouldUsePipelining ：属于NSMutableURLRequest ，开启管线化请求通道，提高请求速度，不被大多服务商支持，一般关闭的
+    
+    
+    sessionSendsLaunchEvents： 指定session是否应该在后台启动
+    
+    
+    connectionProxyDictionary： 指定session会话可以连接代理服务器，大多数手机不需要代理服务器
+    
+
+
+
+Cookie 策略：
+
+    HTTPCookieStorage： 存储了session 所使用的 cookie，+sharedHTTPCookieStorage 得到这个单例对象，与 NSURLConnection 是相同的
+    
+    HTTPCookieAcceptPolicy：什么情况下session接收服务器返回的cookie
+    
+    HTTPShouldSetCookies ：请求是否应该使用session存储的cookie
+    
+
+安全策略：
+    
+    URLCredentialStorage： 存储了 session 所使用的证书，+sharedCredentialStorage 得到这个单例对象，与 NSURLConnection 是相同的
+    
+    TLSMaximumSupportedProtocol 和 TLSMinimumSupportedProtocol  ：  确定 session 是否支持 SSL 协议。即https协议
+
+
+缓存策略：
+   
+    URLCache ： 是session使用的缓存。默认情况下会使用 NSURLCache 的 +sharedURLCache 这个单例对象，这与 NSURLConnection 是相同的
+    
+    requestCachePolicy： 一个请求的缓存响应应该在什么时机返回，相当于 NSURLRequest 的 -cachePolicy 方法。
+    
+
+自定义协议：
+
+    protocolClasses ： 用于配置某个特定session使用的自定义协议，相当于特定的一个请求使用什么协议
+    
+
+
+三、NSURLSessionTask抽象类    
+    
+   子类：
+   普通请求：NSURLSessionDataTask
+   上传请求：NSURLSessionUploadTask 
+   下载请求：NSURLSessionDownloadTask
+   
+   这三个子类不是 alloc-init创建的，而是 NSURLSession 创建的，都有两个构造方法，其中一个带有completionHandler
+   
+   
+四、代理
+   
+   根代理NSURLSessionDelegate：处理鉴定下载权力，下载任务完成通知
+   
+   子类：
+   
+   NSURLSessionTaskDelegate处理鉴定下载权力、处理任务结束通知(无论是正常还是异常)
+   NSURLSessionDataDelegate处理鉴定下载权力 处理数据的接收到的通知
+   NSURLSessionDownloadDelegate主要处理数据下载进度通知等。
+   
+   NSURLSessionTaskDelegate是NSURLSessionDelegate子类
+   NSURLSessionDataDelegate， NSURLSessionDownloadDelegate是NSURLSessionTaskDelegate子类
+   
+
+
+五、NSURLSession 应用
+
+
+1. NSURLSessionDataTask 发送 GET 请求
+
+//确定请求路径
+NSURL *url = [NSURL URLWithString:@"http://120.25.226.186:32812/login?username=520&pwd=520&type=JSON"];
+//创建 NSURLSession 对象
+NSURLSession *session = [NSURLSession sharedSession];
+
+/**
+根据对象创建 Task 请求，默认在子线程中解析数据
+url  方法内部会自动将 URL 包装成一个请求对象（默认是 GET 请求）
+completionHandler  完成之后的回调（成功或失败）
+param data     返回的数据（响应体）
+param response 响应头
+param error    错误信息
+*/
+NSURLSessionDataTask *dataTask = [session dataTaskWithURL:url completionHandler:
+         ^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+
+    //解析服务器返回的数据
+    NSLog(@"%@", [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]);
+}];
+//发送请求（执行Task）
+[dataTask resume];
+
+
+
+
+2. NSURLSessionDataTask 发送 POST 请求  block方式
+//确定请求路径
+NSURL *url = [NSURL URLWithString:@"http://120.25.226.186:32812/login"];
+//创建可变请求对象
+NSMutableURLRequest *requestM = [NSMutableURLRequest requestWithURL:url];
+//修改请求方法
+requestM.HTTPMethod = @"POST";
+//设置请求体
+requestM.HTTPBody = [@"username=520&pwd=520&type=JSON" dataUsingEncoding:NSUTF8StringEncoding];
+//创建会话对象
+NSURLSession *session = [NSURLSession sharedSession];
+//创建请求 Task
+NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:requestM completionHandler:
+         ^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+
+    //解析返回的数据
+    NSLog(@"%@", [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]);
+}];
+//发送请求
+[dataTask resume];
+
+
+3. NSURLSessionDataTask 设置代理发送请求
+//确定请求路径
+NSURL *url = [NSURL URLWithString:@"http://120.25.226.186:32812/login"];
+//创建可变请求对象
+NSMutableURLRequest *requestM = [NSMutableURLRequest requestWithURL:url];
+//设置请求方法
+requestM.HTTPMethod = @"POST";
+//设置请求体
+requestM.HTTPBody = [@"username=520&pwd=520&type=JSON" dataUsingEncoding:NSUTF8StringEncoding];
+//创建会话对象，设置代理
+/**
+第一个参数：配置信息
+第二个参数：设置代理
+第三个参数：队列，如果该参数传递nil 那么默认在子线程中执行
+*/
+NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
+                      delegate:self delegateQueue:nil];
+//创建请求 Task
+NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:requestM];
+//发送请求
+[dataTask resume];
+
+
+代理方法：
+
+//传输完成
+- (void)URLSession:(NSURLSession *)session dataTask:(nonnull NSURLSessionDataTask *)dataTask 
+didReceiveResponse:(nonnull NSURLResponse *)response 
+completionHandler:(nonnull void (^)(NSURLSessionResponseDisposition))completionHandler 
+{
+     //子线程中执行
+     NSLog(@"接收到服务器响应的时候调用 -- %@", [NSThread currentThread]);
+
+     self.dataM = [NSMutableData data];
+     //默认情况下不接收数据
+     //必须告诉系统是否接收服务器返回的数据
+     completionHandler(NSURLSessionResponseAllow);
+}
+
+//传输中多次调用
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveData:(NSData *)data 
+{
+     NSLog(@"接受到服务器返回数据的时候调用,可能被调用多次");
+     //拼接服务器返回的数据
+     [self.dataM appendData:data];
+}
+
+//传输错误
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error
+{
+     NSLog(@"请求完成或者是失败的时候调用");
+     //解析服务器返回数据
+     NSLog(@"%@", [[NSString alloc] initWithData:self.dataM encoding:NSUTF8StringEncoding]);
+}
+
+
+
+设置代理之后的强引用问题
+
+NSURLSession 对象会强引用设置的代理
+控制器调用 viewDidDisappear 方法中，调用 invalidateAndCancel 方法或者是 finishTasksAndInvalidate 方法来释放强引用
+invalidateAndCancel 是无论请求完成都释放代理对象
+finishTasksAndInvalidate  请求完成后释放对象
+
+
+
+
+
+
+4. NSURLSessionDownloadTask 下载block方式
+
+
+    
+//确定请求路径
+NSURL *url = [NSURL URLWithString:@"http://120.25.226.186:32812/resources/images/minion_02.png"];
+//创建请求对象
+NSURLRequest *request = [NSURLRequest requestWithURL:url];
+//创建会话对象
+NSURLSession *session = [NSURLSession sharedSession];
+//创建会话请求
+//优点：该方法内部已经完成了边接收数据边写沙盒的操作，解决了内存飙升的问题
+NSURLSessionDownloadTask *downTask = [session downloadTaskWithRequest:request completionHandler:^(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+
+    //默认存储到临时文件夹 tmp 中，需要剪切文件到 cache
+    NSLog(@"%@", location);//目标位置
+    NSString *fullPath = [[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject]  
+                         stringByAppendingPathComponent:response.suggestedFilename];
+    
+     /**
+      fileURLWithPath:有协议头
+      URLWithString:无协议头
+      */
+    [[NSFileManager defaultManager] moveItemAtURL:location toURL:[NSURL fileURLWithPath:fullPath] error:nil];
+
+}];
+//发送请求
+[downTask resume];
+
+4-1 暂停和恢复下载：
+
+// 暂停
+- (IBAction)suspendDownload 
+{
+    __weak typeof(self) weakSelf = self;
+    [self.downloadTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+        weakSelf.resumeData = resumeData;
+    }];
+}
+
+// 开始
+- (IBAction)resumeDownload 
+{
+    if (self.resumeData)
+    {
+        self.downloadTask = [self.session downloadTaskWithResumeData:self.resumeData];
+        [self.downloadTask resume];
+    }
+    else
+    {
+        [self.downloadTask resume];
+    }
+}
+
+
+
+5. NSURLSessionDownloadTask 代理方式
+
+NSURL *url = [NSURL URLWithString:@"http://e.hiphotos.baidu.com/image/pic/item/63d0f703918fa0ec14b94082249759ee3c6ddbc6.jpg"];
+NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
+NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate:self delegateQueue: [NSOperationQueue mainQueue]];
+
+NSURLSessionDownloadTask * downloadTask =[ defaultSession downloadTaskWithURL:url];
+[downloadTask resume];
+
+
+
+代理方法：
+
+// 接收数据，可能多次被调用
+-(void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite
+{
+    float progress = totalBytesWritten * 1.0/totalBytesExpectedToWrite;
+    
+    // 主线程更新UI
+    dispatch_async(dispatch_get_main_queue(),^ {
+        [self.progressView setProgress:progress animated:YES];
+    });
+}
+
+// 3.下载完成之后调用该方法
+-  (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location
+{
+    NSString *catchDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject];
+    NSString *filePath = [catchDir stringByAppendingPathComponent:@"app.dmg"];
+    
+    NSError *fileError = nil;
+    NSURL *fileURL = [NSURL fileURLWithPath:filePath];
+    [[NSFileManager defaultManager] moveItemAtURL:location toURL:fileURL error:&fileError];
+    
+    if (fileError) {
+        NSLog(@"保存下载文件出错：%@", fileError);
+    } else {
+        NSLog(@"保存成功：%@", filePath);
+    }
+}
+
+
+5-1 暂停和恢复下载：
+
+//暂停
+[self.downloadTask suspend];
+//开始
+[self.downloadTask resume];
+
+
+
+
+6. NSURLSessionDownloadTask 后台下载
+
+1。创建 NSURLSession 时，需要创建后台模式 NSURLSessionConfiguration
+NSURLSessionConfiguration *config = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:@"BackgroundIdentifier"];
+
+NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: config delegate:self delegateQueue: [NSOperationQueue mainQueue]];
+
+NSURLSessionDownloadTask * downloadTask =[ defaultSession downloadTaskWithURL:url];
+[downloadTask resume];
+
+
+2。在AppDelegate中实现下面方法，并定义变量保存completionHandler代码块：
+// 应用处于后台，所有下载任务完成调用
+- (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)(void))completionHandler
+{
+    _backgroundSessionCompletionHandler = completionHandler;
+}
+
+
+
+4。在下载类中实现下面NSURLSessionDelegate协议方法，其实就是先执行完task的协议，保存数据、刷新界面之后再执行在AppDelegate中保存的代码块：
+// 应用处于后台，所有下载任务完成及NSURLSession协议调用之后调用
+- (void)URLSessionDidFinishEventsForBackgroundURLSession:(NSURLSession *)session
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        AppDelegate *appDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
+        if (appDelegate.backgroundSessionCompletionHandler) 
+        {
+            void (^completionHandler)(void) = appDelegate.backgroundSessionCompletionHandler;
+            appDelegate.backgroundSessionCompletionHandler = nil;
+        
+            // 执行block，释放阻止应用挂起的断言
+            completionHandler();
+        }
+    });
+}
+
+
+
+
+
+
+AFN框架分析：
+AFN以3.X版本为主，摒弃了NSURLConnection方法，全部基于NSURLSession方法实现。
+
+   第一层：
+   会话部份：NSUrlSession
+   网络监听模块：监听网络的变化
+   网络安全模块：网络安全方面
+   
+   第二层：
+   请求序列化：对请求进行了一个请求序列化的封装
+   响应序列化：对响应进行了一个响应序列化的封装
+   
+   第三层：
+   uikit集成模块：uikit原生控件分类的添加
+   
+   主要类关系图
+   
+   AFURLSessionManager 核心类
+   AFURLSessionManager 包含以下内容：
+   NSURLSession:会话模块
+   AFSecurityPolicy:保证安全，如网络证书校验，公钥的验证
+   AFNetworkReachabilityManager:对网络连接的一个临听，与苹果提供的Reachabilit是一样的
+   
+   AFHTTPSessionManager 继承于核心类的子类， 使用频率最高
+   AFHTTPSessionManager包含以下内容：
+   AFURLRequestSerialzation:根据传递进来的参数组装拼接，最终转化成NSMutableRequest
+   AFURLResponseSerialzation:负责响应序列化的，对网络的返回结果进行解析，如返回的json字符串，可能会调用系统的json库,或者imagewithdata，产生uiimage
+   
+   AFURLSessionManager主要负责哪些工作：
+   1：创建和管理NSURLSession,以及调用系统的api来生成NSURLSessionTask
+   NSURLSessionTask实际上可以理解为对应一个网络请求
+   2：实现NSURLSessionDelegate等协议以及代理方法，处理网络请求过程中涉及重定向，认证，以及网络响应处理
+   3:引入AFSecurityPolicy保证安全，比如发送https请求时，涉及证书校验，公钥验证过程
+   4:引入AFNetworkReachabilityManager监听网络状态，根据状态进行相关逻辑处理
+
+
+
       
         
         
@@ -10126,6 +11798,1825 @@ int sqlite3_busy_timeout(sqlite3*, 60);
  
 
  
+ReactiveCocoa  RAC  https://www.jianshu.com/p/87ef6720a096
+
+1 ReactiveCocoa作用
+
+方法选择器 代理 通知 kvo 都可用ReactiveCocoa实现
+把要监听的事件 事件的回调 以block等方式 代码放到一起执行 高聚合 低耦合思想
+
+2 编程思想
+
+ 面向过程  以处理事情的业务逻辑为核心，一步步实现
+ 面向对象  万物皆为对象，共同的特性 可抽取成一个类
+ 链式编程思想  将个方法以.方式连接一起，使代码有可读性 a(1).b(2).c(3)  方法返回值为block block的返回值是对象本身如： -(CaculatorMaker *(^)(int))add;
+ 
+ 
+3 链式编程思想 模仿masonry，写一个加法计算器，练习链式编程思想。
+
+
+NSObject+Caculator.h
+
+@class CaculatorMaker;
+@interface NSObject (Caculator)
+
+//计算
++(CGFloat)makeCaulators:(void(^))(CaculatorMaker *make)) caculatorMaker;
+@end
+
+
+
+NSObject+Caculator.m
+
+@implementation NSObject (Caculator)
+
++(CGFloat)makeCaulators:(void(^))(CaculatorMaker *make)) caculatorMaker
+{
+      //1.创建计算管理者
+      CaculatorMaker *mgr = {[CaculatorMaker alloc] init];
+      return mgr.result;
+}
+
+
+
+CaculatorMaker.h
+
+@interface CaculatorMaker :NSObject
+
+@property (nonatomic, assign) int result;
+
+//运算方法
+-(CaculatorMaker *(^)(int))add;
+-(CaculatorMaker *(^)(int))sub;
+-(CaculatorMaker *(^)(int))muilt;
+-(CaculatorMaker *(^)(int))divide;
+
+@end
+
+
+CaculatorMaker.m
+
+@implementation CaculatorMaker
+-(CaculatorMaker *(^)(int))add
+{
+    return ^CaculatorMaker *(int value){
+       _result +=value;
+       return self;
+    }
+}
+
+@end
+
+
+int result = [NSObject makeCaculators:^(CaculatorMaker *make){
+    make.add(1).add(2).divide(5);
+}];
+
+
+4 链式编程思想 一切皆为流，不需要考虑调用顺序，直接考虑结果。
+
+
+6  函数式编程思想  把一系列操作，用方法套方法的方式实现 每个方法必须返回对象本身，方法的参数是block block中的参数是需要操作的参数  block返回值为最后操作的结果
+
+7  函数式编程思想仿ReactiveCocoa 写一个加法计算器,并且加法计算器自带判断是否等于某个值.
+
+8  案例
+
+Caculator.h
+
+@interface Caculator :NSObject
+
+@property (nonatomic, assign) BOOL isEqule;
+@property (nonatomic, assign) int result;
+
+//运算方法
+-(Caculator *)caculator:(int (^) (int result))caculator;
+-(Caculator *)equle:(BOOL (^) (int result))operation;
+
+@end
+
+
+Caculator.m
+
+@implementation Caculator
+
+-(Caculator *)caculator:(int (^) (int result))caculator{
+
+}
+
+@end
+
+
+
+Caculator *c = [[Caculator alloc]init];
+//计算2*5 并判断是否等于10
+BOOL isqule =[[[c caculator:^(int result){
+     result += 2;
+     result *= 5;
+     return result; 
+}] equle:^BOOL(int result){
+
+}] isEqule];//判断每一个block返回的10是否与传入result的10相等
+
+NSLog("%d",isqule);
+
+
+9  ReactiveCocoa编程思想
+ReactiveCocoa结合了几种编程风格：函数式编程（Functional Programming）响应式编程（Reactive Programming）
+被描述为函数响应式编程（FRP）框架。不需要考虑调用顺序，直接考虑结果 ，把每一次操作都写成一系列嵌套的方法中
+
+10  导入ReactiveCocoa框架
+podfile 文件中
+use_frameworks！
+pod 'ReactiveCocoa', '~> 4.0.2-alpha-1'
+
+11 ReactiveCocoa常见类
+
+RACSiganl 信号类 RAC中最核心的类 ,搞定这个类就能用ReactiveCocoa开发了
+只要有数据改变，RACSiganl接收到此数据，内部交给订阅者去发出数据，这个类不具备发送数据能力，数据的每次改变都会调用subscribeNext 订阅这个方法，
+subscribeNext内部会创建订阅者
+冷信号：一个信号未被订阅，即使数据改变了，也找不到订阅者，就无法发送数据，默认信号都是冷信号
+热信号：一个信号被订阅，变为热信号，数据改变了，找到订立者发出数据
+
+
+RACSiganl 简单使用：
+  1.创建信号 + (RACSignal *)createSignal:(RACDisposable * (^)(id<RACSubscriber> subscriber))didSubscribe
+  2.订阅信号,才会激活信号. - (RACDisposable *)subscribeNext:(void (^)(id x))nextBlock
+  3.发送信号 - (void)sendNext:(id)value
+  
+  // 1.创建信号
+    RACSignal *siganl = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {//顺序1：didSubscribe保存到信号中
+        
+        // block调用时刻：每当有订阅者订阅信号，就会调用block。
+        
+        // 2.发送信号
+        [subscriber sendNext:@1];//顺序3：subscriber订阅者调用RACSignal的didSubscribe，didSubscribe调用subscriber订阅者sendNext
+        
+        // 如果不在发送数据，最好发送信号完成，内部会自动调用[RACDisposable disposable]取消订阅信号。
+        [subscriber sendCompleted];
+ 
+        return [RACDisposable disposableWithBlock:^{
+            
+            // block调用时刻：当信号发送完成或者发送错误，就会自动执行这个block,取消订阅信号。
+            
+            // 执行完Block后，当前信号就不在被订阅了。
+            
+            NSLog(@"信号被销毁");
+            
+        }];
+    }];
+    
+    // 3.订阅信号,才会激活信号.
+    [siganl subscribeNext:^(id x) {//顺序2：创建subscriber订阅者，把nextBlock保存到subscriber中
+        // block调用时刻：每当有信号发出数据，就会调用block.
+        NSLog(@"接收到数据:%@",x);
+    }];
+
+
+
+RACSignal底层实现：
+
+    // 1.创建信号，首先把didSubscribe保存到信号中，还不会触发。
+    // 2.当信号被订阅，也就是调用signal的subscribeNext:nextBlock
+    // 2.2 subscribeNext内部会创建订阅者subscriber，订阅都属于signal对象的一个成员，并且把nextBlock保存到subscriber中。
+    // 2.1 subscribeNext内部会调用siganl的didSubscribe
+    // 3.siganl的didSubscribe中调用[subscriber sendNext:@1];
+    // 3.1 sendNext底层其实就是执行subscriber的nextBlock
+    
+    创建信号RACSiganl 会保存didSubscribe
+    订阅信号RACSiganl 会创建订阅者subscriber
+    订阅者subscriber  会保存nextBlock 同时创建一个RACCompoundDisp（复合disp对象）
+    RACCompoundDisp对象  会保存RACSiganl信号 订阅者subscriber
+    订阅者subscriber发送信号时  [subscriber sendNext:@1]; 信号RACSigan中保存的didSubscribe会调用[subscriber sendNext:@1];
+    订阅者又会执行保存的nextBlock
+    
+    
+RACSubscriber 订阅者：用于发送信号，这是一个协议，不是一个类，只要遵守这个协议，并且实现方法才能成为订阅者。
+通过createSignal创建的信号，都有一个订阅者，帮助他发送数据。
+
+RACDisposable 取消订阅或者清理资源，当信号发送完成[subscriber sendCompleted] 或者发送错误的时候，就会自动触发它。可主动调用它取消订阅[disposable dispost]
+
+RACSubject 译为主题 可提供RACSiganl信号，自己可以充当信号，又能发送信号。用来代替代理，有了它，就不必要定义代理了
+当订阅时会把订阅者保存到RACSubscriber的_subscribers
+遍历subject中_subscribers中的订阅者，依次发送信息 ，可以被订阅多次，并且只能是先订阅后发布。
+
+RACReplaySubject:重复提供信号类，RACSubject的子类。可以先发送信号，再订阅信号 
+    场景1：一个信号每被订阅一次，想重复再接收一次，就可以先发信号
+    场景2：可以设置capacity数量来限制缓存的value的数量,即只缓充最新的几个值
+    
+    
+
+RACSubject简单使用:
+
+   // 1.创建信号
+    RACSubject *subject = [RACSubject subject];
+
+    // 2.订阅信号
+    [subject subscribeNext:^(id x) { //创建订阅者 只保存订阅者 nextBlock保存到订阅者中， nextBlock已经赋值
+        // block调用时刻：当信号发出新值，就会调用.
+        NSLog(@"第一个订阅者%@",x);
+    }];
+    [subject subscribeNext:^(id x) { //创建订阅者 只保存订阅者 nextBlock保存到订阅者中， nextBlock已经赋值
+        // block调用时刻：当信号发出新值，就会调用.
+        NSLog(@"第二个订阅者%@",x);
+    }];
+
+    // 3.发送信号
+    [subject sendNext:@"1"];//遍历刚刚保存的所有订阅者，一个一个调用订阅者的nextBlock
+
+    
+
+RACSubject底层原理：
+  // RACSubject使用步骤
+    // 1.创建信号 [RACSubject subject]，跟RACSiganl不一样，创建信号时没有block。
+    // 2.订阅信号 - (RACDisposable *)subscribeNext:(void (^)(id x))nextBlock
+    // 3.发送信号 sendNext:(id)value
+     
+     原理：
+    // RACSubject:底层实现和RACSignal不一样。区别在于发送信号时，RACSiganl是通过RACSiganl的didSubscribe
+     调用[subscriber sendNext:]去发送，而RACSubject是直接遍历所有订阅者，再[subscriber sendNext:]发送
+    // 1.调用subscribeNext订阅信号，只是把订阅者保存起来，并且订阅者的nextBlock已经赋值了。
+    // 2.调用sendNext发送信号，遍历刚刚保存的所有订阅者，一个一个调用订阅者的nextBlock。 
+    
+
+
+RACReplaySubject使用：
+
+    // 1.创建信号
+    RACReplaySubject *replaySubject = [RACReplaySubject subject];
+
+    // 2.发送信号
+    [replaySubject sendNext:@1];//保存所有的值，遍历之前存的订阅者，每个订阅者都调用nextBlock发送值
+    [replaySubject sendNext:@2];
+
+    // 3.订阅信号
+    [replaySubject subscribeNext:^(id x) {//遍历保存的所有值，每个订阅者都调用nextBlock发送此值
+
+        NSLog(@"第一个订阅者接收到的数据%@",x);
+    }];
+
+    // 订阅信号
+    [replaySubject subscribeNext:^(id x) {
+
+        NSLog(@"第二个订阅者接收到的数据%@",x);
+    }];  
+
+
+
+RACReplaySubject底层实现原理：
+
+// RACReplaySubject使用步骤:
+    // 1.创建信号 [RACSubject subject]，跟RACSiganl不一样，创建信号时没有block。
+    // 2.可以先订阅信号，也可以先发送信号。
+    // 2.1 订阅信号 - (RACDisposable *)subscribeNext:(void (^)(id x))nextBlock
+    // 2.2 发送信号 sendNext:(id)value
+
+    原理：
+    // RACReplaySubject:底层实现和RACSubject不一样。
+    // 1.调用sendNext发送信号，把值保存起来，然后遍历刚刚保存的所有订阅者，一个一个调用订阅者的nextBlock。
+    // 2.调用subscribeNext订阅信号，遍历保存的所有值，一个一个调用订阅者的nextBlock
+
+    // 如果想当一个信号被订阅，就重复播放之前所有值，需要先发送信号，在订阅信号。
+    // 也就是先保存值，在订阅值。
+    
+
+
+
+
+RACSubject 来替换代理的使用
+  实现： 点击控制器a的按钮，跳转到控制器b，点击控制器b的按钮，告诉控制器a控制器b已经点击了按钮
+  
+		步骤一：在第二个控制器.h，添加一个RACSubject代替代理。
+		
+		@interface TwoViewController : UIViewController
+
+		@property (nonatomic, strong) RACSubject *delegateSignal;
+
+		@end
+
+		步骤二：监听第二个控制器按钮点击
+		@implementation TwoViewController
+		- (IBAction)notice:(id)sender {
+			// 通知第一个控制器，告诉它，按钮被点了
+	
+			 // 通知代理
+			 // 判断代理信号是否有值
+			if (self.delegateSignal) {
+				// 有值，才需要通知
+				[self.delegateSignal sendNext:nil];
+			}
+		}
+		@end
+
+		步骤三：在第一个控制器中，监听跳转按钮，给第二个控制器的代理信号赋值，并且监听.
+		
+		@implementation OneViewController 
+		- (IBAction)btnClick:(id)sender {
+	
+			// 创建第二个控制器
+			TwoViewController *twoVc = [[TwoViewController alloc] init];
+	
+			// 设置代理信号
+			twoVc.delegateSignal = [RACSubject subject];
+	
+			// 订阅代理信号
+			[twoVc.delegateSignal subscribeNext:^(id x) {
+	   
+				NSLog(@"点击了通知按钮");
+			}];
+	
+			// 跳转到第二个控制器
+			[self presentViewController:twoVc animated:YES completion:nil];
+	
+		}
+		@end
+		
+		
+		
+		
+
+
+RAC定时器：
+    @weakify(self)
+    [[_btn rac_signalForControlEvents:UIControlEventTouchUpInside] subscribeNext:^(__kindof UIControl * _Nullable x) {
+        @strongify(self)
+        
+        x.enabled = false;
+        
+        self.time = 10;
+        
+        //这个就是RAC中的GCD  1秒后执行发送验证码
+        self.dispoable = [[RACSignal interval:1.0 onScheduler:[RACScheduler mainThreadScheduler]] subscribeNext:^(NSDate * _Nullable x) {
+            _time --;
+            NSString * title = _time > 0 ? [NSString stringWithFormat:@"请等待 %d 秒后重试",_time] : @"发送验证码";
+            [self.btn setTitle:title forState:UIControlStateNormal | UIControlStateDisabled];
+            self.btn.enabled = (_time==0)? YES : NO;
+            if (_time == 0) {
+                [self.dispoable dispose];
+            }
+        }];
+    }];		
+
+
+
+
+RACTuple   元组类,类似NSArray或字典用来包装值. 
+	RACTuple *x ； 
+	RACTupleUnpack(NSString *key,NSString *value) = x;   
+	NSString *key = x[0];
+
+
+
+RACSequence   RAC中的集合类，用于代替NSArray,NSDictionary,可以使用它来快速遍历数组和字典。 RACSequence可以转为RACSignal信号类
+
+    1.RACSequence和RACTuple简单使用 遍列数组，字典，字典转模型
+    
+			 // 1.遍历数组
+			NSArray *numbers = @[@1,@2,@3,@4];
+	
+			// 这里其实是三步
+			// 第一步: 把数组转换成集合RACSequence numbers.rac_sequence
+			// 第二步: 把集合RACSequence转换RACSignal信号类,numbers.rac_sequence.signal
+			// 第三步: 订阅信号，激活信号，会自动把集合中的所有值，遍历出来。
+			[numbers.rac_sequence.signal subscribeNext:^(id x) {//把number转成RACSequence再转成RACSignal信号去订阅
+	   
+				NSLog(@"%@",x);
+			}];
+	
+	
+			// 2.遍历字典,遍历出来的键值对会包装成RACTuple(元组对象)
+			NSDictionary *dict = @{@"name":@"xmg",@"age":@18};
+			[dict.rac_sequence.signal subscribeNext:^(RACTuple *x) {
+	   
+				// 解包元组，会把元组的值，按顺序给参数里面的变量赋值
+				RACTupleUnpack(NSString *key,NSString *value) = x;
+		
+				// 相当于以下写法
+		        // NSString *key = x[0];
+		        // NSString *value = x[1];
+		
+				NSLog(@"%@ %@",key,value);
+		
+			}];
+	
+	
+			// 3.字典转模型
+			// 3.1 OC写法
+			NSString *filePath = [[NSBundle mainBundle] pathForResource:@"flags.plist" ofType:nil];
+	
+			NSArray *dictArr = [NSArray arrayWithContentsOfFile:filePath];
+	
+			NSMutableArray *items = [NSMutableArray array];
+	
+			for (NSDictionary *dict in dictArr) {
+				FlagItem *item = [FlagItem flagWithDict:dict];
+				[items addObject:item];
+			}
+	
+			// 3.2 RAC写法
+			NSString *filePath = [[NSBundle mainBundle] pathForResource:@"flags.plist" ofType:nil];
+	
+			NSArray *dictArr = [NSArray arrayWithContentsOfFile:filePath];
+
+			NSMutableArray *flags = [NSMutableArray array];
+	
+			_flags = flags;
+	
+			// rac_sequence注意点：调用subscribeNext，并不会马上执行nextBlock，而是会等一会。
+			[dictArr.rac_sequence.signal subscribeNext:^(id x) {
+				// 运用RAC遍历字典，x：字典
+		
+				FlagItem *item = [FlagItem flagWithDict:x];
+		
+				[flags addObject:item];
+		
+			}];
+	
+			NSLog(@"%@",  NSStringFromCGRect([UIScreen mainScreen].bounds));
+	
+	
+			// 3.3 RAC高级写法:
+			NSString *filePath = [[NSBundle mainBundle] pathForResource:@"flags.plist" ofType:nil];
+	
+			NSArray *dictArr = [NSArray arrayWithContentsOfFile:filePath];
+			// map:映射的意思，目的：把原始值value映射成一个新值
+			// array: 把集合转换成数组
+			// 底层实现：当信号被订阅，会遍历集合中的原始值，映射成新值，并且保存到新的数组里。
+			NSArray *flags = [[dictArr.rac_sequence map:^id(id value) {
+	 
+				return [FlagItem flagWithDict:value];
+		
+			}] array];
+
+
+
+
+
+RACCommand   RAC中用于处理事件的类，可以把事件如何处理,事件中的数据如何传递，包装到这个类中，他可以很方便的监控事件的执行过程
+     
+     监听按钮点击，网络请求
+     
+     
+			// 一、RACCommand使用步骤:
+			// 1.创建命令 initWithSignalBlock:(RACSignal * (^)(id input))signalBlock
+			// 2.在signalBlock中，创建RACSignal，并且作为signalBlock的返回值
+			// 3.执行命令 - (RACSignal *)execute:(id)input
+	
+			// 二、RACCommand使用注意:
+			// 1.signalBlock必须要返回一个信号，不能传nil.
+			// 2.如果不想要传递信号，直接创建空的信号[RACSignal empty];
+			// 3.RACCommand中信号如果数据传递完，必须调用[subscriber sendCompleted]，这时命令才会执行完毕，否则永远处于执行中。
+			// 4.RACCommand需要被强引用，否则接收不到RACCommand中的信号，因此RACCommand中的信号是延迟发送的。
+	        // 5.executing 监听当前命令是否正在执行executing，命令是否正在工作
+	
+	
+			// 1.创建命令
+			RACCommand *command = [[RACCommand alloc] initWithSignalBlock:^RACSignal *(id input) {
+		
+		
+				NSLog(@"执行命令");
+		
+				// 创建空信号,必须返回信号
+				//        return [RACSignal empty];
+		
+				// 2.创建信号,用来传递数据
+				return [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+			        //网络请求完成后可以调用下面的代码
+					[subscriber sendNext:@"请求数据"];//调一次，则subscribeNext执行一次
+			
+					// 注意：数据传递完，最好调用sendCompleted，这时命令才执行完毕。
+					[subscriber sendCompleted];
+			
+					return nil;
+				}];
+		
+			}];
+	
+			// 强引用命令，不要被销毁，否则接收不到数据
+			_conmmand = command;
+	
+	
+   
+			// 3.订阅RACCommand中的信号
+			[command.executionSignals subscribeNext:^(id x) {
+		
+				[x subscribeNext:^(id x) {//订阅executionSignals就能拿到RACCommand中返回的信号，然后订阅返回的信号，就能获取发出的值。
+			
+					NSLog(@"%@",x);
+				}];
+		
+			}];
+	
+			// RAC高级用法
+			// switchToLatest:用于signal of signals，获取signal of signals发出的最新信号,也就是可以直接拿到RACCommand中的信号
+			[command.executionSignals.switchToLatest subscribeNext:^(id x) {
+		
+				NSLog(@"%@",x);
+			}];
+	
+			// 4.监听命令是否执行完毕,默认会来一次，可以直接跳过，skip表示跳过第一次信号。
+			[[command.executing skip:1] subscribeNext:^(id x) {
+		
+				if ([x boolValue] == YES) {
+					// 正在执行
+					NSLog(@"正在执行");
+			
+				}else{
+					// 执行完成
+					NSLog(@"执行完成");
+				}
+		
+			}];
+		   // 5.执行命令
+			[self.conmmand execute:@1];
+	
+	
+	相关问题：
+	
+	  RACCommand设计思想：内部signalBlock为什么要返回一个信号，这个信号有什么用？
+		1.在RAC开发中，通常会把网络请求封装到RACCommand，直接执行某个RACCommand就能发送请求。
+		 2.当RACCommand内部请求到数据的时候，需要把请求的数据传递给外界，这时候就需要通过signalBlock返回的信号传递了。
+	
+      如何拿到RACCommand中返回信号发出的数据。
+		// 1.RACCommand有个执行信号源executionSignals，这个是signal of signals(信号的信号),意思是信号发出的数据是信号，不是普通的类型。
+		// 2.订阅executionSignals就能拿到RACCommand中返回的信号，然后订阅返回的信号，就能获取发出的值。
+	
+		// 五、监听当前命令是否正在执行executing
+	
+		// 六、使用场景,监听按钮点击，网络请求
+		
+		
+		
+
+RACMulticastConnection（多播连接）    用于当一个信号，被多次订阅时，创建信号的block会执行多次，造成副作用，可以使用这个类处理。
+                                    RACMulticastConnection的创建通过RACSignal的-publish或者-muticast
+                                    
+
+
+
+RACMulticastConnection使用步骤:
+    // 1.创建信号 + (RACSignal *)createSignal:(RACDisposable * (^)(id<RACSubscriber> subscriber))didSubscribe
+    // 2.创建连接 RACMulticastConnection *connect = [signal publish];
+    // 3.订阅信号,注意：订阅的不在是之前的信号，而是连接的信号。 [connect.signal subscribeNext:nextBlock]
+    // 4.连接 [connect connect]
+    
+    
+     // 需求：假设在一个信号中发送请求，每次订阅一次都会发送请求，这样就会导致多次请求。
+     // 解决：使用RACMulticastConnection就能解决.
+    
+		// 1.创建请求信号
+	   RACSignal *signal = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+		
+		
+			NSLog(@"发送请求");
+	 
+			return nil;
+		}];
+		// 2.订阅信号
+		[signal subscribeNext:^(id x) {
+	   
+			NSLog(@"接收数据");
+		
+		}];
+		// 2.订阅信号
+		[signal subscribeNext:^(id x) {
+		
+			NSLog(@"接收数据");
+		
+		}];
+	
+		// 3.运行结果，会执行两遍发送请求，也就是每次订阅都会发送一次请求
+	
+	
+	
+		// RACMulticastConnection:解决重复请求问题
+		// 1.创建信号
+		RACSignal *signal = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {//保存了didSubscribe
+		
+		
+			NSLog(@"发送请求");
+			[subscriber sendNext:@1];//didSubscribe会调用 订阅者的sendNext 会遍历RACSubject所有订阅者发送信号
+		
+			return nil;
+		}];
+	
+		// 2.创建连接
+		RACMulticastConnection *connect = [signal publish];
+	
+		// 3.订阅信号，
+		// 注意：订阅信号，也不能激活信号，只是保存订阅者到数组，必须通过连接,当调用连接，就会一次性调用所有订阅者的sendNext:
+		[connect.signal subscribeNext:^(id x) {//connect.signal是RACSubject，不再是RACSignal，保存订阅者，订阅者保存nextBlock
+	   
+			NSLog(@"订阅者一信号");
+		
+		}];
+	
+		[connect.signal subscribeNext:^(id x) {
+		
+			NSLog(@"订阅者二信号");
+		
+		}];
+	
+		// 4.连接,激活信号
+		[connect connect];
+
+
+
+
+RACMulticastConnection 底层原理：
+
+    // 1.创建connect，connect.sourceSignal -> RACSignal(原始信号)  connect.signal -> RACSubject
+    // 2.订阅connect.signal，会调用RACSubject的subscribeNext，创建订阅者，而且把订阅者保存起来，不会执行block。
+    // 3.[connect connect]内部会订阅RACSignal(原始信号)，并且订阅者是RACSubject
+    // 3.1.订阅原始信号，就会调用原始信号中的didSubscribe
+    // 3.2 didSubscribe，拿到订阅者调用sendNext，其实是调用RACSubject的sendNext
+    // 4.RACSubject的sendNext,会遍历RACSubject所有订阅者发送信号。
+    // 4.1 因为刚刚第二步，都是在订阅RACSubject，因此会拿到第二步所有的订阅者，调用他们的nextBlock
+    
+    个人理解：
+    createSignal:创建信号，保存didSubscribec
+    pubilish:创建一个RACSubject，它可以接收发出信号，并把RACSignal与RACSubject保存到连接类connect中
+    connect.signal订阅信号： 这里调用的是RACSubject的订阅方法，并创建订阅者，把nextBlock保存到subscriber订阅中
+    [connect connect]激活连接：RACSubject会遍列数组中的订阅者，信号RACSigan中保存的didSubscribe会调用每个订阅者[subscriber sendNext:@1]送信号。
+    
+    
+    
+    
+
+RACScheduler  RAC中的队列，用GCD封装的。
+
+
+RACUnit   表⽰stream不包含有意义的值,也就是看到这个，可以直接理解为nil.
+
+
+RACEvent   把数据包装成信号事件(signal event)。它主要通过RACSignal的-materialize来使用，然并卵。
+
+
+
+
+
+ReactiveCocoa开发中常见用法：
+
+     rac_signalForSelector：用于替代代理
+     
+    // 1.代替代理
+    // 需求：自定义redView,监听红色view中按钮点击
+    // 之前都是需要通过代理监听，给红色View添加一个代理属性，点击按钮的时候，通知代理做事情
+    // rac_signalForSelector:把调用某个对象的方法的信息转换成信号，就要调用这个方法，就会发送信号。
+    // 这里表示只要redV调用btnClick:,就会发出信号，订阅就好了。
+    
+    [[redV rac_signalForSelector:@selector(btnClick:)] subscribeNext:^(id x) {
+        NSLog(@"点击红色按钮");
+    }];
+
+
+
+    代替KVO   rac_valuesAndChangesForKeyPath：用于监听某个对象的属性改变。
+    
+    // 2.KVO
+    // 把监听redV的center属性改变转换成信号，只要值改变就会发送信号
+    // observer:可以传入nil
+    [[redV rac_valuesAndChangesForKeyPath:@"center" options:NSKeyValueObservingOptionNew observer:nil] subscribeNext:^(id x) {
+
+        NSLog(@"%@",x);
+
+    }];
+    
+    
+    
+    监听事件:   rac_signalForControlEvents：用于监听某个事件。
+    
+    // 3.监听事件
+    // 把按钮点击事件转换为信号，点击按钮，就会发送信号
+    [[self.btn rac_signalForControlEvents:UIControlEventTouchUpInside] subscribeNext:^(id x) {
+
+        NSLog(@"按钮被点击了");
+    }];
+    
+    
+    
+    代替通知:  rac_addObserverForName:用于监听某个通知。
+    
+     // 4.代替通知
+    // 把监听到的通知转换信号
+    [[[NSNotificationCenter defaultCenter] rac_addObserverForName:UIKeyboardWillShowNotification object:nil] subscribeNext:^(id x) {
+        NSLog(@"键盘弹出");
+    }];
+
+
+
+    监听文本框文字改变:rac_textSignal:只要文本框发出改变就会发出这个信号。
+    
+    // 5.监听文本框的文字改变
+   [_textField.rac_textSignal subscribeNext:^(id x) {
+
+       NSLog(@"文字改变了%@",x);
+   }];
+
+
+
+   处理当界面有多次请求时，需要都获取到数据时，才能展示界面
+       
+   rac_liftSelector:withSignalsFromArray:Signals:当传入的Signals(信号数组)，每一个signal都至少sendNext过一次，
+   就会去触发第一个selector参数的方法。
+   使用注意：几个信号，参数一的方法就几个参数，每个参数对应信号发出的数据。
+   
+   
+     // 6.处理多个请求，都返回结果的时候，统一做处理.
+    RACSignal *request1 = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+        
+        // 发送请求1
+        [subscriber sendNext:@"发送请求1"];
+        return nil;
+    }];
+    
+    RACSignal *request2 = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+        // 发送请求2
+        [subscriber sendNext:@"发送请求2"];
+        return nil;
+    }];
+    
+    // 使用注意：几个信号，参数一的方法就几个参数，每个参数对应信号发出的数据。
+    [self rac_liftSelector:@selector(updateUIWithR1:r2:) withSignalsFromArray:@[request1,request2]];
+    
+    
+	}
+	// 更新UI
+	- (void)updateUIWithR1:(id)data r2:(id)data1
+	{
+		NSLog(@"更新UI%@  %@",data,data1);
+	}
+	
+	
+	
+	
+	
+	
+
+
+
+ReactiveCocoa常见宏
+
+
+   RAC(TARGET, [KEYPATH, [NIL_VALUE]])：  用于给某个对象的某个属性绑定信号
+   
+    // 只要文本框文字改变，就会修改label的文字
+    RAC(self.labelView,text) = _textField.rac_textSignal;
+    
+    
+    
+  
+   RACObserve(self, name):监听某个对象的某个属性,返回的是信号。
+   
+   [RACObserve(self.view, center) subscribeNext:^(id x) {
+      
+        NSLog(@"%@",x);
+    }];
+    
+    
+    
+    @weakify(Obj)和@strongify(Obj)：一般两个都是配套使用,在主头文件(ReactiveCocoa.h)中并没有导入，需要自己手动导入，
+    RACEXTScope.h才可以使用。但是每次导入都非常麻烦，只需要在主头文件自己导入就好了。
+    
+    
+    
+    
+    
+    RACTuplePack：把数据包装成RACTuple（元组类）
+    
+    // 把参数中的数据包装成元组
+    RACTuple *tuple = RACTuplePack(@10,@20);
+    
+    
+    
+    
+    RACTupleUnpack：把RACTuple（元组类）解包成对应的数据。
+    
+    // 把参数中的数据包装成元组
+    RACTuple *tuple = RACTuplePack(@"xmg",@20);
+    
+    // 解包元组，会把元组的值，按顺序给参数里面的变量赋值
+    // name = @"xmg" age = @20
+    RACTupleUnpack(NSString *name,NSNumber *age) = tuple;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+                             ReactiveCocoa之进阶篇
+    
+ReactiveCocoa操作须知
+所有的信号（RACSignal）都可以进行操作处理，因为所有操作方法都定义在RACStream.h中，因此只要继承RACStream就有了操作处理方法。    
+
+
+ReactiveCocoa操作思想
+运用的是Hook（钩子）思想，Hook是一种用于改娈方法执行结果的技术. 每次在调用方法前，都会截获该方法，执行自己的方法，改变结果
+
+
+ReactiveCocoa核心方法bind
+ReactiveCocoa操作的核心方法是bind（绑定），RAC中核心开发方式也是绑定，RAC开发，应该把重心放在绑定，而不是赋值上，如果传统开发
+创建对象，先给对象赋值一些数据，再执行方法，而绑定不一样，先把未来要执行的方法与对象绑定，以后再去赋值，对象会调用这个方法。
+在开发中很少使用bind方法，bind属于RAC中的底层方法，RAC已经封装了很多好用的其他方法，底层都是调用bind，用法比bind简单.
+
+
+bind举例：
+
+   // 假设想监听文本框的内容，并且在每次输出结果的时候，都在文本框的内容拼接一段文字“输出：”
+
+    // 方式一:在返回结果后，拼接。
+        [_textField.rac_textSignal subscribeNext:^(id x) {
+
+            NSLog(@"输出:%@",x);
+
+        }];
+
+    // 方式二:在返回结果前，拼接，使用RAC中bind方法做处理。
+    // bind方法参数:需要传入一个返回值是RACStreamBindBlock的block参数 _textField.rac_textSignal bind:^RACStreamBindBlock
+    // RACStreamBindBlock是一个block的类型，返回值是信号，参数（value,stop），因此参数的block返回值也是一个block。
+
+    // RACStreamBindBlock:
+    // 参数一(value):表示接收到信号的原始值，还没做处理
+    // 参数二(*stop):用来控制绑定Block，如果*stop = yes,那么就会结束绑定。
+    // 返回值：信号，做好处理，在通过这个信号返回出去，一般使用RACReturnSignal,需要手动导入头文件RACReturnSignal.h。
+
+    // bind方法使用步骤:
+    // 1.传入一个返回值RACStreamBindBlock的block。
+    // 2.描述一个RACStreamBindBlock类型的bindBlock作为block的返回值。
+    // 3.描述一个返回结果的信号，作为bindBlock的返回值。
+    // 注意：在bindBlock中做信号结果的处理。
+
+    // 底层实现:
+    // 1.源信号调用bind,会重新创建一个绑定信号。
+    // 2.当绑定信号被订阅，就会调用绑定信号中的didSubscribe，生成一个bindingBlock。
+    // 3.当源信号有内容发出，就会把内容传递到bindingBlock处理，调用bindingBlock(value,stop)
+    // 4.调用bindingBlock(value,stop)，会返回一个内容处理完成的信号（RACReturnSignal）。
+    // 5.订阅RACReturnSignal，就会拿到绑定信号的订阅者，把处理完成的信号内容发送出来。
+
+    // 注意:不同订阅者，保存不同的nextBlock，看源码的时候，一定要看清楚订阅者是哪个。
+    // 这里需要手动导入#import <ReactiveCocoa/RACReturnSignal.h>，才能使用RACReturnSignal。
+    [[_textField.rac_textSignal bind:^RACStreamBindBlock{//会创建一个bind信号
+
+        // 什么时候调用:
+        // block作用:表示绑定了一个信号.
+
+        return ^RACStream *(id value, BOOL *stop){//value信号的原始值，保存didSubscribe
+
+            // 什么时候调用block:当信号有新的值发出，就会来到这个block。值变化后就有新信号发出会调用bindingBlock
+
+            // block作用:做返回值的处理
+
+            // 做好处理，通过信号返回出去.RACReturnSignal信号会拿到订阅者把内容sendnext发送出去
+            return [RACReturnSignal return:[NSString stringWithFormat:@"输出:%@",value]];
+        };
+
+    }] subscribeNext:^(id x) {//bind信号订阅时，会创建保存订阅者，订阅者属于bind信号返回的RACReturnSignal信号，信号中的didSubscribe，生成一个bindingBlock。
+
+        NSLog(@"%@",x);
+
+    }];
+    
+    
+    
+    
+    
+ReactiveCocoa操作方法之映射(flattenMap,Map)  flattenMap，Map用于把源信号内容映射成新的内容
+
+flattenMap简单使用：
+
+    // flattenMap作用:把源信号的内容映射成一个新的信号，信号可以是任意类型。
+
+    // flattenMap使用步骤:
+    // 1.传入一个block，block类型是返回值RACStream，参数value
+    // 2.参数value就是源信号的内容，拿到源信号的内容做处理
+    // 3.包装成RACReturnSignal信号，返回出去。
+
+
+    [[_textField.rac_textSignal flattenMap:^RACStream *(id value) {
+
+        // block什么时候 : 源信号发出的时候，就会调用这个block。
+
+        // block作用 : 改变源信号的内容。
+
+        // 返回值：绑定信号的内容.
+        return [RACReturnSignal return:[NSString stringWithFormat:@"输出:%@",value]];
+
+    }] subscribeNext:^(id x) {
+
+        // 订阅绑定信号，每当源信号发送内容，做完处理，就会调用这个block。  创建保存的是bind信号返回信号RACReturnSignal的订阅者
+
+        NSLog(@"%@",x);
+
+    }];
+    
+    
+     // flattenMap底层实现:
+    // 0.flattenMap内部调用bind方法实现的,flattenMap中block的返回值，会作为bind中bindBlock的返回值。
+    // 1.当订阅绑定信号，就会生成bindBlock。
+    // 2.当源信号发送内容，就会调用bindBlock(value, *stop)
+    // 3.调用bindBlock，内部就会调用flattenMap的block，flattenMap的block作用：就是把处理好的数据包装成信号。
+    // 4.返回的信号最终会作为bindBlock中的返回信号，当做bindBlock的返回信号。
+    // 5.订阅bindBlock的返回信号，就会拿到绑定信号的订阅者，把处理完成的信号内容发送出来。
+
+
+
+
+    
+Map简单使用:
+
+
+    // Map作用:把源信号的值映射成一个新的值
+
+    // Map使用步骤:
+    // 1.传入一个block,类型是返回对象，参数是value
+    // 2.value就是源信号的内容，直接拿到源信号的内容做处理
+    // 3.把处理好的内容，直接返回就好了，不用包装成信号，返回的值，就是映射的值。
+    
+    
+   [[_textField.rac_textSignal map:^id(id value) {
+        // 当源信号发出，就会调用这个block，修改源信号的内容
+        // 返回值：就是处理完源信号的内容。
+        return [NSString stringWithFormat:@"输出:%@",value];
+    }] subscribeNext:^(id x) {
+
+        NSLog(@"%@",x);
+    }];    
+    
+    
+    // Map底层实现:  核心（Map底层其实是调用flatternMap）
+    // 0.Map底层其实是调用flatternMap,Map中block中的返回的值会作为flatternMap中block中的值。
+    // 1.当订阅绑定信号，就会生成bindBlock。
+    // 3.当源信号发送内容，就会调用bindBlock(value, *stop)
+    // 4.调用bindBlock，内部就会调用flattenMap的block
+    // 5.flattenMap的block内部会调用Map中的block，把Map中的block返回的内容包装成返回的信号。
+    // 5.返回的信号最终会作为bindBlock中的返回信号，当做bindBlock的返回信号。
+    // 6.订阅bindBlock的返回信号，就会拿到绑定信号的订阅者，把处理完成的信号内容发送出来
+    
+    
+FlatternMap和Map的区别
+	1.FlatternMap中的Block返回信号。
+	2.Map中的Block返回对象。
+	3.开发中，如果信号发出的值不是信号，映射一般使用Map
+	4.开发中，如果信号发出的值是信号，映射一般使用FlatternMap。
+	
+	
+	
+RACSubject的RACSubject（信号的信号）使用FlatternMap
+
+    // 创建信号中的信号
+    RACSubject *signalOfsignals = [RACSubject subject];//信号的信号
+    RACSubject *signal = [RACSubject subject];//信号
+
+    [[signalOfsignals flattenMap:^RACStream *(id value) {
+
+     // 当signalOfsignals的signals发出信号才会调用
+
+        return value;
+
+    }] subscribeNext:^(id x) {
+
+        // 只有signalOfsignals的signal发出信号才会调用，因为内部订阅了bindBlock中返回的信号，也就是flattenMap返回的信号。
+        // 也就是flattenMap返回的信号发出内容，才会调用。
+
+        NSLog(@"%@aaa",x);
+    }];
+
+    // 信号的信号发送信号
+    [signalOfsignals sendNext:signal];
+
+    // 信号发送内容
+    [signal sendNext:@1];
+    
+    
+    
+    
+ReactiveCocoa操作方法之组合  
+
+concat:  按一定顺序拼接信号，当多个信号发出的时候，有顺序的接收信号。
+
+    RACSignal *signalA = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+		[subscriber sendNext:@1];
+
+		[subscriber sendCompleted];
+
+		return nil;
+	}];
+	RACSignal *signalB = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+
+		[subscriber sendNext:@2];
+
+		return nil;
+	}];
+
+	// 把signalA拼接到signalB后，signalA发送完成，signalB才会被激活。
+	RACSignal *concatSignal = [signalA concat:signalB];
+
+	// 以后只需要面对拼接信号开发。
+	// 订阅拼接的信号，不需要单独订阅signalA，signalB
+	// 内部会自动订阅。
+	// 注意：第一个信号必须发送完成，第二个信号才会被激活
+	[concatSignal subscribeNext:^(id x) {
+
+		NSLog(@"%@",x);//打印两次，分别是第一个信号的值 第二个信号的值
+
+	}];
+
+	// concat底层实现:
+	// 1.当拼接信号被订阅，就会调用拼接信号的didSubscribe
+	// 2.didSubscribe中，会先订阅第一个源信号（signalA）
+	// 3.会执行第一个源信号（signalA）的didSubscribe
+	// 4.第一个源信号（signalA）didSubscribe中发送值，就会调用第一个源信号（signalA）订阅者的nextBlock,通过拼接信号的订阅者把值发送出来.
+	// 5.第一个源信号（signalA）didSubscribe中发送完成，就会调用第一个源信号（signalA）订阅者的completedBlock,订阅第二个源信号（signalB）这时候才激活（signalB）。
+	// 6.订阅第二个源信号（signalB）,执行第二个源信号（signalB）的didSubscribe
+	// 7.第二个源信号（signalA）didSubscribe中发送值,就会通过拼接信号的订阅者把值发送出来.
+	
+	
+	
+
+then:  用于连接两个信号，当第一个信号完成，才会连接then返回的信号。
+
+	// then:用于连接两个信号，当第一个信号完成，才会连接then返回的信号
+	// 注意使用then，之前信号的值会被忽略掉.
+	// 底层实现：1、先过滤掉之前的信号发出的值。2.使用concat连接then返回的信号
+	[[[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+ 
+		[subscriber sendNext:@1];
+		[subscriber sendCompleted];
+		return nil;
+	}] then:^RACSignal *{
+		return [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+			[subscriber sendNext:@2];
+			return nil;
+		}];
+	}] subscribeNext:^(id x) {
+  
+		// 只能接收到第二个信号的值，也就是then返回信号的值，之前信号的值会被忽略掉
+		NSLog(@"%@",x);
+	}];
+	
+	
+	
+	
+merge:  把多个信号合并为一个信号，任何一个信号有新值的时候就会调用，与concat拼接信号不同的是这里不需要等signalA发送完成再发送signalB
+
+
+    // merge:把多个信号合并成一个信号
+    //创建多个信号
+    RACSignal *signalA = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+        
+        [subscriber sendNext:@1];
+        
+        
+        return nil;
+    }];
+    
+    RACSignal *signalB = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+        
+        [subscriber sendNext:@2];
+        
+        return nil;
+    }];
+
+    // 合并信号,任何一个信号发送数据，都能监听到.
+    RACSignal *mergeSignal = [signalA merge:signalB];
+    
+    [mergeSignal subscribeNext:^(id x) {
+       
+        NSLog(@"%@",x);//打印两次信号的值 
+        
+    }];
+    
+    // 底层实现：
+    // 1.合并信号被订阅的时候，就会遍历所有信号，并且发出这些信号。
+    // 2.每发出一个信号，这个信号就会被订阅
+    // 3.也就是合并信号一被订阅，就会订阅里面所有的信号。
+    // 4.只要有一个信号被发出就会被监听。
+    
+    
+    
+zipWith:    把两个信号压缩成一个信号，只有当两个信号同时发出信号内容时，并且把两个信号的内容合并成一个元组，才会触发压缩流的next事件。
+
+   RACSignal *signalA = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+        
+        [subscriber sendNext:@1];
+        
+        
+        return nil;
+    }];
+    
+    RACSignal *signalB = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+        
+        [subscriber sendNext:@2];
+        
+        return nil;
+    }];
+
+    
+    
+    // 压缩信号A，信号B
+    RACSignal *zipSignal = [signalA zipWith:signalB];
+    
+    [zipSignal subscribeNext:^(id x) {
+       
+        NSLog(@"%@",x);//接收一次，里面包含信号1和信号2的值
+    }];
+    
+    // 底层实现:
+    // 1.定义压缩信号，内部就会自动订阅signalA，signalB
+    // 2.每当signalA或者signalB发出信号，就会判断signalA，signalB有没有发出个信号，有就会把最近发出的信号都包装成元组发出。
+    
+    
+    
+    
+combineLatest:    与zipWith没什么区别，将多个信号合并起来，并且拿到各个信号的最新的值,必须每个合并的signal至少都有过一次sendNext，才会触发合并的信号。
+
+     RACSignal *signalA = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+       
+       [subscriber sendNext:@1];
+       
+       return nil;
+   }];
+   
+   RACSignal *signalB = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+       
+       [subscriber sendNext:@2];
+       
+       return nil;
+   }];
+
+   // 把两个信号组合成一个信号,跟zip一样，没什么区别
+   RACSignal *combineSignal = [signalA combineLatestWith:signalB];
+ 
+   [combineSignal subscribeNext:^(id x) {
+      
+       NSLog(@"%@",x);
+   }];
+   
+   // 底层实现：
+   // 1.当组合信号被订阅，内部会自动订阅signalA，signalB,必须两个信号都发出内容，才会被触发。
+   // 2.并且把两个信号组合成元组发出。
+   
+   
+   
+reduce聚合:    由于信号发出的内容是元组，把信号发出元组的值聚合成一个值，（即把返回结果为元组的值更换返回类型）每个信号发送信号都能收到一次
+
+	  RACSignal *signalA = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+	 
+		 [subscriber sendNext:@1];
+	 
+		 return nil;
+	 }];
+ 
+	 RACSignal *signalB = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+	 
+		 [subscriber sendNext:@2];
+	 
+		 return nil;
+	 }];
+ 
+	 // 聚合
+	 // 常见的用法，（先组合在聚合）。combineLatest:(id<NSFastEnumeration>)signals reduce:(id (^)())reduceBlock
+	 // reduce中的block简介:
+	 // reduceblcok中的参数，有多少信号组合，reduceblcok就有多少参数，每个参数就是之前信号发出的内容
+	 // reduceblcok的返回值：聚合信号之后的内容。
+	RACSignal *reduceSignal = [RACSignal combineLatest:@[signalA,signalB] reduce:^id(NSNumber *num1 ,NSNumber *num2){
+ 
+		return [NSString stringWithFormat:@"%@ %@",num1,num2];
+	
+	}];
+ 
+	 [reduceSignal subscribeNext:^(id x) {
+	
+		 NSLog(@"%@",x);
+	 }];
+ 
+	 // 底层实现:
+	 // 1.订阅聚合信号，每次有内容发出，就会执行reduceblcok，把信号内容转换成reduceblcok返回的值。
+	 
+	 
+	 
+	 
+ReactiveCocoa操作方法之过滤
+
+filter:  过滤信号 获取满足条件的信号.
+
+	// 过滤:
+	// 每次信号发出，会先执行过滤条件判断.
+	[_textField.rac_textSignal filter:^BOOL(NSString *value) {
+			return value.length > 3;
+	}];
+	
+
+ignore:  忽略完某些值的信号
+    // 内部调用filter过滤，忽略掉ignore的值
+	[[_textField.rac_textSignal ignore:@"1"] subscribeNext:^(id x) {
+
+		NSLog(@"%@",x);
+	}];
+
+
+distinctUntilChanged:  当上一次的值和当前的值有明显的变化就会发出信号，否则会被忽略掉
+
+    // 过滤，当上一次和当前的值不一样，就会发出内容。
+	// 在开发中，刷新UI经常使用，只有两次数据不一样才需要刷新
+	[[_textField.rac_textSignal distinctUntilChanged] subscribeNext:^(id x) {
+  
+		NSLog(@"%@",x);
+	}];
+	
+	
+
+take:  从开始一共取N次的信号
+
+	// 1、创建信号
+	RACSubject *signal = [RACSubject subject];
+
+	// 2、处理信号，订阅信号
+	[[signal take:1] subscribeNext:^(id x) {
+	
+		NSLog(@"%@",x);
+	}];
+
+	// 3.发送信号
+	[signal sendNext:@1];
+
+	[signal sendNext:@2];
+	
+	
+takeLast:取最后N次的信号,前提条件，订阅者必须调用完成，因为只有完成，就知道总共有多少信号.
+
+	// 1、创建信号
+	RACSubject *signal = [RACSubject subject];
+
+	// 2、处理信号，订阅信号
+	[[signal takeLast:1] subscribeNext:^(id x) {
+	
+		NSLog(@"%@",x);
+	}];
+
+	// 3.发送信号
+	[signal sendNext:@1];
+
+	[signal sendNext:@2];
+
+	[signal sendCompleted];
+	
+	
+takeUntil:(RACSignal *):  获取信号直到某个信号执行完成
+
+	// 监听文本框的改变直到当前对象被销毁
+	[_textField.rac_textSignal takeUntil:self.rac_willDeallocSignal];
+	
+	
+skip:(NSUInteger):  跳过几个信号,不接受。
+
+	// 表示输入第一次，不会被监听到，跳过第一次发出的信号
+	[[_textField.rac_textSignal skip:1] subscribeNext:^(id x) {
+   
+		NSLog(@"%@",x);
+	}];
+	
+	
+switchToLatest:用于signalOfSignals（信号的信号），有时候信号也会发出信号，会在signalOfSignals中，获取signalOfSignals发送的最新信号。
+
+	RACSubject *signalOfSignals = [RACSubject subject];
+	RACSubject *signal = [RACSubject subject];
+
+	// 获取信号中信号最近发出信号，订阅最近发出的信号。
+	// 注意switchToLatest：只能用于信号中的信号
+	[signalOfSignals.switchToLatest subscribeNext:^(id x) {
+   
+		NSLog(@"%@",x);
+	}];
+	[signalOfSignals sendNext:signal];//信号中的信号
+	[signal sendNext:@1];
+	
+	
+	
+	
+ReactiveCocoa操作方法之秩序
+
+doNext:  执行Next之前，会先执行这个Block
+doCompleted:  执行sendCompleted之前，会先执行这个Block
+
+	[[[[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+	    [subscriber sendNext:@1];
+	    [subscriber sendCompleted];
+	     return nil;
+	}] doNext:^(id x) {
+	// 执行[subscriber sendNext:@1];之前会调用这个Block
+	    NSLog(@"doNext");;
+	}] doCompleted:^{
+	    // 执行[subscriber sendCompleted];之前会调用这个Block
+	    NSLog(@"doCompleted");;
+	}] subscribeNext:^(id x) {
+  
+		NSLog(@"%@",x);
+	}];
+	
+	
+	
+ReactiveCocoa操作方法之线程
+
+deliverOn: 内容传递切换到制定线程中，副作用在原来线程中,把在创建信号时block中的代码称之为副作用。
+
+subscribeOn: 内容传递和副作用都会切换到制定线程中
+
+
+
+ReactiveCocoa操作方法之时间
+
+timeout：超时，可以让一个信号在一定的时间后，自动报错
+
+	 RACSignal *signal = [[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+		return nil;
+	}] timeout:1 onScheduler:[RACScheduler currentScheduler]];
+
+
+	[signal subscribeNext:^(id x) {
+	
+		NSLog(@"%@",x);
+	} error:^(NSError *error) {
+		// 1秒后会自动调用
+		NSLog(@"%@",error);
+	}];
+	
+	
+interval 定时：每隔一段时间发出信号
+
+	[[RACSignal interval:1 onScheduler:[RACScheduler currentScheduler]] subscribeNext:^(id x) {
+   
+		NSLog(@"%@",x);
+	}];
+
+
+delay： 延迟发送next
+
+    RACSignal *signal = [[[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+   
+		[subscriber sendNext:@1];
+		return nil;
+		
+	}] delay:2] subscribeNext:^(id x) {
+  
+		NSLog(@"%@",x);
+	}];
+
+
+
+
+ReactiveCocoa操作方法之重复
+
+retry重试 ：只要失败，就会重新执行创建信号中的block,直到成功.
+
+     __block int i = 0;
+    [[[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+    
+            if (i == 10) {
+                [subscriber sendNext:@1];
+            }else{
+                NSLog(@"接收到错误");
+                [subscriber sendError:nil];
+            }
+            i++;
+        
+        return nil;
+        
+    }] retry] subscribeNext:^(id x) {
+        
+        NSLog(@"%@",x);
+        
+    } error:^(NSError *error) {
+      
+        
+    }];
+    
+
+replay重放：当一个信号被多次订阅,反复播放内容
+
+    RACSignal *signal = [[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+   
+    
+		[subscriber sendNext:@1];
+		[subscriber sendNext:@2];
+		return nil;
+		
+	}] replay];
+
+	[signal subscribeNext:^(id x) {
+   
+		NSLog(@"第一个订阅者%@",x);
+	
+	}];
+
+	[signal subscribeNext:^(id x) {
+	
+		NSLog(@"第二个订阅者%@",x);
+	
+	}];
+	
+	
+	
+throttle节流:  当某个信号发送比较频繁时，可以使用节流，在某一段时间不发送信号内容，过了一段时间获取信号的最新内容发出
+
+    RACSubject *signal = [RACSubject subject];
+
+    _signal = signal;
+
+	// 节流，在一定时间（1秒）内，不接收任何信号内容，过了这个时间（1秒）获取最后发送的信号内容发出。
+	[[signal throttle:1] subscribeNext:^(id x) {
+   
+		NSLog(@"%@",x);
+	}];
+	
+	
+	
+	
+	
+	
+	
+	
+介绍MVVM架构思想
+
+常见的架构思想:
+
+MVC M:模型 V:视图 C:控制器
+MVVM M:模型 V:视图+控制器 VM:视图模型
+   我的理解：
+     V：视图层view,viewcontrol：
+        view：   控件初始化，设置数据，事件代理，不涉及网络，业务数据，只是ui数据设置，有交互以代理方式回传给viewcontrol
+        viewcontrol:视图的创建，组合，包括视图之间协调逻辑，view事件回调处理
+     VM:业务逻辑层viewmodel：
+        viewmodel：业务逻辑处理，预排版，把网络数据转成ui数据。数据增删改查的封装者，不承担增删改查逻辑，线程安全处理，如微博下拉刷新，
+        同时删除评论，需保证线程安全。
+     数据层engine和model:
+        engine：负责网络请求，数据解析，实际增删改查，本地的处理逻辑，如对server适配，如返回的字段需要转化传给ui
+        
+MVCS M:模型 V:视图 C:控制器 S:服务类
+
+VIPER V:视图 I:交互器 P:展示器 E:实体 R:路由
+
+
+
+MVVM介绍
+
+模型(M):保存视图数据。
+
+视图+控制器(V):展示内容 + 如何展示
+
+视图模型(VM):处理展示的业务逻辑，包括按钮的点击，数据的请求和解析等等。
+
+
+ReactiveCocoa + MVVM 实战一：   登录界面
+
+需求+分析+步骤
+
+/* 需求：1.监听两个文本框的内容，有内容才允许按钮点击
+        2.默认登录请求.
+ 
+   用MVVM：实现，之前界面的所有业务逻辑
+   分析：1.之前界面的所有业务逻辑都交给控制器做处理
+        2.在MVVM架构中把控制器的业务全部搬去VM模型，也就是每个控制器对应一个VM模型.
+ 
+   步骤：1.创建LoginViewModel类，处理登录界面业务逻辑.
+        2.这个类里面应该保存着账号的信息，创建一个账号Account模型
+        3.LoginViewModel应该保存着账号信息Account模型。
+        4.需要时刻监听Account模型中的账号和密码的改变，怎么监听？
+        5.在非RAC开发中，都是习惯赋值，在RAC开发中，需要改变开发思维，由赋值转变为绑定，可以在一开始初始化的时候，就给Account模型中的属性绑定，并不需要重写set方法。
+        6.每次Account模型的值改变，就需要判断按钮能否点击，在VM模型中做处理，给外界提供一个能否点击按钮的信号.
+        7.这个登录信号需要判断Account中账号和密码是否有值，用KVO监听这两个值的改变，把他们聚合成登录信号.
+        8.监听按钮的点击，由VM处理，应该给VM声明一个RACCommand，专门处理登录业务逻辑.
+        9.执行命令，把数据包装成信号传递出去
+        10.监听命令中信号的数据传递
+        11.监听命令的执行时刻
+ */
+ 
+ 
+
+
+VM的代码
+
+	@interface LoginViewModel : NSObject
+
+	@property (nonatomic, strong) Account *account;
+
+
+	// 是否允许登录的信号
+	@property (nonatomic, strong, readonly) RACSignal *enableLoginSignal;
+
+	@property (nonatomic, strong, readonly) RACCommand *LoginCommand;
+
+	@end
+
+	@implementation LoginViewModel
+	- (Account *)account
+	{
+		if (_account == nil) {
+			_account = [[Account alloc] init];
+		}
+		return _account;
+	}
+	- (instancetype)init
+	{
+		if (self = [super init]) {
+			[self initialBind];
+		}
+		return self;
+	}
+
+
+	// 初始化绑定
+	- (void)initialBind
+	{
+		// 监听账号的属性值改变，把他们聚合成一个信号。有多少信号组合，reduceblcok就有多少参数，每个参数就是之前信号发出的内容
+		// 信号1RACObserve(self.account, account) 信号2   RACObserve(self.account, pwd) 
+		// RACObserve(self, name):监听某个对象的某个属性,返回的是信号
+		// control中代码：RAC(self.loginBtn,enabled) = self.loginViewModel.enableLoginSignal;按钮与信号绑定，会使enabled属性自动变为yes或no
+		//监听文本框输入状态，确定按钮是否可以点击，return @(account.length && pwd.length);返回为bool值
+		_enableLoginSignal = [RACSignal combineLatest:@[RACObserve(self.account, account),RACObserve(self.account, pwd)] reduce:^id(NSString *account,NSString *pwd)
+		{
+	
+			return @(account.length && pwd.length);
+	
+		}];
+
+		// 处理登录业务逻辑
+		_LoginCommand = [[RACCommand alloc] initWithSignalBlock:^RACSignal *(id input) {
+	
+			NSLog(@"点击了登录");
+			return [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {//RACCommand 必须返回信号
+		
+				// 模仿网络延迟
+				dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+			
+					[subscriber sendNext:@"登录成功"];//1。发送信号
+			
+					// 数据传送完毕，必须调用完成，否则命令永远处于执行状态
+					[subscriber sendCompleted];
+				});
+		
+				return nil;
+			}];
+		}];
+
+		// 监听登录产生的数据 LoginCommand.executionSignals是RACCommand中的信号，switchToLatest表示信号的信号
+		// 这段代码表示要订阅LoginCommand中信号中的信号 上面的[subscriber sendNext:@"登录成功"]，下面这个block则会执行
+		[_LoginCommand.executionSignals.switchToLatest subscribeNext:^(id x) {
+   
+			if ([x isEqualToString:@"登录成功"]) {
+				NSLog(@"登录成功");
+			}
+		}];
+
+		// 监听登录状态
+		// skip:1  表示输入第一次，不会被监听到，跳过第一次发出的信号
+		// 监听命令是否执行完毕,默认会来一次，可以直接跳过，skip表示跳过第一次信号
+		[[_LoginCommand.executing skip:1] subscribeNext:^(id x) {
+			if ([x isEqualToNumber:@(YES)]) {
+		
+				// 正在登录ing... 命令信号正在执行
+				// 用蒙版提示
+				[MBProgressHUD showMessage:@"正在登录..."];
+	   
+		
+			}else
+			{
+				// 登录成功    命令信号执行完成
+				// 隐藏蒙版
+				[MBProgressHUD hideHUD];
+			}
+		}];
+	}
+
+ 
+ 
+控制器的代码:  控制器只是绑定了按钮可否点击与是否可点击信号，绑定输入框内容改变与loginViewModel.account，业务逻辑全在vm中
+ 
+ 
+		@interface ViewController ()
+
+		@property (nonatomic, strong) LoginViewModel *loginViewModel;
+
+		@property (weak, nonatomic) IBOutlet UITextField *accountField;
+		@property (weak, nonatomic) IBOutlet UITextField *pwdField;
+
+		@property (weak, nonatomic) IBOutlet UIButton *loginBtn;
+
+
+		@end
+
+		- (LoginViewModel *)loginViewModel
+		{
+			if (_loginViewModel == nil) {
+		
+				_loginViewModel = [[LoginViewModel alloc] init];
+			}
+			return _loginViewModel;
+		}
+
+		// 视图模型绑定
+		- (void)bindModel
+		{
+			// 给模型的属性绑定信号
+			// 只要账号文本框一改变，就会给account赋值
+			//RACObserve(self, name):监听某个对象的某个属性,返回的是信号
+			//self.loginViewModel.account会绑定文本框文字变化的信号
+			RAC(self.loginViewModel.account, account) = _accountField.rac_textSignal;
+			RAC(self.loginViewModel.account, pwd) = _pwdField.rac_textSignal;
+	
+			// 绑定登录按钮  业务需求，监听两个文本框的内容，有内容才允许按钮点击  
+			// 按钮的可否点击属性会绑定 self.loginViewModel.enableLoginSignal登录开关信号
+			RAC(self.loginBtn,enabled) = self.loginViewModel.enableLoginSignal;
+	
+		   // 监听登录按钮点击
+			[[_loginBtn rac_signalForControlEvents:UIControlEventTouchUpInside] subscribeNext:^(id x) {
+	  
+				// 执行登录事件执行命令,会执行LoginCommand信号，相当于sendNext
+				[self.loginViewModel.LoginCommand execute:nil];
+			}];
+		}
+
+
+
+
+
+
+
+ReactiveCocoa + MVVM 实战二：网络请求数据
+
+接口：这里先给朋友介绍一个免费的网络数据接口，豆瓣。可以经常用来练习一些网络请求的小Demo.
+
+需求+分析+步骤
+
+/*
+    需求：请求豆瓣图书信息，url:https://api.douban.com/v2/book/search?q=基础
+    
+    分析：请求一样，交给VM模型管理
+ 
+    步骤:
+        1.控制器提供一个视图模型（requesViewModel），处理界面的业务逻辑
+        2.VM提供一个命令，处理请求业务逻辑
+        3.在创建命令的block中，会把请求包装成一个信号，等请求成功的时候，就会把数据传递出去。
+        4.请求数据成功，应该把字典转换成模型，保存到视图模型中，控制器想用就直接从视图模型中获取。
+        5.假设控制器想展示内容到tableView，直接让视图模型成为tableView的数据源，把所有的业务逻辑交给视图模型去做，这样控制器的代码就非常少了。
+ */
+ 
+ 
+ 
+视图模型(VM)代码
+
+		@interface RequestViewModel : NSObject<UITableViewDataSource>
+
+
+			// 请求命令
+			@property (nonatomic, strong, readonly) RACCommand *reuqesCommand;
+
+			//模型数组
+			@property (nonatomic, strong, readonly) NSArray *models;
+
+
+
+		@end
+
+		@implementation RequestViewModel
+
+		- (instancetype)init
+		{
+			if (self = [super init]) {
+		
+				[self initialBind];
+			}
+			return self;
+		}
+
+
+		- (void)initialBind
+		{
+			_reuqesCommand = [[RACCommand alloc] initWithSignalBlock:^RACSignal *(id input) {
+		
+				RACSignal *requestSignal = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+		   
+			
+					NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
+					parameters[@"q"] = @"基础";
+			
+					// 发送请求
+					[[AFHTTPRequestOperationManager manager] GET:@"https://api.douban.com/v2/book/search" parameters:parameters success:^(AFHTTPRequestOperation * _Nonnull operation, id  _Nonnull responseObject) {
+						NSLog(@"%@",responseObject);
+				
+						// 请求成功调用
+						// 把数据用信号传递出去
+						// 控制器订阅后会接收到这个信号，但这个信号会被第三步数据处理
+						[subscriber sendNext:responseObject];
+				
+						[subscriber sendCompleted];
+				
+				
+					} failure:^(AFHTTPRequestOperation * _Nonnull operation, NSError * _Nonnull error) {
+						// 请求失败调用
+				
+					}];
+			
+					return nil;
+				}];
+		
+		
+		
+	            //第三步先进行数据处理
+				// 在返回数据信号时，把数据中的字典映射成模型信号，传递出去
+				return [requestSignal map:^id(NSDictionary *value) {
+					NSMutableArray *dictArr = value[@"books"];
+
+					// 字典转模型，遍历字典中的所有元素，全部映射成模型，并且生成数组
+					NSArray *modelArr = [[dictArr.rac_sequence map:^id(id value) {
+			 
+						return [Book bookWithDict:value];
+					}] array];
+			
+					return modelArr;
+				}];
+		
+			}];
+	
+		 }
+
+		#pragma mark - UITableViewDataSource
+
+		- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+		{
+			return self.models.count;
+		}
+
+		- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+		{
+			static NSString *ID = @"cell";
+			UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:ID];
+			if (cell == nil) {
+		
+				cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:ID];
+			}
+	
+			Book *book = self.models[indexPath.row];
+			cell.detailTextLabel.text = book.subtitle;
+			cell.textLabel.text = book.title;
+	
+			return cell;
+		}
+
+		@end
+ 
+ 
+ 
+控制器代码
+
+	@interface ViewController ()
+
+	@property (nonatomic, weak) UITableView *tableView;
+
+	@property (nonatomic, strong) RequestViewModel *requesViewModel;
+
+
+	@end
+
+	@implementation ViewController
+	- (RequestViewModel *)requesViewModel
+	{
+		if (_requesViewModel == nil) {
+			_requesViewModel = [[RequestViewModel alloc] init];
+		}
+		return _requesViewModel;
+	}
+
+	- (void)viewDidLoad {
+		[super viewDidLoad];
+		// Do any additional setup after loading the view, typically from a nib.
+	
+		// 创建tableView
+		UITableView *tableView = [[UITableView alloc] initWithFrame:self.view.bounds];
+		tableView.dataSource = self.requesViewModel;
+	
+		[self.view addSubview:tableView];
+	
+		// 执行命令信号的请求
+	 RACSignal *requesSiganl = [self.requesViewModel.reuqesCommand execute:nil];
+   
+	   // 获取请求的数据，订阅命令信号
+		[requesSiganl subscribeNext:^(NSArray *x) {
+		
+			self.requesViewModel.models = x;
+		
+			[self.tableView reloadData];
+		
+		}];
+
+	}
+
+
+	@end
 
 
 
