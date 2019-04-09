@@ -1,0 +1,731 @@
+
+                             网络 swift nfnetworking reactivecocoa
+
+afnetworking：
+
+https分单向验证和双向验证两种方式，一般经常说的https是单向验证的
+
+SSL、TLS区别：https://blog.csdn.net/enweitech/article/details/81781405
+ssl：安全套接层。
+tls：在SSL更新到3.0时，IETF对SSL3.0进行了标准化，并添加了少数机制，最后成熟以后成了安全传输层协议，由一个安全层变为了协议，相当于
+ssl是tls的升级版本，无区别，只是人们习惯叫ssl。
+
+单向验证：
+1  客户端向服务端发送SSL协议版本号、加密算法种类、客户端随机数等信息
+2  服务端给客户端返回SSL协议版本号、加密算法种类、服务器随机数等信息，同时也返回服务器端的ca证书，该证书中包含公钥和私钥，
+这里只带公钥的证书返给客户端
+3  客户端使用服务端返回的信息验证服务器的合法性，包括：证书是否过期  服务器证书CA是否可靠  证书中的公钥是否能解开证书的签名  
+服务器域名是否和服务器相同
+4  解开公钥，再生成一个客户端随机数，用公钥加密后生成证书发给服务端
+5  服务端用私钥解密客户端证书，得到客户端最后一次生成的随机数
+6  此时客户端和服务器都有三个随机数 ，在请求和响应的过程中，通过使用前面的三个随机数，生成"对话密钥"（ session key ）
+谈话内容再通过这个对话密钥加密及解密
+
+双向验证： 增加了客户端向服务端发送证书，证书带公钥和私钥，同时发送证书公钥加密的对称加密方案。服务端通过客户端的证书对加密方案解密。
+
+1  客户端向服务端发送SSL协议版本号、加密算法种类、随机数等信息。
+2  服务端给客户端返回SSL协议版本号、加密算法种类、服务器随机数等信息，同时也返回服务器端的ca证书，该证书中包含公钥和私钥，
+这里只带公钥的证书返给客户端
+3  客户端使用服务端返回的信息验证服务器的合法性，包括：证书是否过期  服务器证书CA是否可靠  证书中的公钥是否能解开证书的签名  
+服务器域名是否和服务器相同
+4  验证通过后，客户端保存了服务端带公钥的ca证书，客户端会将自己的证书（只带公钥）发送至服务端，客户端证书中包含公钥和私钥
+6  服务端验证客户端的证书，验证包括：客户端的证书是否过期 提供的客户端证书CA是否可靠  证书中的公钥是否能解开证书的签名 证书是否在证书废止列表（CRL）中。
+通过验证后，会获得客户端的公钥
+7  客户端向服务端发送自己所能支持的对称加密方案，供服务器端进行选择
+8  服务器端在客户端提供的加密方案中选择加密程度最高的加密方式，通过客户端公钥进行加密，返回给客户端
+10 客户端收到服务端返回的加密方案密文后，使用自己的私钥进行解密，得到加密的方式，生成一个随机数，再使用服务端的公钥进行随机数加密，发送给服务端
+11  此时客户端和服务器都有三个随机数 ，在请求和响应的过程中，通过使用前面的三个随机数，生成"对话密钥"（ session key ）
+谈话内容再通过这个对话密钥加密及解密
+
+
+afn单向验证：
+
+一。afn中对ca机构证书非自建证书的单向验证：
+使用AFN时只需要拼接上https://即可，AFN的网络请求配置中默认使用CA认证访问HTTPS地址，所以afn不需要任何设置
+
+二。afn中对自签名证书的单向验证：
+1。从服务器要来.crt格式的证书，然后用Mac钥匙串打开，然后导出 .cer格式的证书
+2。把.cer证书导入程序的中
+3。验证证书的代码：
+
++(AFSecurityPolicy*)customSecurityPolicy
+{
+    //先导入证书，转换成NSSet
+    NSString *cerPath = [[NSBundle mainBundle] pathForResource:@"test" ofType:@"cer"];
+    NSData *certData = [NSData dataWithContentsOfFile:cerPath];
+    NSSet  *dataSet = [NSSet setWithArray:@[certData]];
+    
+    //AFSSLPinningModeCertificate 公钥和其它内容都需要验证
+    //AFSSLPinningModePublicKey 只验证公钥是否通过
+    //AFSSLPinningModeNone 不做任何验证 可理解为证书未在工程文件下  这种模式自签名证书请求https是不成功的
+    
+    AFSecurityPolicy *securityPolicy = [AFSecurityPolicy policyWithPinningMode:AFSSLPinningModeCertificate];
+    
+    //allowInvalidCertificates 如果是自建证书，需要设置为YES 不是自建证书无所。
+    securityPolicy.allowInvalidCertificates = YES;
+    
+    //validatesDomainName 是否需要验证域名，默认为YES；如置为NO，建议自己添加对应域名的校验逻辑
+    securityPolicy.validatesDomainName = NO;
+    
+    securityPolicy.pinnedCertificates = dataSet ;//不是自建证书不需要
+    return securityPolicy;
+}
+
+
+afn双向验证：太复杂请看此文https://www.jianshu.com/p/e66eacc24dbe iOS基于AFNetworking使用自签名证书实现HTTPS请求
+
+
+
+NSURLConnection 和 NSURLSession 区别：
+
+NSURLConnection:
+NSURLConnection在foundation框架中的一个类，它与这个框架中很多类关联：NSURLRequest、NSURLResponse、NSURLProtocol、NSHTTPCookieStorage、NSURLCredentialStorage
+
+NSURLSession:
+在iOS 7.0 推出了 NSURLSession，对foundation框架中url模块进行彻底重构。
+支持 http2.0 协议 
+支持直接下载到硬盘，而非先下载到内存再到硬盘 
+一个NSURLSession对象发送多个请求 
+下载使多线程异步处理，如一个文件开启多个线程加速下载
+提供全局的 session 并可以统一配置等等，提高了 NSURLSession 的易用性、灵活性，更加地适合移动开发的需求。
+
+http2.0 协议 ：
+HTTP/2采用二进制格式而非文本格式
+HTTP/2是完全多路复用的，而非有序并阻塞的——只需一个连接即可实现并行
+使用报头压缩，HTTP/2降低了开销
+HTTP/2让服务器可以将响应主动“推送”到客户端缓存中
+
+区别：从iOS9 开始，NSURLConnection 中同步请求，异步请求方法过期
+
+NSURLSession：
+普通请求：NSURLSessionDataTask
+上传请求：NSURLSessionUploadTask 
+下载请求：NSURLSessionDownloadTask
+三个请求任务会挂起需要时再启动
+
+上传任务：
+NSURLSession 与 NSURLConnection 再上传任务时，都需要设置post请求体。
+
+下载任务：
+NSURLConnection;先是将整个文件下载到内存，然后再写入到沙盒，如果文件比较大，就会出现内存暴涨的情况。
+ NSURLSessionDownloadTask：会默认下载到沙盒中 tmp文件中，不会出现内存暴涨的情况，
+下载完成后会把 tmp 中的临时文件删除，需要在初始化任务方法时，在 completionHandler 回调中增加保存文件的代码。
+
+取消，暂停，继续 状态：
+NSURLConnection 默认发送同步请求，不需要调用 start 方法，一但调用cancel，停止下载，下次下载重新开始
+NSURLSession  取消(cancel)、暂停(suspend)、继续(resume) 继续会接着上次的下载
+
+断点续传的方式：
+NSURLConnection  设置访问请求的 HTTPHeaderField 的 Range 属性，下载的代理方法不断调用，下载完成使用 NSOutputStream 管道流进行数据保存。
+NSURLSession  开启下载，会调用cancelByProducingResumeData:(void (^)(NSData *resumeData))completionHandler，
+resumeData表示下载完成的数据，暂停后继续下载，[self.session downloadTaskWithResumeData:self.resumeData] resume]传入上次下载的resumeData
+
+配置方面：
+NSURLSession  NSURLSession的初始化方法sessionWithConfiguration:delegate:delegateQueue中有个参数NSURLSessionConfiguration，
+此参数可配置 cookie，安全和高速缓存策略，最大主机连接数，资源管理，网络超时等
+
+NSURLConnection  依赖与一个全局的配置对象，不能自定义配置，不够灵活
+
+基本介绍：
+
+NSURLConnection  
+
+1. 异步处理代理
+
+NSURLRequest对象作为参数，传递给NSURLConnection，代理方法NSURLConnectionDelegate返回NSURLResponse， 代理方法NSURLConnectionDataDelegate
+返回NSData
+
+2. 请求策略
+请求发送到服务器之前，检查有无缓存，缓存是否过期，无过期直接返回内容，如果无缓存，已经过期，我们可以指定缓存策略来再次请求
+
+3. 认证策略
+如认证cookie中的用户名，密码是否可自动登陆，通过共享cookie和机密存储来认证区别请求的用户
+
+4. 下载过程
+
+NSURLConnection下载文件时，先是将整个文件下载到内存，然后再写入到沙盒，如果文件比较大，就会出现内存暴涨的情况
+
+二、使用步骤
+创建request：get请求NSURLRequest post请求NSMutableURLRequest
+设置请求方式：get不用设置  post需设置request.HTTPMethod = @"POST";
+设置请求体： get不用设置 post需设置request.HTTPBody
+请求方法：
+   get: NSData *data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];//该方法是阻塞式的，会卡住线程
+   post：
+   [NSURLConnection sendAsynchronousRequest:request queue:[[NSOperationQueue alloc]init] 
+   completionHandler:^(NSURLResponse * __nullable response, NSData * __nullable data, 
+   NSError * __nullable connectionError) {
+代理方法：
+    建立连接成功
+   /*
+    1.当接收到服务器响应的时候调用，该方法只会调用一次
+    第一个参数connection：监听的是哪个NSURLConnection对象
+    第二个参数response：接收到的服务器返回的响应头信息
+   */
+   [NSURLConnection sendAsynchronousRequest:request queue:[[NSOperationQueue alloc]init] completionHandler
+:^(NSURLResponse * __nullable response, NSData * __nullable data, NSError * __nullable connectionError) {
+
+    下载的数据回调多次
+   /*
+    2.当接收到数据的时候调用，该方法会被调用多次
+    第一个参数connection：监听的是哪个NSURLConnection对象
+    第二个参数data：本次接收到的服务端返回的二进制数据（可能是片段）
+    */
+   - (void)connection:(nonnull NSURLConnection *)connection didReceiveData:(nonnull NSData *)data
+   
+   下载的数据完毕
+    /*
+      3.当服务端返回的数据接收完毕之后会调用
+      通常在该方法中解析服务器返回的数据
+    */
+   - (void)connectionDidFinishLoading:(nonnull NSURLConnection *)connection
+   
+   下载的错误
+    /*
+     4.当请求错误的时候调用（比如请求超时）
+     第一个参数connection：NSURLConnection对象
+     第二个参数：网络请求的错误信息，如果请求失败，则error有值
+    */
+   - (void)connection:(nonnull NSURLConnection *)connection didFailWithError:(nonnull NSError *)error
+   
+   
+   
+   发送请求：
+   
+   
+      get同步请求:
+      
+      //1.确定请求路径
+      NSURL *url = [NSURL URLWithString:@""];
+    
+      //2.创建一个请求对象
+      NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    
+     //3.把请求发送给服务器
+     //sendSynchronousRequest  阻塞式的方法，会卡住线程
+    
+     NSHTTPURLResponse *response = nil;
+     NSError *error = nil;
+    
+     /*
+      第一个参数：请求对象
+      第二个参数：响应头信息，当该方法执行完毕之后，该参数被赋值
+      第三个参数：错误信息，如果请求失败，则error有值
+      */
+     //该方法是阻塞式的，会卡住线程
+     NSData *data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
+     
+     
+     
+     
+     
+     
+     post异步请求：
+     
+     //1.确定请求路径
+     NSURL *url = [NSURL URLWithString:@""];
+    
+     //2.创建一个请求对象
+     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    
+     // 2.1设置请求方式
+     // 注意: POST一定要大写
+     request.HTTPMethod = @"POST";
+     // 2.2设置请求体
+     // 注意: 如果是给POST请求传递参数: 那么不需要写?号
+     request.HTTPBody = [@"username=Mitchell&pwd=123456&type=JSON" dataUsingEncoding:NSUTF8StringEncoding];
+    
+     //3.把请求发送给服务器,发送一个异步请求
+     /*
+     第一个参数：请求对象
+     第二个参数：回调方法在哪个线程中执行，如果是主队列则block在主线程中执行，非主队列则在子线程中执行
+     第三个参数： completionHandlerBlock块：接受到响应的时候执行该block中的代码
+            response：响应头信息
+             data：响应体
+            connectionError：错误信息，如果请求失败，那么该参数有值
+      */
+ 
+    [NSURLConnection sendAsynchronousRequest:request queue:[[NSOperationQueue alloc]init] completionHandler:^(NSURLResponse * __nullable response, NSData * __nullable data, NSError * __nullable connectionError) {
+
+       //4.解析服务器返回的数据
+       NSString *str = [[NSString alloc]initWithData:data encoding:NSUTF8StringEncoding];
+       //转换并打印响应头信息
+       NSHTTPURLResponse *r = (NSHTTPURLResponse *)response;
+    }];
+    
+    
+    
+    
+创建代理：
+    
+     第一种代理方式，自动发送请求：
+    [[NSURLConnection alloc]initWithRequest:request delegate:self];
+    
+     第二种代理方式，自动发送请求：
+     /*
+     第一个参数：请求对象
+     第二个参数：谁成为NSURLConnetion对象的代理
+     第三个参数：是否马上发送网络请求，如果该值为YES则立刻发送，如果为NO则不会发送网路请求
+     */
+     NSURLConnection *conn = [[NSURLConnection alloc]initWithRequest:request delegate:self startImmediately:NO];
+    
+    //在startImmediately为NO时，调用该方法控制网络请求的发送
+    [conn start];
+    
+    // 第一种代理方式，自动发送请求：
+    //设置代理的第三种方式：使用类方法设置代理，会自动发送网络请求
+    NSURLConnection *conn = [NSURLConnection connectionWithRequest:request delegate:self];
+    
+    //取消网络请求
+    //[conn cancel];
+    
+    
+3. NSURLConnection 与 NSRunLoop 的关联使用
+    [[NSURLConnection alloc]initWithRequest:request delegate:self];异步请求时，回到代理方法中是在主线程的，主线程默认有一个
+    runloop，会把NSURLConnection加入到这个runloop中，所以它的代理回调在主线程，如何让回调在子线程，需要开启一个子线程，并在子线程
+    创建一个runloop。
+    
+    // 如果按照如下设置，那么回调的代理方法也会运行在子线程中
+    NSURL *url = [NSURL URLWithString:@"http://mvvideo1.meitudata.com/55d99e5939342913.mp4"];
+    NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    //2.2 设置回调方法也在子线程中运行
+    NSURLConnection *conn = [[NSURLConnection alloc]initWithRequest:request delegate:self startImmediately:NO];
+    [conn setDelegateQueue:[[NSOperationQueue alloc] init]];//开启子线程
+    [conn start];//内部在子线程中创建一个runloop，所有代理回调都会在这个runloop所处的线程中执行
+    
+    setDelegateQueue，start方法内部作的事：
+    dispatch_async(dispatch_get_global_queue(0, 0), ^{// setDelegateQueue开启子线程
+
+    NSRunLoop *loop = [NSRunLoop currentRunLoop];//start方法创建runloop
+    [NSURLConnection connectionWithRequest:request delegate:self];
+    [loop run];
+    
+    // 下面这样无法发送请求
+    // [NSURLConnection connectionWithRequest:request delegate:self];
+   });
+      
+      
+      
+NSURLSession：
+
+   一、 session类型
+   三个类方法，分别返回三种不同的配置类型，每种类型都是属于session类型的
+   
+   标准的配置类型： configuration 与NSURLConnection的共享配置一样
+   类方法：+defaultSessionConfiguration
+   返回共享NSHTTPCookieStorage，共享 NSURLCache 和共享 NSURLCredentialStorage（存储）
+   
+   预设配置类型： Ephemeral session  稍稍访问网站
+   不会对缓存Cookie 和证书进行持久性的存储，存储一段时间会清除，对于相稍稍访问一些网站而不被记录访客信息很有用
+   
+   后台session配置： Background session 对后台下载有用
+   可以在应用程序挂起，退出或者崩溃的情况下进行上传和下载任务，区别于任何进程外的传输守护进程。
+   
+   二、配置属性
+   
+   HTTPAdditionalHeaders ：可以设置请求头信息，如数据格式，语言，用户代理，身份认证
+   
+   // 设置请求的header
+   NSString *userPasswordString = [NSString stringWithFormat:@"%@:%@", user, password];
+   NSData * userPasswordData = [userPasswordString dataUsingEncoding:NSUTF8StringEncoding];
+   NSString *base64EncodedCredential = [userPasswordData base64EncodedStringWithOptions:0];
+   NSString *authString = [NSString stringWithFormat:@"Basic %@", base64EncodedCredential];
+   NSString *userAgentString = @"AppName/com.example.app (iPhone 5s; iOS 7.0.2; Scale/2.0)";
+   configuration.HTTPAdditionalHeaders = @{@"Accept": @"application/json",
+                                        @"Accept-Language": @"en",
+                                        @"Authorization": authString,
+                                        @"User-Agent": userAgentString}  
+                                        
+                                        
+                                        
+                                        
+                                        
+    networkServiceType： 对不同功能使用的流量进行划分，如语音，视频，网络电话流量，一般不会用
+    
+    
+    
+    
+    allowsCellularAccess 和 discretionary ：在蜂窝网络时，会根据电量情况等去减少增加网络带宽，使用  discretionary不会考虑电量问题
+    所以带宽会好些
+    
+    
+    
+    timeoutIntervalForRequest 和 timeoutIntervalForResource： 网络请求超时，限制在多少秒内请求，超出时间则停止请求。
+    
+    
+    
+    HTTPMaximumConnectionsPerHost：最多可以同时建立多少个连接来连接服务器
+    
+    
+    
+    
+    HTTPShouldUsePipelining ：属于NSMutableURLRequest ，开启管线化请求通道，提高请求速度，不被大多服务商支持，一般关闭的
+    
+    
+    sessionSendsLaunchEvents： 指定session是否应该在后台启动
+    
+    
+    connectionProxyDictionary： 指定session会话可以连接代理服务器，大多数手机不需要代理服务器
+    
+
+
+
+Cookie 策略：
+
+    HTTPCookieStorage： 存储了session 所使用的 cookie，+sharedHTTPCookieStorage 得到这个单例对象，与 NSURLConnection 是相同的
+    
+    HTTPCookieAcceptPolicy：什么情况下session接收服务器返回的cookie
+    
+    HTTPShouldSetCookies ：请求是否应该使用session存储的cookie
+    
+
+安全策略：
+    
+    URLCredentialStorage： 存储了 session 所使用的证书，+sharedCredentialStorage 得到这个单例对象，与 NSURLConnection 是相同的
+    
+    TLSMaximumSupportedProtocol 和 TLSMinimumSupportedProtocol  ：  确定 session 是否支持 SSL 协议。即https协议
+
+
+缓存策略：
+   
+    URLCache ： 是session使用的缓存。默认情况下会使用 NSURLCache 的 +sharedURLCache 这个单例对象，这与 NSURLConnection 是相同的
+    
+    requestCachePolicy： 一个请求的缓存响应应该在什么时机返回，相当于 NSURLRequest 的 -cachePolicy 方法。
+    
+
+自定义协议：
+
+    protocolClasses ： 用于配置某个特定session使用的自定义协议，相当于特定的一个请求使用什么协议
+    
+
+
+三、NSURLSessionTask抽象类    
+    
+   子类：
+   普通请求：NSURLSessionDataTask
+   上传请求：NSURLSessionUploadTask 
+   下载请求：NSURLSessionDownloadTask
+   
+   这三个子类不是 alloc-init创建的，而是 NSURLSession 创建的，都有两个构造方法，其中一个带有completionHandler
+   
+   
+四、代理
+   
+   根代理NSURLSessionDelegate：处理鉴定下载权力，下载任务完成通知
+   
+   子类：
+   
+   NSURLSessionTaskDelegate处理鉴定下载权力、处理任务结束通知(无论是正常还是异常)
+   NSURLSessionDataDelegate处理鉴定下载权力 处理数据的接收到的通知
+   NSURLSessionDownloadDelegate主要处理数据下载进度通知等。
+   
+   NSURLSessionTaskDelegate是NSURLSessionDelegate子类
+   NSURLSessionDataDelegate， NSURLSessionDownloadDelegate是NSURLSessionTaskDelegate子类
+   
+
+
+五、NSURLSession 应用
+
+
+1. NSURLSessionDataTask 发送 GET 请求
+
+//确定请求路径
+NSURL *url = [NSURL URLWithString:@"http://120.25.226.186:32812/login?username=520&pwd=520&type=JSON"];
+//创建 NSURLSession 对象
+NSURLSession *session = [NSURLSession sharedSession];
+
+/**
+根据对象创建 Task 请求，默认在子线程中解析数据
+url  方法内部会自动将 URL 包装成一个请求对象（默认是 GET 请求）
+completionHandler  完成之后的回调（成功或失败）
+param data     返回的数据（响应体）
+param response 响应头
+param error    错误信息
+*/
+NSURLSessionDataTask *dataTask = [session dataTaskWithURL:url completionHandler:
+         ^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+
+    //解析服务器返回的数据
+    NSLog(@"%@", [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]);
+}];
+//发送请求（执行Task）
+[dataTask resume];
+
+
+
+
+2. NSURLSessionDataTask 发送 POST 请求  block方式
+//确定请求路径
+NSURL *url = [NSURL URLWithString:@"http://120.25.226.186:32812/login"];
+//创建可变请求对象
+NSMutableURLRequest *requestM = [NSMutableURLRequest requestWithURL:url];
+//修改请求方法
+requestM.HTTPMethod = @"POST";
+//设置请求体
+requestM.HTTPBody = [@"username=520&pwd=520&type=JSON" dataUsingEncoding:NSUTF8StringEncoding];
+//创建会话对象
+NSURLSession *session = [NSURLSession sharedSession];
+//创建请求 Task
+NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:requestM completionHandler:
+         ^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+
+    //解析返回的数据
+    NSLog(@"%@", [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]);
+}];
+//发送请求
+[dataTask resume];
+
+
+3. NSURLSessionDataTask 设置代理发送请求
+//确定请求路径
+NSURL *url = [NSURL URLWithString:@"http://120.25.226.186:32812/login"];
+//创建可变请求对象
+NSMutableURLRequest *requestM = [NSMutableURLRequest requestWithURL:url];
+//设置请求方法
+requestM.HTTPMethod = @"POST";
+//设置请求体
+requestM.HTTPBody = [@"username=520&pwd=520&type=JSON" dataUsingEncoding:NSUTF8StringEncoding];
+//创建会话对象，设置代理
+/**
+第一个参数：配置信息
+第二个参数：设置代理
+第三个参数：队列，如果该参数传递nil 那么默认在子线程中执行
+*/
+NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
+                      delegate:self delegateQueue:nil];
+//创建请求 Task
+NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:requestM];
+//发送请求
+[dataTask resume];
+
+
+代理方法：
+
+//传输完成
+- (void)URLSession:(NSURLSession *)session dataTask:(nonnull NSURLSessionDataTask *)dataTask 
+didReceiveResponse:(nonnull NSURLResponse *)response 
+completionHandler:(nonnull void (^)(NSURLSessionResponseDisposition))completionHandler 
+{
+     //子线程中执行
+     NSLog(@"接收到服务器响应的时候调用 -- %@", [NSThread currentThread]);
+
+     self.dataM = [NSMutableData data];
+     //默认情况下不接收数据
+     //必须告诉系统是否接收服务器返回的数据
+     completionHandler(NSURLSessionResponseAllow);
+}
+
+//传输中多次调用
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveData:(NSData *)data 
+{
+     NSLog(@"接受到服务器返回数据的时候调用,可能被调用多次");
+     //拼接服务器返回的数据
+     [self.dataM appendData:data];
+}
+
+//传输错误
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error
+{
+     NSLog(@"请求完成或者是失败的时候调用");
+     //解析服务器返回数据
+     NSLog(@"%@", [[NSString alloc] initWithData:self.dataM encoding:NSUTF8StringEncoding]);
+}
+
+
+
+设置代理之后的强引用问题
+
+NSURLSession 对象会强引用设置的代理
+控制器调用 viewDidDisappear 方法中，调用 invalidateAndCancel 方法或者是 finishTasksAndInvalidate 方法来释放强引用
+invalidateAndCancel 是无论请求完成都释放代理对象
+finishTasksAndInvalidate  请求完成后释放对象
+
+
+
+
+
+
+4. NSURLSessionDownloadTask 下载block方式
+
+
+    
+//确定请求路径
+NSURL *url = [NSURL URLWithString:@"http://120.25.226.186:32812/resources/images/minion_02.png"];
+//创建请求对象
+NSURLRequest *request = [NSURLRequest requestWithURL:url];
+//创建会话对象
+NSURLSession *session = [NSURLSession sharedSession];
+//创建会话请求
+//优点：该方法内部已经完成了边接收数据边写沙盒的操作，解决了内存飙升的问题
+NSURLSessionDownloadTask *downTask = [session downloadTaskWithRequest:request completionHandler:^(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+
+    //默认存储到临时文件夹 tmp 中，需要剪切文件到 cache
+    NSLog(@"%@", location);//目标位置
+    NSString *fullPath = [[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject]  
+                         stringByAppendingPathComponent:response.suggestedFilename];
+    
+     /**
+      fileURLWithPath:有协议头
+      URLWithString:无协议头
+      */
+    [[NSFileManager defaultManager] moveItemAtURL:location toURL:[NSURL fileURLWithPath:fullPath] error:nil];
+
+}];
+//发送请求
+[downTask resume];
+
+4-1 暂停和恢复下载：
+
+// 暂停
+- (IBAction)suspendDownload 
+{
+    __weak typeof(self) weakSelf = self;
+    [self.downloadTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+        weakSelf.resumeData = resumeData;
+    }];
+}
+
+// 开始
+- (IBAction)resumeDownload 
+{
+    if (self.resumeData)
+    {
+        self.downloadTask = [self.session downloadTaskWithResumeData:self.resumeData];
+        [self.downloadTask resume];
+    }
+    else
+    {
+        [self.downloadTask resume];
+    }
+}
+
+
+
+5. NSURLSessionDownloadTask 代理方式
+
+NSURL *url = [NSURL URLWithString:@"http://e.hiphotos.baidu.com/image/pic/item/63d0f703918fa0ec14b94082249759ee3c6ddbc6.jpg"];
+NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
+NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate:self delegateQueue: [NSOperationQueue mainQueue]];
+
+NSURLSessionDownloadTask * downloadTask =[ defaultSession downloadTaskWithURL:url];
+[downloadTask resume];
+
+
+
+代理方法：
+
+// 接收数据，可能多次被调用
+-(void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite
+{
+    float progress = totalBytesWritten * 1.0/totalBytesExpectedToWrite;
+    
+    // 主线程更新UI
+    dispatch_async(dispatch_get_main_queue(),^ {
+        [self.progressView setProgress:progress animated:YES];
+    });
+}
+
+// 3.下载完成之后调用该方法
+-  (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location
+{
+    NSString *catchDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject];
+    NSString *filePath = [catchDir stringByAppendingPathComponent:@"app.dmg"];
+    
+    NSError *fileError = nil;
+    NSURL *fileURL = [NSURL fileURLWithPath:filePath];
+    [[NSFileManager defaultManager] moveItemAtURL:location toURL:fileURL error:&fileError];
+    
+    if (fileError) {
+        NSLog(@"保存下载文件出错：%@", fileError);
+    } else {
+        NSLog(@"保存成功：%@", filePath);
+    }
+}
+
+
+5-1 暂停和恢复下载：
+
+//暂停
+[self.downloadTask suspend];
+//开始
+[self.downloadTask resume];
+
+
+
+
+6. NSURLSessionDownloadTask 后台下载
+
+1。创建 NSURLSession 时，需要创建后台模式 NSURLSessionConfiguration
+NSURLSessionConfiguration *config = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:@"BackgroundIdentifier"];
+
+NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: config delegate:self delegateQueue: [NSOperationQueue mainQueue]];
+
+NSURLSessionDownloadTask * downloadTask =[ defaultSession downloadTaskWithURL:url];
+[downloadTask resume];
+
+
+2。在AppDelegate中实现下面方法，并定义变量保存completionHandler代码块：
+// 应用处于后台，所有下载任务完成调用
+- (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)(void))completionHandler
+{
+    _backgroundSessionCompletionHandler = completionHandler;
+}
+
+
+
+4。在下载类中实现下面NSURLSessionDelegate协议方法，其实就是先执行完task的协议，保存数据、刷新界面之后再执行在AppDelegate中保存的代码块：
+// 应用处于后台，所有下载任务完成及NSURLSession协议调用之后调用
+- (void)URLSessionDidFinishEventsForBackgroundURLSession:(NSURLSession *)session
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        AppDelegate *appDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
+        if (appDelegate.backgroundSessionCompletionHandler) 
+        {
+            void (^completionHandler)(void) = appDelegate.backgroundSessionCompletionHandler;
+            appDelegate.backgroundSessionCompletionHandler = nil;
+        
+            // 执行block，释放阻止应用挂起的断言
+            completionHandler();
+        }
+    });
+}
+
+
+
+
+
+
+AFN框架分析：
+AFN以3.X版本为主，摒弃了NSURLConnection方法，全部基于NSURLSession方法实现。
+
+   第一层：
+   会话部份：NSUrlSession
+   网络监听模块：监听网络的变化
+   网络安全模块：网络安全方面
+   
+   第二层：
+   请求序列化：对请求进行了一个请求序列化的封装
+   响应序列化：对响应进行了一个响应序列化的封装
+   
+   第三层：
+   uikit集成模块：uikit原生控件分类的添加
+   
+   主要类关系图
+   
+   AFURLSessionManager 核心类
+   AFURLSessionManager 包含以下内容：
+   NSURLSession:会话模块
+   AFSecurityPolicy:保证安全，如网络证书校验，公钥的验证
+   AFNetworkReachabilityManager:对网络连接的一个临听，与苹果提供的Reachabilit是一样的
+   
+   AFHTTPSessionManager 继承于核心类的子类， 使用频率最高
+   AFHTTPSessionManager包含以下内容：
+   AFURLRequestSerialzation:根据传递进来的参数组装拼接，最终转化成NSMutableRequest
+   AFURLResponseSerialzation:负责响应序列化的，对网络的返回结果进行解析，如返回的json字符串，可能会调用系统的json库,或者imagewithdata，产生uiimage
+   
+   AFURLSessionManager主要负责哪些工作：
+   1：创建和管理NSURLSession,以及调用系统的api来生成NSURLSessionTask
+   NSURLSessionTask实际上可以理解为对应一个网络请求
+   2：实现NSURLSessionDelegate等协议以及代理方法，处理网络请求过程中涉及重定向，认证，以及网络响应处理
+   3:引入AFSecurityPolicy保证安全，比如发送https请求时，涉及证书校验，公钥验证过程
+   4:引入AFNetworkReachabilityManager监听网络状态，根据状态进行相关逻辑处理
