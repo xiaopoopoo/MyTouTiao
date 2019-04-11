@@ -1820,3 +1820,535 @@ ReactiveCocoa + MVVM 实战二：网络请求数据
 	@end
 
 
+
+
+
+
+
+
+
+
+
+iOS 从MVC到MVP到mvvm https://blog.csdn.net/xiaozhuanddapang/article/details/78553215
+
+
+
+mvc：
+苹果的设计要点：
+c与m的关系：controller 用于更新model  model更新完成通知controller
+c与v的关系：view的点击事件会通知controller，controller会更新view
+
+但在实际使用中：ViewController 同时扮演了view和controller的功能，所以controller持有model数据更新
+view变成了view和model之间的交互，view和model产生了耦合，controller和model产生了耦合
+代码如下：
+
+- (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
+{
+    UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:self.cellIdentifier forIndexPath:indexPath];
+    id model = [self modelsAtIndexPath:indexPath];
+    
+    cell.model = model;
+    
+    return cell;
+}
+
+还记得这段代码“cell.model = model;”我们曾经都这么写，很方便很高大。
+
+
+
+具体如下：
+
+模型层： 
+Person.h
+
+#import <Foundation/Foundation.h>
+
+@interface Person : NSObject
+
+@property (nonatomic, readonly) NSString *firstName;
+@property (nonatomic, readonly) NSString *lastName;
+
+- (instancetype)initWithFirstName:(NSString *)firstName lastName:(NSString *)lastName;
+
+@end
+
+Person.m
+
+#import "Person.h"
+
+@implementation Person
+
+- (instancetype)initWithFirstName:(NSString *)firstName lastName:(NSString *)lastName {
+    self = [super init];
+    if (self) {
+        _firstName = firstName;
+        _lastName = lastName;
+    }
+    return self;
+}
+
+@end 
+
+
+
+
+
+
+
+
+视图层： 
+TestView.h
+
+#import <UIKit/UIKit.h>
+
+@interface TestView : UIView
+
+@property (nonatomic, strong) UILabel *nameLabel;
+
+@end
+ 
+ 
+ 
+TestView.m
+
+#import "TestView.h"
+
+@implementation TestView
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.nameLabel = [[UILabel alloc] initWithFrame:self.bounds];
+        self.nameLabel.textAlignment = NSTextAlignmentCenter;
+        [self addSubview:self.nameLabel];
+    }
+    return self;
+}
+
+@end 
+
+
+
+
+
+控制器层： 
+ViewController.m
+
+#import "ViewController.h"
+#import "Person.h"
+#import "TestView.h"
+
+@interface ViewController ()
+
+@property (nonatomic, strong) Person *personModel;
+@property (nonatomic, strong) TestView *testView;
+
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    [self setupViews];
+
+    if (self.personModel.firstName.length > 0) {
+        self.testView.nameLabel.text = self.personModel.firstName;
+    } else {
+        self.testView.nameLabel.text = self.personModel.lastName;
+    }
+
+}
+
+- (void)setupViews {
+    self.personModel = [[Person alloc] initWithFirstName:@"" lastName:@"胡歌"];
+    self.testView = [[TestView alloc] initWithFrame:CGRectMake(100, 100, CGRectGetWidth(self.view.bounds)-200, 50)];
+    [self.view addSubview:self.testView];
+}
+
+@end 
+
+
+
+
+
+
+
+
+
+MVP：
+把ViewController作了拆分，业务逻辑部份拆分为Presenter（主持人），其它部份和view作为视图层
+v视图层指的是：ViewController除逻辑部份的其它和View
+p视图数据逻辑部份：把ViewController业务逻辑拆分出来作为p,p和视图的通信通过协议进行通信
+m模型层：还是原来的model
+
+mvp把view和controler 以及view和model真正的作到了解藕，但是代码量比mvc大，过于笨拙
+
+
+Presenter层完成业务逻辑处理，更新Model层，更新ui，完全隔断Model和View之间的通信。
+通过协议接口的方式来连接view和presenter层，如果页面复杂，会产生更多的接口，为了处理一些
+类似的问题，定义一些基类接口，把一些公共的逻辑，比如网络请求，toast，提示框等放在里面。 
+MVP中的Presenter更多的作为框架的控制者，承担了大量的逻辑操作。
+
+
+
+模型层： 
+Person.h
+
+#import <Foundation/Foundation.h>
+
+@interface Person : NSObject
+
+@property (nonatomic, readonly) NSString *firstName;
+@property (nonatomic, readonly) NSString *lastName;
+
+- (instancetype)initWithFirstName:(NSString *)firstName lastName:(NSString *)lastName;
+
+@end
+ 
+ 
+ 
+ 
+Person.m
+
+#import "Person.h"
+
+@implementation Person
+
+- (instancetype)initWithFirstName:(NSString *)firstName lastName:(NSString *)lastName {
+    self = [super init];
+    if (self) {
+        _firstName = firstName;
+        _lastName = lastName;
+    }
+    return self;
+}
+
+@end 
+
+
+
+视图层： 
+TestView.h
+
+#import <UIKit/UIKit.h>
+
+@interface TestView : UIView
+
+@property (nonatomic, strong) UILabel *nameLabel;
+
+@end
+
+
+
+TestView.m
+
+#import "TestView.h"
+
+@implementation TestView
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.nameLabel = [[UILabel alloc] initWithFrame:self.bounds];
+        self.nameLabel.textAlignment = NSTextAlignmentCenter;
+        [self addSubview:self.nameLabel];
+    }
+    return self;
+}
+
+@end 
+
+
+
+
+Presenter层： 
+
+PersonViewProtocol.h
+
+#import <Foundation/Foundation.h>
+
+@protocol PersonViewProtocol <NSObject>  //定义了一个协议PersonViewProtocol 
+
+- (void)setNameText:(NSString *)nameText;
+
+@end
+
+
+
+Presenter.h
+
+#import <Foundation/Foundation.h>
+#import "PersonViewProtocol.h"
+
+@interface Presenter : NSObject
+
+- (void)attachView:(id <PersonViewProtocol>)view;//定义添加view的方法，目的是拿到转入的view
+
+- (void)fetchData;//获取数据的方法,目的是获取到model并设置代理回调函数
+
+@end
+
+
+
+Presenter.m
+
+#import "Presenter.h"
+#import "Person.h"
+
+@interface Presenter()
+
+@property (nonatomic, strong) Person *person;
+@property (nonatomic, weak) id<PersonViewProtocol> attachView;
+
+@end
+
+@implementation Presenter
+
+- (void)attachView:(id<PersonViewProtocol>)view {
+    self.attachView = view;
+}
+
+- (void)fetchData {
+    self.person = [[Person alloc] initWithFirstName:@"赵丽颖" lastName:@"胡歌"];
+    if (self.person.firstName.length > 0) {
+        [self.attachView setNameText:self.person.firstName];
+    } else {
+        [self.attachView setNameText:self.person.lastName];
+    }
+}
+
+@end 
+
+
+
+
+
+ViewController.m
+
+#import "ViewController.h"
+#import "PersonViewProtocol.h"
+#import "Presenter.h"
+#import "TestView.h"
+
+@interface ViewController ()<PersonViewProtocol>
+
+@property (nonatomic, strong) TestView *testView;
+@property (nonatomic, strong) Presenter *presenter;
+
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    [self setupViews];
+
+    self.presenter = [Presenter new];
+    [self.presenter attachView:self];//添加view
+    [self.presenter fetchData];//获取到数据后回调这个view
+}
+
+- (void)setupViews {
+    self.testView = [[TestView alloc] initWithFrame:CGRectMake(100, 100, CGRectGetWidth(self.view.bounds)-200, 50)];
+    [self.view addSubview:self.testView];
+
+}
+
+#pragma PersonViewProtocol
+- (void)setNameText:(NSString *)nameText {
+    self.testView.nameLabel.text = nameText;
+}
+
+@end 
+
+
+
+
+
+
+
+
+
+
+MVVM
+
+在MVP的基础上，将P改成与V双向绑定的VM就变成了MVVM。就是v和vm不再通过代理方式通信，而是通过v和vm双向绑定进行通信
+绑定：是一种响应式的通信方式，观察某个label的值是否有变化，绑定label的这个值，其它对象要得知这个值是否变化
+只需要kvo或者响应式方式可实现。
+vM感知V中某个属性值的变化，当变化后vm设置不同的状态，同时v也能感知到vm中状态的变化，根据变化的状态，可以设置v的其它控件属性值。
+
+需求+分析+步骤
+
+/*
+    需求：请求豆瓣图书信息，url:https://api.douban.com/v2/book/search?q=基础
+    
+    分析：请求一样，交给VM模型管理
+ 
+    步骤:
+        1.控制器提供一个视图模型（requesViewModel），处理界面的业务逻辑
+        2.VM提供一个命令，处理请求业务逻辑
+        3.在创建命令的block中，会把请求包装成一个信号，等请求成功的时候，就会把数据传递出去。
+        4.请求数据成功，应该把字典转换成模型，保存到视图模型中，控制器想用就直接从视图模型中获取。
+        5.假设控制器想展示内容到tableView，直接让视图模型成为tableView的数据源，把所有的业务逻辑交给视图模型去做，这样控制器的代码就非常少了。
+ */
+ 
+ 
+ 
+视图模型(VM)代码
+
+		@interface RequestViewModel : NSObject<UITableViewDataSource>
+
+
+			// 请求命令
+			@property (nonatomic, strong, readonly) RACCommand *reuqesCommand;
+
+			//模型数组
+			@property (nonatomic, strong, readonly) NSArray *models;
+
+
+
+		@end
+
+		@implementation RequestViewModel
+
+		- (instancetype)init
+		{
+			if (self = [super init]) {
+		
+				[self initialBind];
+			}
+			return self;
+		}
+
+    
+//把业务逻辑的请求是否完成以及数据作了绑定，状态发生改变通知view
+		- (void)initialBind
+		{
+			_reuqesCommand = [[RACCommand alloc] initWithSignalBlock:^RACSignal *(id input) {//初始化
+		
+		        //创建一个信号，这个信号必须返回，命令模式的用法
+				RACSignal *requestSignal = [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+		   
+			
+					NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
+					parameters[@"q"] = @"基础";
+			
+					// 发送请求
+					[[AFHTTPRequestOperationManager manager] GET:@"https://api.douban.com/v2/book/search" parameters:parameters success:^(AFHTTPRequestOperation * _Nonnull operation, id  _Nonnull responseObject) {
+						NSLog(@"%@",responseObject);
+				
+						// 请求成功调用
+						// 把数据用信号传递出去
+						// 控制器订阅后会接收到这个信号，但这个信号会被第三步数据处理
+						[subscriber sendNext:responseObject];
+				
+						[subscriber sendCompleted];//发送信号完成
+				
+				
+					} failure:^(AFHTTPRequestOperation * _Nonnull operation, NSError * _Nonnull error) {
+						// 请求失败调用
+				
+					}];
+			
+					return nil;
+				}];
+		
+		
+		
+	            //第三步先进行数据处理
+				// 在返回数据信号时，把数据中的字典映射成模型信号，传递出去
+				return [requestSignal map:^id(NSDictionary *value) {
+					NSMutableArray *dictArr = value[@"books"];
+
+					// 字典转模型，遍历字典中的所有元素，全部映射成模型，并且生成数组
+					NSArray *modelArr = [[dictArr.rac_sequence map:^id(id value) {
+			 
+						return [Book bookWithDict:value];
+					}] array];
+			
+					return modelArr;
+				}];
+		
+			}];
+	
+		 }
+
+		#pragma mark - UITableViewDataSource
+
+		- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+		{
+			return self.models.count;
+		}
+
+		- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+		{
+			static NSString *ID = @"cell";
+			UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:ID];
+			if (cell == nil) {
+		
+				cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:ID];
+			}
+	
+			Book *book = self.models[indexPath.row];
+			cell.detailTextLabel.text = book.subtitle;
+			cell.textLabel.text = book.title;
+	
+			return cell;
+		}
+
+		@end
+ 
+ 
+ 
+控制器代码
+
+	@interface ViewController ()
+
+	@property (nonatomic, weak) UITableView *tableView;
+
+	@property (nonatomic, strong) RequestViewModel *requesViewModel;
+
+
+	@end
+
+	@implementation ViewController
+	- (RequestViewModel *)requesViewModel
+	{
+		if (_requesViewModel == nil) {
+			_requesViewModel = [[RequestViewModel alloc] init];
+		}
+		return _requesViewModel;
+	}
+
+	- (void)viewDidLoad {
+		[super viewDidLoad];
+		// Do any additional setup after loading the view, typically from a nib.
+	
+		// 创建tableView
+		UITableView *tableView = [[UITableView alloc] initWithFrame:self.view.bounds];
+		tableView.dataSource = self.requesViewModel;
+	
+		[self.view addSubview:tableView];
+	
+		// 执行命令信号的请求
+	 RACSignal *requesSiganl = [self.requesViewModel.reuqesCommand execute:nil];
+   
+	   // 获取请求的数据，订阅命令信号
+		[requesSiganl subscribeNext:^(NSArray *x) {
+		
+			self.requesViewModel.models = x;
+		
+			[self.tableView reloadData];
+		
+		}];
+
+	}
+
+
+	@end
+
+
+
+
