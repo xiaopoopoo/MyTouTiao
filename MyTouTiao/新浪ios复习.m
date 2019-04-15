@@ -150,7 +150,8 @@ UITableView只有当视图所有都在屏幕外，才会放到重用池中，滑
 
 
 重用池是两个队列：等待使用的队列  使用中的队列
-从重用池当中取出一个可重用的view：从等待使用的队列中拿出一个view，如果view为nil，则return nil，否则放到正在使用的队列中，并移除掉等待使用的队列中的nil
+从重用池当中取出一个可重用的view：从等待使用的队列中拿出一个view，如果view为nil，则return nil，
+否则放到正在使用的队列中，并移除掉等待使用的队列中的nil
 - (void)addUsingView:(UIView *)view：如果参数view不为空，就添加view到正在使用中的队列中。
 - (void)reset：把正在使用中的队列里的view移除掉，添加到等待使用的队列中
 
@@ -1147,7 +1148,8 @@ objc_association_copy_nonatomic(关联的协议，用copy协议关联了hello)
 
 
 调用objc_setassociatedobject方法：
-第一步：生成objecassociation，objecassociation 包含的成员结构 (objc_association_copy_nonatomic  @"hello")，这里描述通过assgin或retain关键字关联hello
+第一步：生成objecassociation，objecassociation 包含的成员结构 (objc_association_copy_nonatomic  @"hello")，
+这里描述通过assgin或retain关键字关联hello
 第二步：通过objectassciationmap 包含（@selector(text) ，这个相当于sethello方法选择器），与 objcassociation再作关联
 第三步：objectassciationmap 对象是放在associationshashmap 这个全局对象中的
 第四步：associationshashmap（disguise(obj)当前被关联对象的指针值与objectassciationmap建立关联）
@@ -1752,9 +1754,13 @@ setter方法，同时把原有类isa指针指向这个子类。
 
 3.当一个方法没有实现的时候，系统是怎样实现消息转发过程的？
   当调用一个未实现的对象方法，或者未实现的类方法，会消息转发
-  第一次机会：类方法调用解决类方法的函数，对象方法调用解决实例方法函数，函数返回yes，为其内部添加实现的方法，代码不报异常，表未已经处理了这个未找到的方法
-  第二次机会：解决实例方法返回no，此时系统调用为选择器转发目标函数，返回值是nil或一个对象，返回一个对象，即把未实现的方法交给这个对象实现，返回nil，则系统调用第三次机会的处理函数
-  第三次机会：为选择器方法签名的函数，此时如果返回方法签名。如告诉系统交由某个对象去处理这个方法，此时会调用转发调用函数，这个函数可打印错误的日志，如果返回nil，不再调用转发调用函数，系统会认为此条消息无发处理，则会闪退，抛出未识别的选择器
+  第一次机会：类方法调用解决类方法的函数，对象方法调用解决实例方法函数，函数返回yes，
+            为其内部添加实现的方法，代码不报异常，表未已经处理了这个未找到的方法
+  第二次机会：解决实例方法返回no，此时系统调用为选择器转发目标函数，返回值是nil或一个对象，返回一个对象，即把未实现的方法交给这个对象实现，
+            返回nil，则系统调用第三次机会的处理函数
+  第三次机会：为选择器方法签名的函数，此时如果返回方法签名。如告诉系统交由某个对象去处理这个方法，
+            此时会调用转发调用函数，这个函数可打印错误的日志，如果返回nil，不再调用转发调用函数，
+            系统会认为此条消息无发处理，则会闪退，抛出未识别的选择器
 
 想要得到上面答案，
 从runtime的数据结构学起？
@@ -1834,9 +1840,11 @@ superClass去定义的。
 cache_t  cache:表达方法缓存的，在消息传递过程中，会使用方法缓存的数据结构
 class_data_bits_t   bits:一个类所定义的一些变量属性包括它的一些方法都在bits它的成员结构中，主要是对class_rw_t的封装。
 class_rw_t代表类相关读写信息，对class_ro_t的封装，class_ro_t包括比如为分类添加的一些方法，以及协议在其中。ro表示readonly，代表只读
-class_rw_t包含：class_ro_t,protocols,properties,methods,后面三个都是list_array_tt类型二维数组。如methods，第一层由不同分类构成数组，每个分类都是数组，里面包含method_t这样
+class_rw_t包含：class_ro_t,protocols,properties,methods,后面三个都是list_array_tt类型二维数组。如methods，
+第一层由不同分类构成数组，每个分类都是数组，里面包含method_t这样
 数据结构  
-class_ro_t，name类名（可以通过string获取一个类） ivars（声明定义的一些类的成员变量,一维数组） properties(一维数组)， protocols(一维数组),methods(一维数组)和class_rw_t中成员是有区别的。
+class_ro_t，name类名（可以通过string获取一个类） ivars（声明定义的一些类的成员变量,一维数组） properties(一维数组)， protocols(一维数组),
+methods(一维数组)和class_rw_t中成员是有区别的。
 class_rw_t里是二维数组，methodList存的内容一般是分类添加的内容，class_ro_t一维数组，methodList存的内容存的是原来类中添加的一些方法内容，包含method_t结构
 
 
@@ -1956,7 +1964,8 @@ objc_class又继承自objc_object，objc_object包含了所有的属性，方法
 void objc_msgSend(void/*id self, SEL OP,...*) 第一个参数是对象消息的接收者，第二个是方法选择器名称，第三个是真正消息传递的方法参数
 任何一个消息传递的书写[self class],通过编译器会转换成objc_msgSend(self,@selector(class))
 方法2：
-void objc_msgSendSuper(void/*struct objc_super *super,SEL op,...*/)  //接收对象objc_super，其实还是self对象，只是会从该对象所属的类的父类去查找方法，不对该类本身的方法去查找
+void objc_msgSendSuper(void/*struct objc_super *super,SEL op,...*/)  //接收对象objc_super，其实还是self对象，只是会从该对象所属的类的父类去查找方法，
+//不对该类本身的方法去查找
 
 super在编译中会是编译成objc_super
 struct objc_super{
@@ -2390,10 +2399,12 @@ runtime实战问题：
 
 其它：
 runtime实现机制是什么，怎么用，一般用于嘛，你还能记得你所使用的相关头文件或者某些方法的名称吗？
-回答：运行时机制，runtime库里面包含了跟类/成员变量/方法相关的API,比如获取类里面的所有成员变量，为类动态添加成员变量，动态改变类的方法实现，为类动态添加新的方法等，需要导入<ObJc/message.h>,<objc/runtime>
+回答：运行时机制，runtime库里面包含了跟类/成员变量/方法相关的API,比如获取类里面的所有成员变量，为类动态添加成员变量，动态改变类的方法实现，为类动态添加新的方法等，
+需要导入<ObJc/message.h>,<objc/runtime>
 1>runtime,运行时机制，它是一套C语言库
 什么是runtime?
-2>实际上我们编写的所有OC代码，最终都是转成了runtime库的东西，比如类转成了runtime库里面的结构体等数据类型，方法转成了runtime库里面的C语言函数，平时调方法都是转成了objc_msgSend函数(所以说OC有个消息发送机制)
+2>实际上我们编写的所有OC代码，最终都是转成了runtime库的东西，比如类转成了runtime库里面的结构体等数据类型，
+方法转成了runtime库里面的C语言函数，平时调方法都是转成了objc_msgSend函数(所以说OC有个消息发送机制)
 3>因此，可以说runtime是OC的底层实现，是OC的幕后执行者
 runtime有啥用?
 1>能动态产生一个类、一个成员变量、一个方法
@@ -2600,7 +2611,8 @@ arc中新增weak,strong属性关键字
      第二次：对象指针在sidetable引用计数表中中获取引用计数成员变量，
      再对引用计数加1
   dealloc实现：
-     判断是非指针型的isa ，是否有weak指针，有则将指向该对象的弱引用指针置为nil，是否有关联对象，有则移除关联对象，是否使用c++代码， 是否有额外的引用计数表sidetable，最后才能调用c函数free()
+     判断是非指针型的isa ，是否有weak指针，有则将指向该对象的弱引用指针置为nil，是否有关联对象，有则移除关联对象，是否使用c++代码， 
+     是否有额外的引用计数表sidetable，最后才能调用c函数free()
      
 
 
@@ -4151,7 +4163,8 @@ NSOperationQueue 提供执行队列 多核并行计算 供了更多可定制的�
 NSOperation：
 NSOperation类的自定义：
 非并发队列：
-子类需重写main方法，最好不要只实现一个main方法就交给队列去执行，没有实现finished属性，所以获取finished属性时只会返回NO，任务加入到队列后不会被队列删除，一直会保存，而且任务执行完成后的回调块也不会执行
+子类需重写main方法，最好不要只实现一个main方法就交给队列去执行，没有实现finished属性，
+所以获取finished属性时只会返回NO，任务加入到队列后不会被队列删除，一直会保存，而且任务执行完成后的回调块也不会执行
 
 并发队列：
 重写start方法
@@ -4190,13 +4203,13 @@ YES，则阻塞当前线程直到所有任务完成
 */
 - (void)addOperations:(NSArray<NSOperation *> *)ops waitUntilFinished:(BOOL)wait;
 
-/／向队列中添加一个任务，任务以block的形式传
+//向队列中添加一个任务，任务以block的形式传
 - (void)addOperationWithBlock:(void (^)(void))block;
 
 //获取所有任务
 @property (readonly, copy) NSArray<__kindof NSOperation *> *operations;
 
-/获取队列中的任务数量
+//获取队列中的任务数量
 @property (readonly) NSUInteger operationCount;
 
 /*
@@ -4207,10 +4220,10 @@ YES，则阻塞当前线程直到所有任务完成
 @property NSInteger maxConcurrentOperationCount;
 
 
-/／队列是否挂起
+//队列是否挂起
 @property (getter=isSuspended) BOOL suspended;
 
-/队列的名称
+//队列的名称
 @property (nullable, copy) NSString *name;
 
 ／*
@@ -4241,7 +4254,8 @@ TestOperation: NSOperation
 {
 
 }
-最好不要只实现一个main方法就交给队列去执行，没有实现finished属性，所以获取finished属性时只会返回NO，任务加入到队列后不会被队列删除，一直会保存，而且任务执行完成后的回调块也不会执行
+最好不要只实现一个main方法就交给队列去执行，没有实现finished属性，所以获取finished属性时只会返回NO，
+任务加入到队列后不会被队列删除，一直会保存，而且任务执行完成后的回调块也不会执行
 
 
 并发的NSOperation自定义子类
@@ -4282,7 +4296,8 @@ isAsynchronous: 是否并发执行，之前需要使用isConcurrent，但isConcu
             return;
         }
         //输出任务的各个状态以及队列的任务数
-        NSLog(@"Task %d %@ Cancel:%d Executing:%d Finished:%d QueueOperationCount:%ld", i, [NSThread currentThread], self.cancelled, self.executing, self.finished, [[NSOperationQueue currentQueue] operationCount]);
+        NSLog(@"Task %d %@ Cancel:%d Executing:%d Finished:%d QueueOperationCount:%ld", i, [NSThread currentThread], 
+        self.cancelled, self.executing, self.finished, [[NSOperationQueue currentQueue] operationCount]);
         [NSThread sleepForTimeInterval:0.1];
     }
     NSLog(@"Task Complete.");
@@ -5616,15 +5631,19 @@ timers:
  
  source0：
  这里和上面的sources0集合存的数据类型是一样的，需要手动唤醒线程，把当前线程从内核态切换到用户态
+ 如：1.处理如UIEvent ，Socket这类事件，用户级别的，需手动触发的事件称为手动唤醒线程
  
  source1:
  具备唤醒线程的能力，不需要手动唤醒
+ 如：处理系统内核的mach_msg事件。（推测CADisplayLink也是这里触发）。系统级别的底层事件，自动处理
  
  cfrunlooptimer：
  基于事件的定时器，它和我们使用的nstimer是具备免费桥转换的，toll-free bridged
+ 如：Timer事件：，延迟的dispatch_after，timer事件。
  
  cfrunloopobserver:
  可以注册一些observer对runloop进行一些相关时间点的监测，观察
+ 如：runloop准备启动时，将对timer事件进行处理时，将对source事件处理时，将进入休眠休态是，唤醒状态时，退出时
  
  可以监测runloop哪些时间点呢？
  
@@ -5648,12 +5667,17 @@ timers:
   代表runloop退出的通知
   
   
+  其它事件源：
+  Block事件，非延迟的NSObject PerformSelector立即调用，dispatch_after立即调用，block回调
+  Main_Dispatch_Queue事件：GCD中dispatch到main queue的block会被dispatch到main loop执行。
+  
+  
   
   各个数据结构之间的关系：
   
   线程和runloop是一一对应的。
   runloop和runloop的mode是一对多的关系，因为runloop有一个modes的成员
-  mode与source,timer,observer也是一对多的关系
+  mode与source,timer,observer也是一对多的关系，或多对多关系，因为有一个commonmodes
   
   引出面试问题：
   runloop和mode，以及mode和source,timer,observer是怎样一个关系呢？
