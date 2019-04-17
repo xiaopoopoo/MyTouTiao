@@ -79,7 +79,8 @@ afn双向验证：太复杂请看此文https://www.jianshu.com/p/e66eacc24dbe iO
 NSURLConnection 和 NSURLSession 区别：
 
 NSURLConnection:
-NSURLConnection在foundation框架中的一个类，它与这个框架中很多类关联：NSURLRequest、NSURLResponse、NSURLProtocol、NSHTTPCookieStorage、NSURLCredentialStorage
+NSURLConnection在foundation框架中的一个类，
+它与这个框架中很多类关联：NSURLRequest、NSURLResponse、NSURLProtocol、NSHTTPCookieStorage、NSURLCredentialStorage
 
 NSURLSession:
 在iOS 7.0 推出了 NSURLSession，对foundation框架中url模块进行彻底重构。

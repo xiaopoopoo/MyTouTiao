@@ -40,7 +40,8 @@ CAAnimation(动画根类，不可直接使用){
 - (void)animationDidStop:(CAAnimation *)anim finished:(BOOL)flag;
 removedOnCompletion：动画完成后是否移除动画默认为YES此属性为YES时，在fillMode不可用，具体为什么不可用，可以自己结合两个属性分析一下，这里不再赘述。
 timingFunction设置动画速度曲线，默认值上面已经给出下面说它的几个方法：
-。这两个方法是一样的如果我们对系统自带的速度函数不满意，可以通过这两个函数创建一个自己喜欢的速度曲线函数，具体用法可以参考这篇文章CAMediaTimingFunction使用的
+。这两个方法是一样的如果我们对系统自带的速度函数不满意，可以通过这两个函数创建一个自己喜欢的速度曲线函数，
+具体用法可以参考这篇文章CAMediaTimingFunction使用的
 + (instancetype)functionWithControlPoints:(float)c1x :(float)c1y :(float)c2x :(float)c2y;
 - (instancetype)initWithControlPoints:(float)c1x :(float)c1y :(float)c2x :(float)c2y;
 电子杂志曲线的函数的缓冲点，具体用法可以参考这篇文章：iOS-核心动画高级编程/ 10-缓冲
@@ -76,7 +77,8 @@ timingFunction设置动画速度曲线，默认值上面已经给出下面说它
 
 属性的详解：
 
-BEGINTIME：刚才上面简单解释了下这个属性的用法：CACurrentMediaTime()+ x。会使动画延迟执行点¯x秒不知道到这里有没有人想过如果-x？会出现怎么样效果假设我们有执行一个3秒的动画，设置然后beginTime = CACurrentMediaTime()- 1.5那么执行动画你会发现动画只会执行后半段，就是也。只执行后面的3-1.5s的动画。为什么会这样？其实动画都有一个时间表（时间线）的概念。动画开始执行都是基于这个时间线的绝对时间，这个时间和它的父类有关（系统的属性注释可以看到）。默认的CALayer的的BEGINTIME为零，如果这个值为零的话，系统会把它设置为CACurrentMediaTime（），那么这个时间就是正常执行动画的时间：立即执行所以如果设置你beginTime=CACurrentMediaTime()+x;它会把它的执行时间线推迟x秒，就是也。晚执行x秒，如果你beginTime=CACurrentMediaTime()-x;那它开始的时候会从你动画对应的绝对时间开始执行。
+BEGINTIME：刚才上面简单解释了下这个属性的用法：CACurrentMediaTime()+ x。会使动画延迟执行点¯x秒不知道到这里有没有人想过如果-x？
+会出现怎么样效果假设我们有执行一个3秒的动画，设置然后beginTime = CACurrentMediaTime()- 1.5那么执行动画你会发现动画只会执行后半段，就是也。只执行后面的3-1.5s的动画。为什么会这样？其实动画都有一个时间表（时间线）的概念。动画开始执行都是基于这个时间线的绝对时间，这个时间和它的父类有关（系统的属性注释可以看到）。默认的CALayer的的BEGINTIME为零，如果这个值为零的话，系统会把它设置为CACurrentMediaTime（），那么这个时间就是正常执行动画的时间：立即执行所以如果设置你beginTime=CACurrentMediaTime()+x;它会把它的执行时间线推迟x秒，就是也。晚执行x秒，如果你beginTime=CACurrentMediaTime()-x;那它开始的时候会从你动画对应的绝对时间开始执行。
 timeOffset：时间偏移量，默认为0;既然它是时间偏移量，那么它即和动画时间相关这么解释：假设我们设置一个动画时间为5秒，动画执行的过程为1->2->3->4->5，这时候如果你设置timeOffset = 2s它那么的执行过程就会变成3->4->5->1->2如果你设置timeOffset = 4s那么它的执行过程就会变成5->1->2->3->4，这么说应该很明白了吧？
 
 3、CAPropertyAnimation属性动画，抽象类，不能直接使用
@@ -93,7 +95,9 @@ timeOffset：时间偏移量，默认为0;既然它是时间偏移量，那么�
 
 
 属性的详解：
-CAPropertyAnimation是属性动画顾名思义也就是针对属性才可以做的动画那它可以对谁的属性可以做动画是的CALayer的属性，比如：？界限，位置等那么问题来了，我们改变的CALayer的位置可以。设置直接[CAPropertyAnimation animationWithKeyPath:@"position"]如果我们设置它的变换（CATransform3D）呢？CATransform3D是一个矩阵，如果我们想为它做动画怎么办？下面这个属性就是用来解决这个问题的。
+CAPropertyAnimation是属性动画顾名思义也就是针对属性才可以做的动画那它可以对谁的属性可以做动画是的CALayer的属性，
+比如：？界限，位置等那么问题来了，我们改变的CALayer的位置可以。设置直接[CAPropertyAnimation animationWithKeyPath:@"position"]
+如果我们设置它的变换（CATransform3D）呢？CATransform3D是一个矩阵，如果我们想为它做动画怎么办？下面这个属性就是用来解决这个问题的。
 
 valueFunction：我们来看它可以设置的值：
 kCAValueFunctionRotateX
@@ -596,12 +600,14 @@ UIViewAnimationOptionOverrideInheritedOptions
 73、iOS获取设备唯一标识 https://blog.csdn.net/u014795020/article/details/72667320
 前言
 
-目前市面应用普遍采用用户体验，涉及到部分重要功能时候才提醒用户注册账户，而用户之前的操作，比如收藏，点赞，关注等内容需要同时关联进注册的账户，那么根据什么记录用户的操作信息就尤为重要。下面就列出我之前收集资料总结的方案。
+目前市面应用普遍采用用户体验，涉及到部分重要功能时候才提醒用户注册账户，而用户之前的操作，比如收藏，点赞，关注等内容需要同时关联进注册的账户，
+那么根据什么记录用户的操作信息就尤为重要。下面就列出我之前收集资料总结的方案。
 
 UDID
 
-UDID（Unique Device Identifier），iOS 设备的唯一识别码，是一个40位十六进制序列（越狱的设备通过某些工具可以改变设备的 UDID），移动网络可以利用 UDID 来识别移动设备。 
-许多开发者把 UDID 跟用户的真实姓名、密码、住址、其它数据关联起来，网络窥探者会从多个应用收集这些数据，然后顺藤摸瓜得到这个人的许多隐私数据，同时大部分应用确实在频繁传输 UDID 和私人信息。 为了避免集体诉讼，苹果最终决定在 iOS 5 的时候，将这一惯例废除。 
+UDID（Unique Device Identifier），iOS 设备的唯一识别码，是一个40位十六进制序列（越狱的设备通过某些工具可以改变设备的 UDID），移动网络可以利用 UDID
+ 来识别移动设备。 许多开发者把 UDID 跟用户的真实姓名、密码、住址、其它数据关联起来，网络窥探者会从多个应用收集这些数据，
+ 然后顺藤摸瓜得到这个人的许多隐私数据，同时大部分应用确实在频繁传输 UDID 和私人信息。 为了避免集体诉讼，苹果最终决定在 iOS 5 的时候，将这一惯例废除。 
 现在应用试图获取 UDID 已被禁止且不允许上架。
 
 MAC 地址
@@ -612,12 +618,15 @@ MAC 地址在网络上用来区分设备的唯一性，接入网络的设备都�
 
 OpenUDID
 
-UDID 被弃用后，广大开发者需要寻找一个可以替代的 UDID，并且不受苹果控制的方案，由此，OpenUDID 成为了当时使用最广泛的开源 UDID 代替方案。OpenUDID 利用一个非常巧妙的方法在不同程序间存储标示符：在粘贴板中用了一个特殊的名称来存储标示符，通过这种方法，其他应用程序也可以获取。 
+UDID 被弃用后，广大开发者需要寻找一个可以替代的 UDID，并且不受苹果控制的方案，由此，OpenUDID 成为了当时使用最广泛的开源 UDID 代替方案。
+OpenUDID 利用一个非常巧妙的方法在不同程序间存储标示符：在粘贴板中用了一个特殊的名称来存储标示符，通过这种方法，其他应用程序也可以获取。 
 苹果在 iOS 7 之后对粘贴板做了限制，导致同一个设备上的应用间，无法再共享一个 OpenUDID。
 
 UUID + 自己存储
 
-UUID（Universally Unique IDentifier），通用唯一标示符，是一个32位的十六进制序列，使用小横线来连接：8-4-4-4-12，通过 NSUUID（iOS 6 之后）[NSUUID UUID].UUIDString 或者 CFUUID（iOS 2 之后） CFBridgingRelease(CFUUIDCreateString(kCFAllocatorDefault, CFUUIDCreate(kCFAllocatorDefault))) 来获取，
+UUID（Universally Unique IDentifier），通用唯一标示符，是一个32位的十六进制序列，使用小横线来连接：8-4-4-4-12，通过 NSUUID（iOS 6 之后）
+[NSUUID UUID].UUIDString 或者 CFUUID（iOS 2 之后） CFBridgingRelease(CFUUIDCreateString(kCFAllocatorDefault, 
+CFUUIDCreate(kCFAllocatorDefault))) 来获取，
 但是每次获取的值都不一样，需要自己存储。keychain存储
 
 推送 token + bundleID
@@ -626,15 +635,23 @@ UUID（Universally Unique IDentifier），通用唯一标示符，是一个32位
 
 IDFA
 
-IDFA-identifierForIdentifier（广告标示符），在同一个设备上的所有 APP 都会取到相同的值，是苹果专门给各广告提供商用来追踪用户而设定的。虽然 iPhone 默认是允许追踪的，而且一般用户都不知道有这么个设置，但是用户可以在 设置 - 隐私 - 广告追踪 里重置此 ID 的值，或者限制此 ID 的使用，所以有可能会取不到值。
+IDFA-identifierForIdentifier（广告标示符），在同一个设备上的所有 APP 都会取到相同的值，是苹果专门给各广告提供商用来追踪用户而设定的。
+虽然 iPhone 默认是允许追踪的，而且一般用户都不知道有这么个设置，但是用户可以在 设置 - 隐私 - 广告追踪 里重置此 ID 的值，或者限制此 ID 的使用，
+所以有可能会取不到值。
 
 IDFV
 
-IDFV-identifierForVendor（Vendor 标示符），通过 [UIDevice currentDevice].identifierForVendor.UUIDString 来获取。是通过 bundleID 的反转的前两部分进行匹配，如果相同是同一个 Vendor ，例如对于 com.mayan.app_1 和 com.mayan.app_2 这两个 bundleID 来说，就属于同一个 Vendor ，共享同一个 IDFV，和 IDFA 不同的是，IDFV 的值一定能取到的，所以非常适合于作为内部用户行为分析的主 ID 来识别用户。但是用户删除了该 APP ，则 IDFV 值会被重置，再次安装此 APP ，IDFV 的值和之前的不同。
+IDFV-identifierForVendor（Vendor 标示符），通过 [UIDevice currentDevice].identifierForVendor.UUIDString 来获取。
+是通过 bundleID 的反转的前两部分进行匹配，如果相同是同一个 Vendor ，例如对于 com.mayan.app_1 和 com.mayan.app_2 这两个 bundleID 来说，
+就属于同一个 Vendor ，共享同一个 IDFV，和 IDFA 不同的是，IDFV 的值一定能取到的，
+所以非常适合于作为内部用户行为分析的主 ID 来识别用户。但是用户删除了该 APP ，则 IDFV 值会被重置，再次安装此 APP ，IDFV 的值和之前的不同。
 
 IDFV + keychain
 
-通过以上几种存储唯一标识的方法分析，总结一下各有优劣。很多方法被苹果禁止，或者漏洞太多，越来越不被开发者利用，现在苹果主推IDFA和IDFV这两种方法，分别对外和对内，但是IDFV在App重新安装时候会被更改，所以我的方法是通过第一次生成的IDFV存储到keychain中，以后每次获取标识符都从keychain中获取。注意：keychain在iOS 7之后开放给开发者，但是在iOS 10中默认是关闭的，需要开发者手动打开。
+通过以上几种存储唯一标识的方法分析，总结一下各有优劣。很多方法被苹果禁止，或者漏洞太多，越来越不被开发者利用，
+现在苹果主推IDFA和IDFV这两种方法，分别对外和对内，但是IDFV在App重新安装时候会被更改，
+所以我的方法是通过第一次生成的IDFV存储到keychain中，以后每次获取标识符都从keychain中获取。
+注意：keychain在iOS 7之后开放给开发者，但是在iOS 10中默认是关闭的，需要开发者手动打开。
 我的项目用的是
 +(NSString*) getCurrentDeviceUDID
 {
@@ -662,7 +679,8 @@ NSString *const  cent = @"zlbcent";//去掉CONST是全局变量
 定义太多的宏会造成编译时间过长 ，const这个代码只会编译一次，宏是只要用到的地方都进行了替换 
 因此常用的字符串使用const定义
 一个错误的说法：大量使用宏会造成内存过大
-这个说法是错误的，NSLOG("%@",zlburl)NSLOG("%@",zlburl)NSLOG("%@",zlburl)打印多次后还是同一个内存地址，因为常量会放到常量区里面，只分配一次内存
+这个说法是错误的，NSLOG("%@",zlburl)NSLOG("%@",zlburl)NSLOG("%@",zlburl)打印多次后还是同一个内存地址，
+因为常量会放到常量区里面，只分配一次内存
 
 const用于修饰基本变量和指针变量，且修饰的变量指读，const一定放到变量的左边靠近变量
 
@@ -733,6 +751,32 @@ extern NSString *const name；
 造成原因是创建一个项目的时候下边有个选项未打勾，所以就不参与编译
 
 
+1. 可以使用：
+	ViewController.m
+	NSString *const name = @"123";
+
+	AppDelegate.m
+	extern NSString * name； 
+	//或 UIKIT_EXTERN  NSString * name；
+
+2.不可以使用：局部常量：用static修饰后，不能提供外界访问，只能在ViewController.m中使用
+	ViewController.m
+	static NSString *const name = @"123";
+
+	AppDelegate.m
+	extern NSString * name；  
+
+
+3.const NSString *HSCoder = @"汉斯哈哈哈";
+*HSCoder = @"2";不能被修改  它的指针指向的地址能被修改
+
+4.NSString const *HSCoder = @"汉斯哈哈哈";
+*HSCoder = @"2";不能被修改  它的指针指向的地址能被修改
+
+5.NSString * const HSCoder = @"汉斯哈哈哈";
+HSCoder = @"3" 能被修改，*HSCoder不能被修改
+
+
 
 
 
@@ -751,11 +795,13 @@ Core Data使用起来相对直接使用SQLite3的API而言更加的面向对象�
 
 创建管理上下文
 创建管理上下可以细分为：加载模型文件->指定数据存储路径->创建对应数据类型的存储->创建管理对象上下方并指定存储。
-经过这几个步骤之后可以得到管理对象上下文NSManagedObjectContext，以后所有的数据操作都由此对象负责。同时如果是第一次创建上下文，Core Data会自动创建存储文件（例如这里使用SQLite3存储），并且根据模型对象创建对应的表结构。
+经过这几个步骤之后可以得到管理对象上下文NSManagedObjectContext，以后所有的数据操作都由此对象负责。同时如果是第一次创建上下文，
+Core Data会自动创建存储文件（例如这里使用SQLite3存储），并且根据模型对象创建对应的表结构。
 查询数据
 对于有条件的查询，在Core Data中是通过谓词来实现的。首先创建一个请求，然后设置请求条件，最后调用上下文执行请求的方法。
 插入数据
-插入数据需要调用实体描述对象NSEntityDescription返回一个实体对象，然后设置对象属性，最后保存当前上下文即可。这里需要注意，增、删、改操作完最后必须调用管理对象上下文的保存方法，否则操作不会执行。
+插入数据需要调用实体描述对象NSEntityDescription返回一个实体对象，然后设置对象属性，最后保存当前上下文即可。
+这里需要注意，增、删、改操作完最后必须调用管理对象上下文的保存方法，否则操作不会执行。
 删除数据
 删除数据可以直接调用管理对象上下文的deleteObject方法，删除完保存上下文即可。注意，删除数据前必须先查询到对应对象。
 修改数据
@@ -1037,7 +1083,9 @@ CoreData 数据库迁移：
      会得到一个sqlite3类型的对象，后面需要借助这个对象进行其他操作
      执行SQL语句，执行SQL语句又包括有返回值的语句和无返回值语句。
      对于无返回值的语句（如增加、删除、修改等）直接通过sqlite3_exec()函数执行；
-     对于有返回值的语句则首先通过sqlite3_prepare_v2()进行sql语句评估（语法检测），然后通过sqlite3_step()依次取出查询结果的每一行数据，对于每行数据都可以通过对应的sqlite3_column_类型()方法获得对应列的数据，如此反复循环直到遍历完成。当然，最后需要释放句柄。
+     对于有返回值的语句则首先通过sqlite3_prepare_v2()进行sql语句评估（语法检测），
+     然后通过sqlite3_step()依次取出查询结果的每一行数据，
+     对于每行数据都可以通过对应的sqlite3_column_类型()方法获得对应列的数据，如此反复循环直到遍历完成。当然，最后需要释放句柄。
 
 9。说一说你对FMDB的认识     
     FMDB是一个处理数据存储的第三方框架，框架是对sqlite的封装，整个框架非常轻量级但又不失灵活性，而且更加面向对象
@@ -1093,8 +1141,11 @@ if([[NSUserDefaults standardUserDefaults] objectForKey:ID] == nil){
 }
 
 15。MD5和Base64的区别是什么，各自使用场景是什么？
-    MD5：是一种不可逆的摘要算法，用于生成摘要，无法逆着破解得到原文。常用的是生成32位摘要，用于验证数据的有效性。比如，在网络请求接口中，通过将所有的参数生成摘要，客户端和服务端采用同样的规则生成摘要，这样可以防篡改。又如，下载文件时，通过生成文件的摘要，用于验证文件是否损坏。
-    Base64：属于加密算法，是可逆的，经过encode后，可以decode得到原文。在开发中，有的公司上传图片采用的是将图片转换成base64字符串，再上传。在做加密相关的功能时，通常会将数据进行base64加密/解密。
+    MD5：是一种不可逆的摘要算法，用于生成摘要，无法逆着破解得到原文。常用的是生成32位摘要，
+    用于验证数据的有效性。比如，在网络请求接口中，通过将所有的参数生成摘要，客户端和服务端采用同样的规则生成摘要
+    ，这样可以防篡改。又如，下载文件时，通过生成文件的摘要，用于验证文件是否损坏。
+    Base64：属于加密算法，是可逆的，经过encode后，可以decode得到原文。
+    在开发中，有的公司上传图片采用的是将图片转换成base64字符串，再上传。在做加密相关的功能时，通常会将数据进行base64加密/解密。
 
 16。plist文件是用来做什么的。一般用它来处理一些什么方面的问题。
 
@@ -2033,66 +2084,3 @@ self.transitioningDelegate = self;
 链接：https://www.jianshu.com/p/a9b1307b305b
 来源：简书
 简书著作权归作者所有，任何形式的转载都请联系作者获得授权并注明出处。
-
-
-
-
-
-
-
-      
-        
-        
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-            
-            
-         
-          
-         
- 
-
-
-
-
-
-
- 
- 
- 
- 
- 
- 
- 
-
-
-
-
