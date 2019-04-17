@@ -1,0 +1,2886 @@
+
+第一阶段。javaSE基础
+
+day 1
+
+1.it的前世今生
+
+2.操作系统与平台的相关性
+
+3.windows常用命令和快捷键
+
+4.太极和八卦
+
+5.进制概述 未看
+
+6.进制之间的转换操作 未看
+
+7.原码 补码 反码 未看
+
+8.计算机语言和编程概述
+
+9.sun公司和java平台 
+
+10.java课程体系和学习方法
+
+11.引出跨平台和可移植性
+
+12.实现街机游戏的跨平台性
+
+13.java跨平台性原理
+java源代码文件转换成字节码class文件，字节码class文件和平台无关，编译工具javac，把源文件编成字节码class文件，
+java虚拟机（jvm）识别字节码文件。
+启动虚拟机，并选择加载哪一份字节码文件
+启动虚拟机的工具，就叫java
+字节码文件一般看不懂，只有虚拟机能看得懂
+
+14.JDK JRE JVM
+JRE是java程序运行的环境，JRE中存在了JVM
+JDK是java的开发工具，编译工具javac，启动虚拟机的工具java都在JDK里面
+
+15.搭建java的运行环境
+不同系统平台选择不同jdk安装，到oracle去下载jdk
+安装jdk，配置环境变量
+安装的目录文件名最好别中文和空格
+
+目录结构：
+bin 指二进制，存放编译工具，javac， 启动java虚拟机工具都在里面
+db  存放了java测试的数据库，企业不用
+include 存放了c++的头文件
+jre java的运行环境，里面有java虚拟机
+libary   java运行和依赖的核心库
+src.zip  java的源代码，感兴趣可欣赏
+命令窗口 javac 测试是否装好了
+提示找不到命令
+在环境变量中，用户变量和系统变量（所有用户都可以用），找到path路径，编辑输入javac的路径，即所在的位置
+建议在用户变量中新建path路径
+建议在sys32删除与java有关的文件，避免引起其它问题
+
+
+16.第一个java程序
+
+在控制台输出一句话
+1：在目录下新建文本文档，123.java
+2：写代码
+class Hello{
+	public static void main(String[] args){
+	    System.out.println("hello word");
+	}
+}
+3:打开命令窗口，进入文件目录，对	123.java进行编译
+javac 123.java
+执行成功后会生成Hello.class字节码文件
+启动java虚拟机运行Hello.class
+java Hello  //不是 java Hello.class  
+
+
+17.Java的编译和运行机制
+JAVA工具启动虚拟机，执行某一份class代码
+java 带有main方法的类名，main方法是程序的入口
+java是编译性及解释性语言，javac编译  java虚拟机解释
+给别人项目一般只给字节码class文件
+
+
+18.CLASSPATH环境变量
+因为class文件在d盘，后来剪切到c盘
+java虚拟机从哪里去找class文件
+默认是在当前路径下去找
+在我的电脑，高级，环境变量，新建名为CLASSPATH，把字节码路径拷过去
+java hello.class 执行就会去这个路径去找，不在再默认是当前路径下去找
+以后有工具不再需要注意这一点
+java_home是针对linux才需要配置
+java5之前都需要配CLASSPATH，之后不需要配置
+如果把java源文件和字节码文件放到不同文件夹
+javac -d path 123.java //编译到某个路径下
+java -classpath  path hello.class//执行某个文件下类文件
+
+19.Java基本语法
+1.严格区分大小写
+2.一个java文件可以定义多个类，如果有三个类，编译出来三个class文件
+class Hello{
+	public static void main(String[] args){
+	    System.out.println("hello word");
+	}
+}
+class a{
+	public static void main(String[] args){
+	    System.out.println("hello word");
+	}
+}
+class b{
+	public static void main(String[] args){
+	    System.out.println("hello word");
+	}
+}
+Hello.class a.class b.class 编译出的结果
+
+public 的类名必须与文件名相同
+但是一个文件中多个类，只有一个类可以用public修饰,且这个java文件名必须和public 的这个类名相同
+如：下面的代码不能放在123.java中，只能放到Hello.java中
+public class Hello{
+	public static void main(String[] args){
+	    System.out.println("hello word");
+	}
+}
+3.一个类必须运行，必须有main函数，main方法是程序入口
+
+编程建议，一个java文件中定义一个类，用public修饰起来，保证一个文件一个类
+
+
+20.Java的三大注释
+注释是给程序员看的，编译后就没了
+单行注释：//注释内容 
+多行注释：/*注释内容*/
+文档注释：/**注释内容*/
+文档注释可以生成api文档
+多行注释和文档注释彼此之间都不能多行嵌套
+xjad反编译工具可以查看字节码文件
+
+21.Java中的关键字和保留字
+关键字：一些事先定义的，有特殊含义和用途的单词
+保留字：一些事先定义好的，只是暂时没用，未来可能要用的一些单词  goto const
+关键字和保留字都是小写组成，边学边记
+注意：java无sizeof goto const关键字
+不纠结 true false null属于字面量，还是直接量
+
+22.Java中的语言分隔符
+汉语用符号断句
+java也一样，一句话结束用分号； 花括号开始花括号结束时不需要分号； 花括号已经很清楚的解释了是代码的分隔
+必须是半角下的英文符号
+
+23.Java的标识符规范
+为了增强代码可读性，程序员自己定义的符号
+标识符命名规则
+1。以字母，数字，下划线，$组成，但不能以数字开头
+2。大小写敏感
+3。不得使用java中的关键字和保留字
+4，不用java api的类名作为自己的类名
+
+
+24.Editplus工具
+这个工具能让我们知道哪个是关键字，保留字，api类名
+通过颜色进行区分
+
+25.今日小结
+
+
+day2
+
+1.字面量和常量
+常量就是一个值，不会变，如 123，45  整数 小数
+字面量常量（直接量）：直接给出的一个值，可以整数，小数，true false等
+final定义的变量：
+
+2.引出变量
+public class Hello{
+	public static void main(String[] args){
+	    System.out.println(6+3);//9
+	}
+}
+签合同用jia方 yi方
+
+3.变量的定义和基本使用
+表示存储空间，可以存放某一类型常量，没有固定值，并可以重复使用
+定义变量格式：
+数据类型 变量名称;
+变量必须初始化才能使用，初始化才是真正的在内存中分配一个空间
+public class Hello{
+	public static void main(String[] args){
+	   int age;
+	   age = 17;
+	   int age1 = 18;
+	   int a,b,c;//不推荐，不直观
+	}
+}
+
+04.变量分类-作用域-使用规则
+
+1.变量分类：
+变量根据位置不同分为两大类：
+a。成员变量  字段  
+直接定义在{}中的变量方法外
+public class Hello{
+	int age;
+	public static void main(String[] args){
+	   age = 17;//报错，无法从静态上下文中引用非静态变量，上下文指环境  修改： static int age则不报错
+	}
+}
+b。局部变量
+变量除了成员变量就是局部变量
+定义在方法中的变量
+public class Hello{
+	public static void main(String[] args){
+	   int age;
+	   age = 17;
+	}
+}
+成员变量和局部变量如果名字相同，采用就近原则
+
+2.作用域问题：
+可以起作用的领域，在哪个范围内能使用
+成员变量在类中，在所定义的类中起作用
+public class Hello{
+	public void a(){
+	   age = 17;
+	}
+	int age;//不报错，java编译语言，已经在内存中
+}
+局部变量从定义的那个地方到紧跟着的}之间使用。
+
+3.使用规则
+作有域相同的时候变量名不能重复
+
+
+5.Java表达式
+相当于算术式
+由数字，运算符，分级符号如括号，变量，常量，组成的
+并能求得一个结果
+
+
+
+
+第三阶段 安卓基础到实战课程
+
+day1
+
+1_(了解)移动通讯技术
+要学的基础：ui 网络 存储数据库  多媒体
+工作原理：模拟信号：说话产生声波，声波振动使铜片来回摆动，则电容会变化，产生交变电流，通过电线传到另一边
+课外拓展：后来是通过信号传播，传播是扩散的，最好是直线最好，所以有很多电塔，现在是卫星取代了。a,b,c互相通话会
+信号干扰，所以需要在同一个频道上能通话，所有人只要在一个频道都能听到说话，保密信息差。
+第二代手机有转变，
+将模拟信号转为数字信号，及声音传换成二进制数据（加密），再通过信号传过去。这会就可以发送短信功能
+第三代通讯技术3g
+采用数字通讯，可发图片，发音视频
+4g功能
+4g信号覆盖广，流量多，快
+
+2_(了解)浅谈Android 
+
+
+
+3_(了解)Android 系统体系结构
+
+1。底层：linux kernel linux内核  使用c去操作代码，能够操作硬件的代码称之为驱动代码
+2。硬件抽象层：hareware abstraction layer 开源的安卓，各厂商可以定制，为了让别的厂商定制的功能代码保密，会在这个抽象层去开发
+3。libraries：用c语言对1，2层封装代码，便于程序员去操作。
+4。application framework:框架层，用java代码写的，java程序员直接用java操作，不用再去java调用libraries这一层，因为操作难度高
+5。applications：平时写代码主要在这一层去写
+java代码调用c代码，是因为runtime层，这个相当于java虚拟机（orace打官司）。davlike虚拟机去作这个事，两个虚拟机都可实现java和c调用，
+都使用了openjdk,
+jvm与dvm虚拟机区别
+编译：
+jvm: java->class_>jar
+dvm: java->class->dex//dex是压缩版的，把所有相同的方法放到一个常量池中，使用这个方法通过id去拿，比如a,b两个类都有一个相同的方法，就可以优化
+架构：
+jvm: 基于栈的结构
+dvm：基于寄存器的结构
+
+4_(掌握)开发工具介绍
+android standard develop kits 安卓sdk，安卓开发工具集
+两种工具集：
+1。android-adt-bundle 基础课基本上以这个工具为基准
+下载android-adt-bundle，打开文件夹，有一个sdk manager.exe
+配置环境变量，打开用户环境变量
+变量名ANDROID_SDK_HOME 变量值：d:\android-adt-bundle\sdk
+变量名path 变量值：;%ANDROID_SDK_HOME%\platform-tools;%ANDROID_SDK_HOME%\tools 两个路径引入
+cmd 找开输入adb，如果出现信息就成功了，adb命令这里比较重要，通过这样配置后，adb命令就可以使用了
+打开eclipse，会出现找不到path，是因为java环境变量没有配置好
+变量名：JAVA_HOME 变量值：d:\java\jkd1.1.0_79
+变量名path 变量值:;%JAVA_HOME%\bin
+打开sdk manager.exe，可以下载和安装更新skd，下载太慢一般不使用
+
+打开eclipse目录，eclipse.ini 配置eclipse内存等
+这个eclipse是自带了adt插件的eclipse，打开plugin目录，发现多了com.android.ide.eclipse.adt等一系列东西
+安装插件后打开eclipse，才会用一些新的图标出现
+
+打开sdk目录，包含以下目录 .android add-ons build-tools docs extras platforms platform-tools samples sources system-images tools
+.android打开，有个avd目录，存放的是你创建的模拟器
+add-ons 存的goole的一些api，实现一些非正式的api,gool map google play
+build-tools 把class 文件编译成android某个版本
+docs  一些api的文档 搜踏得安卓文档比较好，网快
+extras 写了一个app 4。0写的，想在手机2.3版本使用，需要把这个extras放到里面去，提供一些在2.3版本没有的新技术的婉转作法
+platforms android-8(代表第8套api，安卓2.2) android-10 android-14 android-16  对应的是android的版本 有用，相针对哪个版本开发
+platform-tools tools都是android常用工具，adb.exe 管理模拟器，启动模拟器等  有用
+samples 显示的android每个版本的示例
+source  android的源码，是有关java层的源码 application framework 有用
+system-images 镜像工具，android系统的备份
+
+2.android studio
+
+
+
+5_(掌握)安卓模拟器
+eclipse 自带模拟器 android virtual device manager，点击可以创建一个模拟器，机型很多
+app只能给大多尺寸使用，一般开发前几年选480*800  近几年选720*1280，选了以后会显示这种屏幕出现在
+android最主流的版本是哪一个，cpu/abi  相当于电脑的处理器， keyboard,skin都是默认打上构的
+memory options:ram 内存 vm heap 堆内存，程序员自己生成的，表示单个程序的最大内存
+internal storage:手机内部存储空间大小，点ok则创建一个模拟器成功
+点运行，选择scale display to real size 表示模拟器可缩放
+查看eclipse是否与模拟器连接，选eclipse - show view - other
+弹出框有个android 文件夹，点击device，这时在下方出现一个devices
+会显示当前连接的模拟器
+
+genymotion模拟器  每次更新需要登录网站下载，不是很方便
+夜神模拟器  游戏厂商用来推扩游戏用的
+
+
+6_(掌握)DDMS与安卓环境定制
+eclipe右上角有个java，叫工作区。每个工作区都有不同的窗口，debug也是一个工作区，一个工作区有多个切换的视图
+今天了解一下另外的工作区，windows - open perspective - ddms工作区
+ddms 全称：dalvik debug monitor service 是android开发环境中的dalvik虚氛机调试监控服务。
+ddms里面包含了：device（设备） file explorer(文件管理)  emulator control(模拟器管理) logcat（日志）
+
+device只要模拟器出现，这里就会显示一个设备，模拟器打开后显示很多包名，每个包名代表一个应用。不管你打没打开，每个应用都会显示到这里，android希望每个应用都打开，下次再打开这个应用更快
+
+file explorer(文件管理) 里面有很多文件，和linux文件系统相似，不分c,d盘。每安装一个应用，都会在data-data目录下生成一个应用文件包，这叫内存储。右上角有两个按钮，一个是导入，一个是导出文件
+
+emulator control(模拟器管理，控制器) 只对eclipse自带的模拟器有效，选中自带的模拟器，在incoming number 输入手机号，可以发短信，打电话，模拟手机当前坐标位置
+
+logcat（日志）打印android的日志
+
+在开发里，在java工作区写完代码，又得切换到ddms工作区看日志，不方便，这里可以优化，把ddms用到的窗口放到java区来
+windows - show view - android -device 
+windows - show view - android -locat 
+这样子一个一个的添加进来
+加进来以后为了保证这几个窗口重新打开还存在，windows - perspective as 保存工作区，取个名称。
+
+7_(掌握)Helloworld
+创建android应用程序，首先右上角选中android工作空间，然后左边工作区右键，new-android application project
+需要填三项：
+application name:应用的名称
+project name:eclipse里项目名称
+package name:包名 com.123.www  点后面只能是英文
+minimum required sdk:最低版本的sdk 最低能兼容的版本 如，app主流版本4.4  兼容版本2.3  如果手机是1.6版本是不能用的
+target sdk:选当前市场最流行的一个版本
+compile with:编译版本 一般和目标版本一样
+theme  主题
+点击下一步：
+create project in workspace:是否要创建工作空间
+下一步：
+configure launcher icon 项目图标
+下一步：
+blank activity 选项不用项，直接确认 这里可以填写程序类的名称  activity name :mainactivity  layout name:activity_main 布局文件
+activity name:
+layout name:
+navigation type:
+项目创建成功：
+选右键运行：提示no compatible targets were found.do you wish to add a new android virtual device?
+提示没有目标模拟器。
+打开夜神模拟器
+点一下上节课添加的ddms模块，devices，可以查看到模拟器是否关联
+点右键--run as -- android application
+项目创建成功后有activity_main.xml mainactivity.java //两个文件
+activity_main.xml 可以修改界面，左边form widgets 很多控件，可以拖一个进来
+下边选graphical layout视图工具区 activity_main.xml代码区
+
+8_(掌握)Eclipse工程目录结构
+ src:（常用） 展开在包名下的文件：mainactivity.java
+ mainactivity.java刚进来的时候会调用oncreate方法，该方法会调用activity_main.xml视图
+ setcontentview(r.layout.activity_main)//将这个类和布局相关联
+ 以后安卓程序，如果写代码的部份所有都放到src下
+ 
+ gen:gen[generated java files] 译：自动生成的java文件，buildconfig.java r.java   
+                                                                                                                                                                                                                                                                                       
+ android 4.3:  android.jar 主流版本api的文档
+ 
+ android private libraries:  android-support-v4.jar
+ 
+ assets:存放资源文件，如html，视频，音频文件 这里存放的文件不会产生id，数据库的初始化，html，比较轻量级的视频放这里
+ 
+ bin:
+ 
+ libs:  android-support-v4.jar  这个jar包和上面 android private libraries的jar包一样的，libs和 android private libraries
+ 是相关联的。libs右键 - bulid path -add to build path可以添加新jar包，添加后android private libraries会有一个关于这个jar包的引用 
+ 
+ res:（常用）  资源存放文件，这里存放的文件会在R.java中产生一个id
+   //放图片的地方，适配不同手机会准备多张图片
+   drawable-hdpi
+   drawable-ldpi
+   drawable-mdpi
+   drawable-xhdpi
+   drawable-xxhdpi
+   
+   //界面也相当于是资源，所以这里放的是ui界面
+   layout
+      activity_main.xml
+      my_layout.xml
+
+   //每个应用都可以定制菜单，特别是在老版本的时候
+   menu
+       main.xml//菜单的配置在这个文件中定义的
+       
+   values  
+       dimens.xml   配置在不同手机屏幕，类似按钮尺寸等
+       strings.xml  配置应用所有的文字的，类似hello word 文字
+       styles.xml   配置应用的样式
+       colors.xml   新建一个颜色配置，以后所有颜色都可在这里配
+   values-sw600dp
+   values-sw720dp-land
+   values-v11
+   values-v14
+ 
+ 
+ androidmanifest.xml 整个应用的配置文件，包括包名，版本号。最低兼容版本等
+ 
+ ic_launcher-web.png
+ 
+ proguard-project.txt
+ project.properties
+ 
+
+9_(掌握)简单点击事件
+创建一个新的android项目，因为我的模拟器是2.2,所以创建选择minimum required sdk 最低适配版本是2.2
+建好以后在资源布局文件拖放一个按钮进来，功能点击按钮打日志
+在布局文件中
+首先通过id找到button
+<button 
+      android:id="@+id/btn"  //如果想创建一个id，选@+id/  如果是引用别人的id则@id/
+
+在gen文件目录下r.java中
+public static final int bnt = 0x7f0909;//会增加刚创建的那个id
+
+在cliclactivity.java文件中，one oncreate()程序启动时会调用
+获取按钮，绑定事件
+Button view =  (Button)findviewbyid(R.id.btn);
+button 继承于view 
+btn.setOnclicklisenr(new onClicllistener(){
+    @verride
+     public void onclick(view age){
+         System.out.println("onclick");
+     }
+); 
+
+
+10_(掌握)应用程序编译安装的过程
+ 为什么应用一下载就布置到了模拟器上，平时网上下载的应用是.apk格式
+ 在bin目录下，会编译生成应用的apk文件
+ 怎么把代码，图片打包成apk的
+ 
+ 程序安装过程：
+ 1.把所有的.java文件编译成.class文件 使用jdk中的javac命令 
+ 
+ 2.把所有的.class字节码文件打包合成一个文件classes.dex，这个classes.dex文件在bin目录下 这是一个class的压缩文件，不压缩会很大，压缩一千个类的同一个方法会压成一个方法，
+ 使用\sdk\build-tools\android-4.4\dx.bat工具，因为eclipse工具安装了adt插件，所以能帮忙找到这个工具
+ 
+ 3.根据资源id（r.java），生成一个bin目录下resources.ap_ 保存所有的资源信息
+ 
+ 4.把.dex文件，res目录下的资源文件，resources.ap_文件 asset目录下的文件合成一起打包成一个apk压缩包
+ 使用\sdk\build-tools\android-4.4\aapt.exe
+ 
+ 5.adb.exe负责把生成好的apk文件上传安装到手机里面
+ android debug bridge 安装调试桥 负责上传安装apk
+ 
+ adb命令
+ 安装一个应用程序
+ adb install xxx.apk
+ 
+ 卸载一个应用程序
+ adb uninstall com.xx.xx.xx
+ 
+ 进入手机linux系统
+ adb shell 刚可以使用shell 里面的所有命令 如ls-l  pwd命令
+ 
+ 杀死adb的调试桥，当调试桥不稳定的时候
+ adb kill-server
+ 
+ 启动adb的调试桥
+ adb start-server
+ 
+ 查看连接到电脑上的手机设备
+ adb devices
+ 查看当前有哪些设置
+ adb -s 127.0.0.1:62001 指令使用这个模拟器
+ 
+ 11_(掌握)点击事件的几种写法
+ 关闭项目，选中，右键，delete后出现弹框，不要构delete project contents on disk,构了是把本地项目都删除掉了
+ 导入项目，右键，import，出现弹框，不要选android，选general-existing projects,选路径，点ok导入。
+ 创建一个应用程序，最好用英文项目名称，
+ 在mainactivity.java中拖入按钮
+ 在cliclactivity.java文件中
+ Button view =  (Button)findviewbyid(R.id.btn);
+ 生成两个方法
+ oncreate()   oncreateoptionsmenu();//这个方法和res下menu/main.xml配合使用，点击菜单就会有弹出效果，一般不用就删除掉，现在的app 一般不用菜单
+ 在activity_main.xml放入一个按钮
+ 
+ 在mainactivity.java
+   //第一种按钮点击方式
+   public class MainActivity extends Activity implements OnClickListener{
+   @Override
+	protected void onCreate(Bundle savedInstanceState) {
+	
+ 	Button btn=(Button) findViewById(R.id.button1);
+	btn.setOnClickListener(this);
+		
+	@Override
+	public void onClick(View arg0) {
+		//Toast 吐司
+		//duration 就是弹出的时间
+		Toast.makeText(this, "还真的点我?", 800).show();
+	}
+	
+	//第二种按钮方式 匿名对象方式
+		Button btn2=(Button) findViewById(R.id.button2);
+		btn2.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View arg0) {
+				Toast.makeText(MainActivity.this, "点击事件2", 800).show();
+			}
+		});
+		
+	//第三种按钮方式
+		Button btn3=(Button) findViewById(R.id.button3);
+		btn3.setOnClickListener(new MyClickListener());
+		
+	  class MyClickListener implements OnClickListener{
+		@Override
+		public void onClick(View arg0) {
+			Toast.makeText(MainActivity.this, "点击事件3", 800).show();
+		}
+		
+	}
+	
+	//第四种方式，不要id找按钮
+	activity_main.xml中
+	    <Button 
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/button3"
+        android:layout_marginLeft="15dp"
+        android:layout_marginTop="46dp"
+        android:layout_toRightOf="@+id/button3"
+        android:onClick="btn4Click"//增加了这个属性
+        android:text="按钮4" />
+        
+	MainActivity.java中
+	//一般不推荐 写法比较Low
+	public void btn4Click(View v){
+		Toast.makeText(this, "按钮4", 800).show();
+	}
+	
+	
+day2
+
+01_(重点)View的属性
+  view是所有控件的父类，子类有如下:
+	文本按钮输入框
+	是非选择框
+	进度条
+	图片控件
+	滑动控件
+	日期时间选择器
+	webview
+	togglebutton
+	progressbar
+	edittext
+	选中一个控件的类名，按f4，左边窗口就会显示这个控件的继承关系
+ view有很多的属性，是所有子控件都通用的
+	1. 控件的宽高：（固定值 与两种状态）
+    android:layout_width="30dp"  | android:layout_width="wrap_content" //里面内容多大字体就有多大  | android:layout_width="match_parent"//匹配父控件有多大，则显示有多大 
+    android:layout_height="30dp"
+
+    2. 控件的可见度：（3种状态）
+    android:visibility="visible" | gone/invisible是不可见的，gone是真实的不可见，也不占位置，invisible，不可见，占了位置
+
+    3. 控件的背景：（颜色 图片）
+    android:background="#F00"  |  android:background="R.drawable.ic_lanucher" (引用图片，代码里面写法) | android:background="@drawable/ic_lanucher" (引用图片，xml文件里面写法)
+    android:background="#FF00" （第一个f表示透明度                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ）
+    4. 盒子模型：用dp，针对不同屏幕自动缩放，如果用px，每个屏幕都不同的px
+    android:layout_margin="10dp"
+    android:padding="5dp"
+    创建盒子模型xml，选中layout文件夹，点击左上角创建一个xml文件的图标，在弹出框选择linerlayout，输入box_layout
+    margin主要是你的控件在外边距位置android:layout_marginLeft |right |top|bottom |start| end
+	padding 时，控件内部的子控件距离这个控件的位置
+	
+02_View的属性与ViewGroup关系
+    如果设置android:layout_width="wrap_content" ，必须是里面有内容的，或者有子控件的，如果什么都没有系统无法计算出宽高
+    
+    <!-- 报错：如果让一个View直接添加子控件 是不允许-->
+    <Vie
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:background="#F00" >
+
+        <View
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:background="#0F0" />
+    </Vie>
+
+    
+    
+	<!-- 报错：此时 应该直接使用ViewGroup控件 ，ViewGroup是view的子类，虽然ViewGroup可以包括子控件，但是这里面系统不知道子控件view具体应该怎么排放位置-->
+    <ViewGroup
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:background="#F00" >
+
+        <View
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:background="#0F0" />
+    </ViewGroup>
+
+    2011年的时候有5大布局，这5大布局其时是ViewGroup的子类
+    AbsoluteLayout  绝对布局
+    AdapeterView
+    DrawerLayout
+    FragmentBreadCrumbs
+    FrameLayout    帧布局
+    GridLayout
+    LinearLayout   线性布局  //使用比较多
+    TableLayout    表格布局
+    RelativeLayout 相对布局  //使用比较多
+    
+	<!-- 正确：此时 应该直接使用ViewGroup控件的子类控件，及五大布局 ，ViewGroup是view的子类，虽然ViewGroup可以包括子控件，但是这里面系统不知道子控件view具体应该怎么排放位置-->
+    <ViewGroup
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:background="#F00" >
+
+        <View
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:background="#0F0" />
+    </ViewGroup>
+
+03_LinearLayout
+    组视图
+    1.LinearLayout
+    线性布局，该布局下子布局列表为模线或者竖线排布
+    创建一个新项目，在包名中千万别出现下划线
+    创建一个linearlayout.xml，点击进入默认是RelativeLayout，这里改成LinearLayout
+    同时拖入多个textview，发现多个textview在linerlayout中默认是以横向布局
+    变成纵向布局android:orientation="vertical"  /horizontal横向布局
+    权重：android:layout_weight=""(只能在LinearLayout的子控件中使用)
+    例如有3个textview，需要横向占满，所以和子控件的宽度有关系
+    解决方式： 把3个textview的宽度设为0，android:layout_width="0dp",
+    同时把3个textview的权重设为android:layout_weight="1"，这个时候三个view就平均分配占满了屏幕的宽度，三个权重1,相当于把屏幕切分为三份
+    例如：希望垂直的屏幕平均占3份
+    解决方式： 把3个textview的宽度设为android:layout_width="match_parent",
+    把3个textview的高度设为0，android:layout_height="0dp",同时把3个textview的权重设为android:layout_weight="1"
+    这时，把第一个textview的高度设为200dp，则下面两个textview的高度，就是除去了整体带有实际宽高的控件后，进行平分布局
+    下面看一个有趣例子，电视没有信号的时候，可以模似来作
+    创建一个布局linearlayout.xml
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"//高度平分
+        android:layout_weight="1"
+        android:orientation="horizontal"  >
+        <View 
+            android:layout_width="0dp"//宽度平分
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:background="#FF0" />
+        <View 
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:background="#0FF" />
+	</LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical" >
+        <View 
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#08F" />
+        <View 
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#0F8" />
+	</LinearLayout>
+</LinearLayout>
+
+    
+    2.RelativeLayout
+    
+    3.FrameLayout
+    
+    4.其它视图
+    
+    一般视图
+    5.文本按钮输入框
+    6.是非选择框
+    7.进度条
+    8.图片控件
+    9.滑动控件
+    10.日期时间选择控件
+    11.WebView 
+    
+ 04_RelativeLayout
+   1.相对父控件布局
+   拖入一个按钮，不高设置坐标位置，按钮默认在左上角
+   设置按钮在横向居中的属性： android:layout_centerHorizontal="true"
+   再设置按钮纵向居中的属性： android:layout_centerVertical="true"
+   设置按钮在屏幕的正中间：   android:layout_centerInParent="true"
+   高置按钮在屏幕的最左边：   android:layout_alignParentLeft="true"//在父亲的最左边对齐  alignParentRight//右边 alignParentTop//最顶部 alignParentBottom//最底部
+   2.相对同个等级控件进行布局
+   相对中间这个按钮布局<Button android:id=@"+id/center_btn"
+   在中间按钮的上面，并与中间按钮左对齐android:layout_above="@id/center_btn"; android:layout_alignLeft="@id/center_btn"
+   android:layout_below="@id/center_btn"; //正下面对齐
+   android:layout_marginRight="10dp"; //微调 结合相对布局使用
+   android:layout_toLeftOf="@id/center_btn"; //在某个按钮的左边
+   android:layout_alignTop="@id/center_btn"; //并与这个按钮顶部对齐
+   
+05_其他组视图
+   在开发中用得最多的是RelativeLayout，LinearLayout，
+   FrameLayout偶尔会用一点
+   FrameLayout：
+   创建framelayout.xml
+   创建一个view 250dp 250dp
+   再创建一个view 200dp 200dp
+   如果这两个view是在LinearLayout布局中，那会出现view一个在上面，另一个在view的下方
+   如果这两个view是在FrameLayout布局中，那么两个view会重叠。FrameLayout越往后写的控件越放在最上层展示
+   
+   AbsoluteLayout绝对布局：
+   android:layout_x="30dp"; android:layout_x="30px";//写px,dp都可以，因为用这个布局一般是不用适配多机型的
+   例如网络电视选项，往左右滑的时候改变x,y的坐标，如果作网络电视，没有更多机型去适配，就用绝对布局
+   
+   TableLayout    表格布局：
+   TableLayout  代表一个表格
+   TableRow  代表一行 
+   创建一个登录的ui案例
+   创建用户名控件，和密码控件，
+   别然实现了，但对齐方式不对，所以这种布局很少使用
+   
+   06_文本按钮与输入框
+   new  android application 创建一个文本项目 
+   <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TextView"
+        android:ellipsize="end"//这个属性加上尾部会有省略号，如果没设lines是没有省略号的，因为没有显示全才会有省略号
+        android:lines="2"//限制两行，没有省略号
+        android:textStyle="bold" //加粗 italic斜体 
+        android:textSize="36sp"//字体大小，sp是字体的尺寸大小
+        android:textColor="#F0F"   />//字体颜色
+        
+        
+   <!-- singleLine 变成单行 附带省略号 -->
+	<TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="22sp"
+        android:layout_marginTop="5dp"//距顶部5dp
+        android:singleLine="true"//变成单行 附带省略号
+        android:text="sdfsfdsfsdfsdfdsfdsfsdfsfdsfsdfsdfdsfdsfsdfsf
+   
+   <!-- typeface 设置字体风格 -->     
+ 	<TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="22sp"
+        android:typeface="sans"//默认是sans  android:typeface="serif"  android:typeface="monospace" 展示的字体风格会有一些小小的变化
+        android:text="abc123" />
+        
+  button是继承textview的，button可点击，textview不可能点击
+  	<!-- 1.把Button变成TextView -->
+	<Button
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:background="@null"//把Button变成TextView
+	    android:text="Button" />
+	<!-- 2.把TextView变成Button -->
+	<TextView
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:clickable="true"//把TextView变成Button
+	    android:onClick="myClick" 
+	    android:text="Button" />
+	    
+  在MainActitity.java
+  	public void myClick(View v){
+		Toast.makeText(this, "click", Toast.LENGTH_SHORT).show();
+	}
+        
+    拖入一个editText,这个控件是继承textview的
+    	<!-- text输入的文本 -->
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="请输入xxx"
+        android:text="haha"  />
+    <!-- editable 决定用户能否输入 -->
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="请输入xxx"
+        android:editable="false"//输入不了
+        android:text="haha"  />
+    <!-- maxLength最大输入的数字长度 -->
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:lines="1"//最多一行
+        android:maxLength="10"//最大可输入数字
+        android:hint="请输入xxx"  />
+    <!-- inputType设置输入的风格  textPassword代表密码 -->
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:lines="1"
+        android:inputType="textEmailAddress"//设置是输入密码，还是eamil，输入的风格 numberpassword输入只带数字的密码 | number显示数字 如果是email 会多了@ . com这些符号
+        android:maxLength="10"
+        android:hint="请输入xxx"  />   
+        
+   07_是非选择框 
+   都继承button          
+   ToggleButton 只能选是和否，相当于一个按钮点击有打开，关闭两种状态，这个控件很少用
+       <ToggleButton
+        android:id="@+id/toggleButton1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/hello_world"
+        android:textOff="关闭的"
+        android:textOn="打开的" />
+                                                                                                                                                                                                                                                                                                                               
+        
+   RadioButton 只能选一个的时候，必须放到RadioGroup 中，因RadioGroup继承RelativeLayout
+       <RadioGroup
+        android:id="@+id/sex_rg" 
+        android:layout_width="wrap_content"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <RadioButton
+            android:id="@+id/radioButton1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/male" />
+
+        <RadioButton
+            android:id="@+id/radioButton2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="女" />//这里报黄警告，因为字体按常规应该放到res/values/strings.xml中，如果不要报错，打开strings.xml 
+                         <String name="male">女</string>  引用android:text="@string/male"
+    </RadioGroup>
+    
+    
+   RadioButton的响应事件：
+        在MainActivity.java中
+   		RadioGroup radioGroup=(RadioGroup) findViewById(R.id.sex_rg);
+   		radioGroup.setOnCheckedChangeListener(new OnCheckedChangeListener() {		
+			@Override
+        //查看源代码，按ctrl,弹出中选open super implementation 点进去，弹窗选择external location 外部的位置，选源码，
+        在android-adt-bundle/sdk/sources/android18			
+			public void onCheckedChanged(RadioGroup group, int checkedId) {//checkedId,指补选中的id
+				if (checkedId==R.id.radioButton1) {
+					Toast.makeText(MainActivity.this, "男",0).show();
+				}else if (checkedId==R.id.radioButton2) {
+					Toast.makeText(MainActivity.this, "女",0).show();
+				}
+			}
+		});                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+  
+  checkbox多选，继承compoundbutton:
+      <CheckBox 
+        android:id="@+id/apple_cbx" //id，便于找到它
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="苹果" />
+      <CheckBox 
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="黄瓜" />
+ checkbox响应事件：
+   		CheckBox appleCbx=(CheckBox) findViewById(R.id.apple_cbx);
+		appleCbx.setOnCheckedChangeListener(
+				new CompoundButton.OnCheckedChangeListener() {
+			
+			@Override
+//			buttonView 当前的CheckBox
+//			isChecked 是否被选中
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				Toast.makeText(MainActivity.this, isChecked?"选中":"未选中",0).show();
+			}
+		});
+		
+  08_进度条
+  android的进度条种类很多
+  
+  一直在转的进度条，不能看到它当前是进度多少了，最小的进度条圆圈
+      <ProgressBar
+        style="?android:attr/progressBarStyleSmall"//按ctrl可以点进去，看到很多种样式
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+        
+     反方向转圆圈的进度条   
+     <ProgressBar
+        style="?android:attr/progressBarStyleInverse"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+   大的圆圈进度条
+    <ProgressBar
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+        
+  直条的进度条，可以看到当前多少进度
+  ?android:attr/progressBarStyleHorizontal 带进度的进度条的样式 
+      <ProgressBar
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="250"//总的进度有多少
+        android:progress="40" />//当前进度有多少
+  这个进度需要代码设置
+  
+  可拖动的进度条
+     <SeekBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="250"
+        android:progress="40" />
+    SeekBar继承了ProgressBar,max,progress即可以在布局文件中配置，也可以在代码中配置
+    
+    
+    <!-- 星星进度条   step步长-->
+    <RatingBar 
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:numStars="4"//设置显示最多只有这4颗星星，原本5颗星，当这里重新点击星星的时候，星星只亮了一半
+        android:rating="3"//默认的评分数
+        android:stepSize="0.3"  />//每次点星星，只照亮0.3
+        RatingBar 继承了ProgressBar，
+        
+        
+    09_图片控件
+    	<!-- src属性只能放静态的图片，只能放res/drawable下的图片 -->
+    <ImageView
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:src="@drawable/flower"
+        android:scaleType="fitEnd"//center图片居中 fitxy占满控件，拉伸了 matrix图片缩小左上角，一般图片是长方型，控件是正方形，就需要使用这个属性
+        android:background="#F00"  />
+   <View//这个也可以放图片，只是没有scaleType属性让它更清晰
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:src="@drawable/flower"
+        android:background="#F00"  />
+        
+        代码写：
+        		ImageView iv;
+//		设置静态项目资源文件
+//		iv.setImageResource(R.drawable.flower);
+//      设置位图，位图可以通过文件获取，也可以通过网络获取
+//		iv.setImageBitmap(bm)
+//		iv.setImageDrawable(drawable)//和上一个差不多，可相互转换
+
+
+10_滑动控件
+   上下滑动
+   ScrollView 这个控件不是用来展示的，是用来包含其它控件的，上下滑动的控件 这个控件不能直接包含2个子控件  在多个子控件外层嵌套一个容器控件 -->
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical" >
+
+            <TextView  //没有加scrollw控件时，这个时候这个控件占满了这个屏幕，这个控件不能滑动
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="hahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahaha"
+                android:textSize="40sp" />
+
+            <TextView//没有加LinearLayout布局时，运行报错，因为ScrollView不能直接包含2个子控件
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="hahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahaha"
+                android:textSize="40sp" />
+        </LinearLayout>
+    </ScrollView>
+    
+    左右滑动，也只能放一个子控件
+    <HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+	<!-- HorizontalScrollView 横向滑动控件 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="hahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahaha"
+        android:textSize="40sp" />
+    </HorizontalScrollView>
+    
+    11_日期时间选择器
+    //日历和滚动两种方式
+    <DatePicker
+        android:id="@+id/datePicker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"  />
+    //显示的是滚动的方式12小时制，上午，下午，几分，几点
+    <TimePicker
+        android:id="@+id/timePicker1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"   />
+        
+    在MainActivity.java
+    DatePicker datePicker = (DatePicker) findViewById(R.id.datePicker);
+		//year 年
+		//month 月减1，写5显示6月
+		//day 天 
+		datePicker.init(1979, 5, 1, new OnDateChangedListener() {//显示在某一天1979-6-1，每个月份加1，月的范围是0-11，如果不想监听最后一个参数传null
+			
+			@Override
+			public void onDateChanged(DatePicker view, int year, int monthOfYear,
+					int dayOfMonth) {
+				String text=year+"年"+(monthOfYear+1)+"月"+dayOfMonth+"日";
+				Toast.makeText(MainActivity.this,text , 0).show();
+			}
+		});
+		
+		TimePicker timePicker = (TimePicker) findViewById(R.id.timePicker1);
+		//设置24小时表示法，设置以后上午下午就没有了
+		timePicker.setIs24HourView(true);
+		//设置时间改变的监听器
+		timePicker.setOnTimeChangedListener(new OnTimeChangedListener() {
+			
+			@Override
+			public void onTimeChanged(TimePicker view, int hourOfDay, int minute) {
+				Toast.makeText(MainActivity.this,hourOfDay+":"+minute , 0).show();
+			}
+		});
+
+
+   12_WebView
+       <WebView
+        android:id="@+id/wv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+        
+       在MainActivity.java 
+        WebView wv = (WebView) findViewById(R.id.wv);
+//		1.加载这个网页
+		wv.loadUrl("http://www.520it.com/");
+		1a. 需要提示用户这个控件需要容量，找到项目中AndroidManifest.xml
+		告诉用户有上网的权限 ,当安装这个app的时候就会提示是否可上网，运行后发现加载这个控件后，网页没在当前控件上显示，而作了一个跳转到其它浏览器页显示，这个是因为该网址作了一个重定向技术
+	     <uses-permission android:name="android.permission.INTERNET" />
+        </manifest>
+        
+//		2.点击其中链接会跳转到其它浏览器，这里通过处理，让跳转页在当前控件中显示
+		wv.setWebViewClient(new WebViewClient(){
+			@Override
+//			url 是点击的时候新的网址
+			public boolean shouldOverrideUrlLoading(WebView view, String url) {
+				view.loadUrl(url);//新网址传进来
+//				3.告诉系统不要打开新的浏览器，true，告诉系统，我们自己处理，不跳转浏览器
+				return true;
+			}
+		});
+//		4.Õ 网页控件默认是不支持javascript的，需要手动代码打开这个开关
+		wv.getSettings().setJavaScriptEnabled(true);
+//		5.Õ 网页控件默认不支持弹出框，如javascript中的alert() prompt() confirm(),但是html5的弹出框是默认支持的
+		wv.setWebChromeClient(new WebChromeClient(){
+//			虽然不支持js弹出框，但会回调下面的方法
+			@Override
+			public boolean onJsAlert(WebView view, String url, String message,
+					JsResult result) {
+//				在这个方法里面可以使用原生的弹出框代替
+				return super.onJsAlert(view, url, message, result);
+			}
+			
+		});
+		
+		13_ShapDrawable 画圆角
+		<EditText
+        android:layout_width="match_parent"
+        android:layout_height="35dp"
+        android:layout_margin="2dp"
+        android:paddingLeft="5dp"
+        android:background="@drawable/et_shap" />
+    
+        <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="2dp"
+        android:layout_margin="2dp" 
+        android:text="按钮"
+        android:background="@drawable/et_shap" />
+        我们平时写的按钮，没有背景图片，不够好看。
+        现在要作一个圆角按钮
+        首先在res下创建一个文件夹drawable，选中这个文件夹，
+        New Android XML File ,选shape,这里就创建了一个et_shap.xml
+        这个et_shap.xml文件，包含了所有的图片资源
+        
+        <?xml version="1.0" encoding="utf-8"?>
+        <shape xmlns:android="http://schemas.android.com/apk/res/android" >
+        <!-- stroke边框      color边框的颜色   width边框的粗细-->
+            <stroke android:color="#888" android:width="1dp"/>
+	     <!-- solid填充的颜色 -->
+         <solid android:color="#FFF"/>
+         <!-- 设置圆角 -->
+       <corners android:radius="5dp"/>
+       </shape>
+       
+       14_SelectorDrawable
+       让按钮点击的时候有背景
+       1。
+       准备两张.png的图片，把它拷贝到drawable-hdpi中，选中res,创建文件夹drawable，选中这个
+       文件夹，创建xml文件，选中selector，btn_bg_selector.xml创建成功，这里可以认为它就是一张
+       图片。
+       <?xml version="1.0" encoding="utf-8"?>
+        <selector xmlns:android="http://schemas.android.com/apk/res/android" >
+        <!-- 有两种状态 1:原来的状态 2:按下的状态 -->
+	    <item android:state_pressed="true" 
+	    android:drawable="@drawable/blue_btn_pressed"/>
+	    <!-- 默认的状态一定要写到最后 -->
+	     <item 
+	    android:drawable="@drawable/blue_btn_normal"/>
+        </selector>
+       2。
+       找到布局文件activity_main.xml
+        <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/btn_bg"//覆盖掉原来系统的图
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:textColor="@drawable/btn_txt_selector"//字体颜色的改变
+        android:text="@string/hello_world" />
+        
+       3。按钮点击图片的效果写出来了，但感觉不好看，我们可以自己画一个
+       同样，选中res，创建btn_bg.xml
+       <?xml version="1.0" encoding="utf-8"?>
+       <selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+       <!-- 两种状态 的图片都由我们自己去绘制 -->
+       <!-- 有两种状态 1:原来的状态 2:按下的状态 -->
+       <item android:state_pressed="true">
+          <shape>
+            <!-- stroke边框      color边框的颜色   width边框的粗细 -->
+            <stroke android:width="1dp" android:color="#888" />
+            <!-- solid填充的颜色 -->
+            <solid android:color="#888" />
+            <!-- 设置圆角 -->
+            <corners android:radius="5dp" />
+          </shape>
+      </item>
+      <!-- 默认的状态一定要写到最后 -->
+      <item>
+          <shape>
+            <!-- stroke边框      color边框的颜色   width边框的粗细 -->
+            <stroke android:width="1dp" android:color="#888" />
+            <!-- solid填充的颜色 -->
+            <solid android:color="#FFF" />
+            <!-- 设置圆角 -->
+            <corners android:radius="5dp" />
+          </shape>
+      </item>
+
+      </selector>
+      
+      4。实现checkbox
+      	<!-- CheckBox里面的选择框样式是由属性android:button决定的，它也就选中的状态 -->
+         <CheckBox
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:button="@drawable/cbx_slector"//这里不是用的android:background而是button属性决定
+        android:text="苹果" />
+        
+        找到两张圆形背景图，拷贝到drawable-hdpi文件夹中
+        创建一个资源xml文件
+        <?xml version="1.0" encoding="utf-8"?>
+         <selector xmlns:android="http://schemas.android.com/apk/res/android" >
+         <!-- 一种是选中的 一种是未选中 -->
+	     <item android:state_checked="true" 
+	        android:drawable="@drawable/more_radio_selected"/>
+	    <item 
+	        android:drawable="@drawable/more_radio_normal"/>
+         </selector>
+         
+      5。选中的时候字体颜色改变
+      <?xml version="1.0" encoding="utf-8"?>
+      <selector xmlns:android="http://schemas.android.com/apk/res/android">
+	  <!-- 如果设置的是字体的颜色 这里不应该使用android:drawable属性 而应该使用android:color -->
+      <item android:state_pressed="true" android:color="#FFF"/>
+      <item android:color="#F000"/>
+      </selector>
+
+
+      15_LayerlistDrawable 主要用于进度条中
+      改变进度条的样式
+      	<!-- 引用当前的进度条样式图 -->
+      <ProgressBar
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:progressDrawable="@drawable/pb_bg"
+        android:max="100"
+        android:progress="100"  />
+        
+        在drawable下选layer_list,创建pb_bg.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
+        <!-- 进度条:背景图 进度图 这里是有顺序的，顺序不能变-->
+	     <item android:drawable="@drawable/progress_bar_bg" 
+	    android:id="@android:id/background"/>//这个id告诉系统我想作为背影，这个id是安卓系统定义好的
+	    <item android:drawable="@drawable/progress_bar_selected_bg" 
+	    android:id="@android:id/progress"/>
+        </layer-list>
+
+       16_9patch图说明
+       按钮给固定大小，设置背影图片时，背影图片变形了，中间的字体被拉伸，有一种方式，只拉伸两边，不拉伸中间
+        <Button
+        android:layout_marginTop="10dp"
+        android:layout_width="260dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/pressed" />
+        找到android-adt-bundel/sdk/tools/draw9patch.bat 双击打开，把要处理的图片拖进来。
+        这时候会出现两个窗口，左窗口显示原图大小，右边显示三副图，分别是原图，横向拉伸，纵向拉伸三种效果
+        只希望拉伸两边，在左窗中点击从哪个部份拉伸，右窗口则会出现不同的效果，按shift+左键可以去掉之前的选择
+        好处在于，不用作和按钮一样大的图片，浪费空间。
+        使用该工具处理完后保存pressed.9.png,把该图拖到drawable-hdpi文件夹下。报了错，因为有一张图片pressed.png
+        重名，所以删除掉。这时候加载的图片还是有点字体变形
+        因为之前作点9图的时候，只是设的拉伸区域是一条线，必须在最左端再点一下，勾上show content。就可以看到被拉伸的区域
+        再保存一下，拉伸的区域像个井字，井字中间以上面，左边进行拉伸，最终就会显示出按钮的效果
+        
+        
+        day3
+        
+        关于android的一些简单概念
+        01_(了解)尺寸单位
+        安卓常用单位是dp，文字常用是sp，很少使用px
+        为什么安卓不使用px?
+        px是电视电脑上分辨率，由多少个点组成就是多少分辨率,px相素是构成数码影像的基本单位
+        比如屏幕300*300分辨率，就表示水平或垂直方向每英寸长度上的像素是300*300,也可以说是一平方英寸有9万像素
+        在平时安卓手机尺寸很多，无法用px去适配所有手机
+        dp这个单位好处在于会根据手机屏幕自动缩放或增加尺寸大小
+        sp用来设置文字的大小
+        同一个按钮，在小手机上显示很好，在大手机上显示太小，用dp
+        如何去选择适配主流手机
+        120dip 240*320 2.7英寸
+        160mdip 320*480 3.2英寸
+        240hdip 480*800 4英寸
+        320xhdip 2760*1280,800*1280 4.7英寸
+        480xxhdip 1080*1920 5英寸
+        640xxxhdip 3840*2160 给4k电视用的
+        没有归并到上面的其它尺寸，都可以归并到相似的地方
+        把图片根据上面的尺寸放到res下对应要适配手机型号的drawable-ldpi或其它文件夹中
+        
+        02_(重点)LogCat的使用
+        在eclipse界面右下方窗体，有一个logCat窗口
+        查看logcat，在界面右下方选devices，里面有很多模拟手机设备，你要看哪个设备的locat，就选中那个模拟器
+        再切换到logca窗体。
+        在mainactivity.java中
+        system.out.println("haha");
+        这时候在LogCat就能看到打印的结果
+        这里会显示这个手机里面所有应用的日志，可找到当前应用的日志
+        在android中打印不用system.out，使用android.util包
+        Log.(verbose,debug,warn,error,assert,info)
+        Log.v("523","haha");最新的日志总是显示在最下面，这个打印是黑色的tag:"523" text:"haha" 
+        Log.d("523","debug");显示的是蓝色
+        Log.i("523","info");绿色
+        Log.w("523","warn");绿色
+        Log.e("523","error");红色
+        当log.e的时候，log.v log.d log.i log.w的日志没了 
+        当log.v的时候 log.d log.i log.w的日志没了
+        1。不同等级下显示不同的日志
+        2。从低到高verbose->debug->info->warn->error
+        3。等级拦截器中越高等级的拦截器不能拦截比它低等级的日志
+        4。只要进一个应用，就会把该应用的日志打印出来
+        对于真机，进入一个应用，一直在打日志
+        当系统打印日志占太多内存，系统会把最早的日志一条一条的清空
+        这个清空日志称为环行缓冲区，先进先出
+        5。过滤器，左下边窗口，点添加一个静态过滤器
+        name:我的过滤器
+        tag:xmg
+        这会log.v("xmg","haha");
+        选中这个过滤器，只会打印xmg，其它日志不会打印
+        如果没打印重启eclipse
+        动态监听拦截tag （如何只在logcat中看只看523的日志）
+        在logcat输入框中输了入：tag:523
+        
+        
+        03_(了解)测试相关的概念
+        测试的分类：
+        
+        1。根据是否知道源代码
+        白盒测试:测试人员知道源代码，根据源代码写测试用例 大公司
+        黑盒测试:不知道源代码，知道应用功能，根据功能测试应用
+        
+        2。根据测试的粒度（精细程度）
+        方法测试：只测试某个方法的功能是否正确
+        单元测试：测试一个或多个方法
+        集成测试：app需与后台交互，比如数据存到后台数据库，测试某一个功能，涉及到后台和前端
+        系统测试：不同软件之间可以交互，测试不同软件交互是否正确
+        
+        3。测试的暴力程度
+        压力测试：重复点击万次，或写程序不断往后台发数据，这是后台的测试，app在某个时间点内，作重复单一频繁操作，如果后台不好，app也闪退
+        冒烟测试：在某一个时间断内，作一个重复的不确定性的频繁操作。随机点各个按钮，无规律操作，直到点到出错收集bug
+        
+        04_(掌握)Android下的单元测试
+        首先了解一下web的架构
+        jsp  前端jsp
+        action severlet是action层的，主要作页面的跳转
+        service 带有业务逻辑的增删查看数据库操作，有业务性
+        dao 保证数据库写入数据的正确性，dao只对数据库操作 增删查改简单操作
+        数据库db 存储数据库
+        
+        junitTest单纯的对某一层进行测试，不用跑整个程序
+        
+        android也一样，也有数据库，也有dao层，所以也可以使用junittest测试
+        在app中的juittest是不一样的测试，需代码跑模拟器上
+        创建一个 MockCalculator.java模拟一个计算器
+        
+        package com.m520it.juint;
+
+        public class MockCalculator {
+	
+	    /**
+	     * 模拟的业务方法，可以认为当前就是对数据库进行操作
+	     */
+	    public static int add(int x,int y){
+		    return x+y;
+	    }
+	
+	    /**
+	     * 方法2
+	     */
+    	public static int multi(int x,int y){
+	    	return x+y;
+	    }
+	
+        }
+        再创建一个类CalculatorTest.java
+        package com.m520it.juint;
+
+        import android.test.AndroidTestCase;
+
+        /**
+         * 写一个类继程AndroidTestCase
+         *
+         * */
+        public class CalculatorTest extends AndroidTestCase{
+	
+	        /**
+	         * 1.写一个方法 用来测试其它业务方法，这里测试上一个类add方法的
+	         * 测试的时候可能会报错，所以要把错误告诉系统
+	         * */
+	    public void testAdd()throws Exception{//把错误告诉系统
+		    int result = MockCalculator.add(3, 5);//返回了一个值
+		    //expected 期望的值和实际得到的结果是否一致
+		    assertEquals(8, result);//判断结果是不是等于8
+	    }
+	
+	    //2. 写完以后，选中当前项目，点右键，run as-> android junit test
+        这会报了一个错,没有选择一个instrumentation，所以应该是在配置文件AndroidManifest.xml中
+        以一个标签的形式出现，或者没有申明uses-library
+	    //android.test.InstrumentationTestRunner instrumentation 
+	    // or does not declare uses-library android.test.runner 
+	    //in its AndroidManifest.xml
+	    
+	    增加方法二，只是证明junittest能同时测多个方法，只测一个方法，只需选这个方法的名称右键运行，如果测多个方法，只需在空白处选右键运行
+	    public void testMulti()throws Exception{
+		    int result = MockCalculator.multi(3, 5);
+		    //
+		    assertEquals(15, result);
+	       }
+        }
+
+        修改报错，在AndroidManifest.xml中添加这段代码
+        <!-- 告诉手机系统 我们想做一个单元测试 到底要测试哪些类 -->
+         <instrumentation android:name="android.test.InstrumentationTestRunner" 
+        android:targetPackage="com.m520it.juint" />
+    
+         <!-- 单元测试需要导包 -->
+        <uses-library android:name="android.test.runner" />
+        
+        以下是修改报错AndroidManifest.xml中的所有代码
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+        package="com.m520it.juint"
+        android:versionCode="1"
+        android:versionName="1.0" >
+
+        <uses-sdk
+        android:minSdkVersion="8"
+        android:targetSdkVersion="18" />
+        <application
+            android:allowBackup="true"
+            android:icon="@drawable/ic_launcher"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme" >
+        <activity
+            android:name="com.m520it.juint.MainActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- 单元测试需要导包 在application范围导包-->
+        <uses-library android:name="android.test.runner" />
+        </application>
+	    <!-- 告诉手机系统 我们想做一个单元测试 到底要测试哪些类 -->
+        <instrumentation android:name="android.test.InstrumentationTestRunner" 
+            android:targetPackage="com.m520it.juint" />
+        </manifest>
+        选中方法名，右键运行后，如果窗口左边出现绿色表示正确
+         
+       05_(掌握)QQ登陆的界面  06_(重点)Android下的数据读写
+       数据存储  作一个qq登陆界面
+       头像 用户名 密码 登陆按钮
+       分析：界面布局肯定是线性的，用linearlayout布局  方向orientation="vertical"
+       图片一定是拷贝到res下drawable文件夹里面，因为不作适配，所以随便拷贝到drawable文件夹中任何一个位置
+       
+       附言：xml布局容器在工具内显示的和运行在手机上的差别还是有点大，这时候找到顶部类似nexus one下拉，选择尺寸720*1280，这时候
+       显示就会差别不大了，再选择app theme->theme.light->theme.light.no titlebar则把导航头部去掉了，但并不代表运行的时候导航没有了
+       
+       
+       <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >//水平布局方向垂直
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"//控件居中
+        android:layout_marginTop="100dp"//距离顶部100
+        android:src="@drawable/qq" />//图片用src
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"//横向布局
+        android:paddingLeft="20dp"//内部控件的左边
+        android:paddingRight="20dp"//内部控件的右边距离
+        android:layout_marginTop="30dp" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="账号:" />
+        
+        <EditText
+            android:id="@+id/passport_et"//命名规则，业务名称加控件的缩写
+            android:layout_width="match_parent"//占满除textview以外的位置
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:hint="请输入账号" />
+        
+    </LinearLayout>
+	
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"//横向布局
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:layout_marginTop="10dp" >//密码与用户名上下之间距离
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="密码:" />
+        
+        <EditText
+            android:id="@+id/password_et"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:inputType="textPassword"//密码
+            android:hint="请输入密码" />
+        
+    </LinearLayout>
+    
+    <Button 
+        android:layout_width="120dp"
+        android:layout_height="45dp"
+        android:layout_gravity="center_horizontal"//居中
+        android:layout_marginTop="20dp"
+        android:textSize="22sp"
+        android:onClick="loginClick"//增加点击方法
+        android:text="登录" /></LinearLayout>
+        
+    2。在mainActivity.java中
+    public class MainActivity extends Activity {
+
+	private EditText mPassportEt;
+	private EditText mPasswordEt;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+
+		mPassportEt = (EditText) findViewById(R.id.passport_et);
+		mPasswordEt = (EditText) findViewById(R.id.password_et);
+		
+		readData();
+	}
+      
+    /**
+	 * 读取文件里面的数据，显示在界面上
+	 */
+	private void readData() {
+		try {
+			//1.读取帐号密码
+//			File file = new File("/data/data/com.m520it.qqlogin/qqinfo.txt");
+//			File file = new File(getCacheDir(), "/qqinfo.txt");
+			File file = new File(getFilesDir(), "/qqinfo.txt");
+			if (file.exists()&&file.length()>0) {//判断文件是否存在
+				//2.显示到控件里面去 读取字符串操作
+				BufferedReader reader=new BufferedReader(new FileReader(file));
+				String line=reader.readLine();//读一行
+				if (line.contains("#")) {//如果包含这个字符
+					String[] datas = line.split("#");//分隔成数组
+					mPassportEt.setText(datas[0]);
+					mPasswordEt.setText(datas[1]);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 1.获取两个输入框中的值，并判断不为空
+	 */
+	public void loginClick(View v) {
+		String passport = mPassportEt.getText().toString();
+		String password = mPasswordEt.getText().toString();
+		// passport==null||passport.equals("")//类似的写法，下面是简化的写法
+		// TextUtils.isEmpty()
+		if (TextUtils.isEmpty(passport) || TextUtils.isEmpty(password)) {
+			Toast.makeText(this, "«ÎÃÓ–¥ÕÍ’˚µƒ–≈œ¢", 0).show();
+			return;
+		}
+		// 保存到手机的文件夹中
+		saveData(passport, password);
+	}
+
+	/**
+	 * 将数据保存到手机里面--》将帐号密码写到文件系统中，开发工具下方file explorer可以看到文件系统的结构
+	 * 定义"帐号#密码"这种格式，
+	 */
+	private void saveData(String passport, String password) {
+		try {
+//		    File file = new File(qqinfo.txt");//这个文件没有创建成功，因为不能在根目录写文件，需在应用里面写文件，应用都在data目录下的
+//			File file = new File("/data/data/com.m520it.qqlogin/qqinfo.txt");//创建文件对象
+//			替代上面的getCacheDir()得到应用的目录
+			//  /data/data/com.m520it.qqlogin/cache
+//			File file = new File(getCacheDir(), "/qqinfo.txt");//放到cache目录下是标准方法。这个目录下文件在设置中点清除缓存会清除掉catch下的文件
+			File file = new File(getFilesDir(), "/qqinfo.txt");//放到files目录下也是标准方法  在设置中点击清除数据会清掉catch 和files两个文件夹
+			// 字符流，当将一个字符串写进文件里面的时候会考虑使用它
+			BufferedWriter writer = 
+					new BufferedWriter(new FileWriter(file));//将一个文件丢进来，第一种创建方式
+//			BufferedWriter writer =
+//					new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));//第二种创建方式
+			writer.write(passport+"#"+password);//传的是一个字符串
+			writer.close();//关闭流才能写进去
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+    
+    
+    07_(重点)手机存储目录的划分
+    存储一般在data/data/程序包名下储存
+    在根目录上存储会报错，因为保存到根目录别的应用也可以读取
+    一般保存比较重要的数据，用户信息，应用配置保存到files文件夹
+    如果图片什么的保存在cache文件夹下
+    
+    存储划分：
+    1。内部存储 data目录下所有东西都是内部存储
+		File dataFile = Environment.getDataDirectory();
+		Log.v("520it", dataFile.getAbsolutePath());
+    2。外部存储 手机卡的存储
+        // /storage/emulated/0  外部存储的路径
+		// /mnt/sdcard  再创建一个模拟器后，外部存储路径变了，因为版本不一样，手机型号不一样，这是谷歌标准目录,外部存储太多路径
+		// /mnt/starage01
+		// /mnt/starage02
+		File extralFile = Environment.getExternalStorageDirectory();
+		Log.v("520it", extralFile.getAbsolutePath());  
+		有些手机卡是连到手机里面的
+		
+		
+	08_(重点)SD卡读写的操作
+	 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context=".MainActivity" >
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="downloadClick"//真实项目不这样写，因为不规范
+        android:text="下载到SD卡" />
+
+    </RelativeLayout>
+    
+    在MainActivity.java中
+    public class MainActivity extends Activity {
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+	}
+
+	public void downloadClick(View v){
+		try {
+			//下载一个空的文件 1024*1024*10 这个大小到sd卡上
+			//1.SD卡是可以插取的，拿到这个卡的状态
+			String externalState = Environment.getExternalStorageState();
+			if (externalState.equals(Environment.MEDIA_MOUNTED)) {//判断sd卡是否装载
+				//2.创建一个空文件
+				File parentFile = Environment.getExternalStorageDirectory();//拿到sd卡的父路么
+				File file=new File(parentFile, "one.avi");
+				FileOutputStream fos=new FileOutputStream(file);//创建了文件
+				byte[] buff=new byte[1024*1024];
+				for (int i = 0; i < 10; i++) {//循环10次，每次写1m
+					fos.write(buff);
+				}
+				fos.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+    }
+    
+    	执行的时候报错，因为权限出问题，因为其它手机也可以读，不安全。
+    		<!-- 因为操作外部存储是一个比较敏感的操作 所以需要告诉用户 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    在androidmainifext.xml配置文件中加上上面这句话避免权限问题
+    代码如下：
+    <?xml version="1.0" encoding="utf-8"?>
+    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.m520it.sdcard"
+    android:versionCode="1"
+    android:versionName="1.0" >
+    <uses-sdk
+        android:minSdkVersion="8"
+        android:targetSdkVersion="18" />
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name="com.m520it.sdcard.MainActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+	<!-- 因为操作外部存储是一个比较敏感的操作 所以需要告诉用户 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    </manifest>
+    
+    找到mnt/sdcard可以看到下载好的文件
+    如果是其它模拟器sd卡的路径是哪里呢
+    首先run as 然后选择其它模似器
+    然后在开发工具底部的devices选择当前模拟器，选择file explorer就选到了当前模拟器目录
+    storage/sdcard0 可看到文件，有的时候会因为限权原因看不到下载的文件
+    这时可以在手机系统存储空间中找到。
+    
+    09_(掌握)内部存储目录文件的访问模式
+    尝试创建一个黑客应用，试图访问一下其它应用的内部文件
+    布局文件：
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context=".MainActivity" >
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="readDataClick"
+        android:text="窃取其他应用的数据" />
+
+   </RelativeLayout>
+   
+   java代码文件：
+   import java.io.BufferedReader;
+   import java.io.File;
+   import java.io.FileNotFoundException;
+   import java.io.FileReader;
+
+   import android.app.Activity;
+   import android.os.Bundle;
+   import android.util.Log;
+   import android.view.View;
+   	public void readDataClick(View v) {
+		try {
+			String path = "/data/data/com.m520it.qqlogin/files/qqinfo.txt";
+			File file = new File(path);
+			// 字符流
+			BufferedReader reader = new BufferedReader(new FileReader(file));
+			String line=reader.readLine();
+			Log.v("520it", line);
+			reader.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+	运行后找不到这个文件，因为权限问题
+	可以看到下载的这个文件的权限 -rw------
+	正常情况下：
+	1：- or d 文件 文件夹
+	2-4 :rwx 用户权限
+	5-7: rwx 组权限
+	8-10 rwx 其它权限
+	为什么这么多权限：
+	一个应用就是一个用户
+	组权限：多个应用相如果在一个组，如果组的权限可读可写，那同组的其它应用可以访问这个应用
+	其它权限：如果一个应用和另一个应用不在一个组，想访问另一个应用 
+	在linux中分group id  user id；
+	
+	把qq这个项目拷贝一份，运行会替换掉原有版本
+	这个时候在res/values/strings.xml
+	<string name="app_name">qqlogin</string>//修改应用名称
+	运行也会替换掉之前应用
+	结论：只要包命相同就会替换掉其它文件
+	
+	需求：提供两个应用之间的数据能共享读写
+	
+		private void saveData(String passport, String password) {
+		try {
+//			File file = new File("/data/data/com.m520it.qqlogin/qqinfo.txt");
+//			把文件保存在cache目录下
+			//  /data/data/com.m520it.qqlogin/cache
+//			File file = new File(getCacheDir(), "/qqinfo.txt");
+//			File file = new File(getFilesDir(), "/qqinfo.txt");
+			
+//			name 文件名
+//			mode 文件权限
+//			MODE_APPEND 比如一个文件已经有内容了，再次写文件就是在文件后面追加
+//			MODE_PRIVATE 对其它文件应用私有化，本应用可读可写的
+//			MODE_WORLD_READABLE  任何应用都能读取
+//			MODE_WORLD_WRITEABLE  任何应用都能写入
+			FileOutputStream fos=openFileOutput("qqinfo.txt",
+					MODE_WORLD_READABLE+MODE_WORLD_WRITEABLE);//代码会有一个划线，因为觉得应用数据危险
+//			OutputStreamWriter 转换流，转换对接字符流与字节流
+			BufferedWriter writer = 
+					new BufferedWriter(new OutputStreamWriter(fos));
+//			BufferedWriter writer =
+//					new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
+			writer.write(passport+"#"+password);
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	再次运行
+	查看文件目录权限-rw-rw-rw-
+	代码一般创建不了可执行权限的，因为怕安全风险
+	虽代码不能，可用命令改可执行权限
+	adb devices 查看当前正在使用的模拟器
+	adb -s emulator-5554 shell 进入模拟器
+	cd /data/data/com.m520.qqlogin/files
+	chmod  777 qqinfo.text可修复用户权限  
+	7是三个权限相加得到的 2的0次方 2的1次方 2的2次方相加
+	
+	10_(掌握)SharedPreference的使用
+	键值存储
+	平时在开发中，小的值,不重要的数据进行存储，用键值对的方式
+	不使用 用户名#密码的方式，因为这种方式如果有人在注册时写snrifk#444,密码123,这种有可能会冲突
+	
+	import android.content.SharedPreferences;
+    import android.content.SharedPreferences.Editor;
+    private EditText mPassportEt;
+	private EditText mPasswordEt;
+
+
+	
+	
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+
+		mPassportEt = (EditText) findViewById(R.id.passport_et);
+		mPasswordEt = (EditText) findViewById(R.id.password_et);
+		
+		readData();
+	}
+		/**
+	 * 读取文件里面的数据 回显文本
+	 */
+	private void readData() {
+		SharedPreferences sp=getSharedPreferences("qqinfo", MODE_PRIVATE);
+		String passport = sp.getString("username", "");
+		mPassportEt.setText(passport);
+		String password = sp.getString("pwd", "");
+		mPasswordEt.setText(password);
+	}
+
+	/**
+	 * 将数据保存到文件中
+	 * 
+	 */
+	private void saveData(String passport, String password) {
+		SharedPreferences sp=getSharedPreferences("qqinfo", MODE_PRIVATE);//参数：文件名 模式（复杂，只传mode_private）
+		//2.Õ 往sp中存键值对，有可能存储过多值会报错，这里使用事物的存储方式，因为有原子性，要么一次性成功，要么一次性全不成功
+		Editor edit = sp.edit();
+		edit.putString("username", passport);
+		edit.putString("pwd", password);
+		edit.commit();//当提交的时候在com.m520it.qqlogin目录下自动增加了shared_prefs目录，qqinfo.xml在此目录下
+	}
+	qqinfo.xml内容如下：
+	<map>
+	  <string name="username">abc</string>
+	  <string name="pwd">123</string>
+	<map>
+	
+   
+   
+   
+   
+   day 4
+   
+   
+   01_(了解)数据存储的几种方式
+   1。保存成一般file格式
+   2。sharedperference 自动增加了shared_prefs目录，.xml文件在此目录下
+   3. 数据库 当有大量相似结构的数据，并想实现增删查改，使用数据库
+   4. 通过内容提供者， 保存到别的应用的数据库里面 提供访问方式
+   5. 网络
+   
+   例：保存xml文件，点按钮时把用户名密码保存起来
+   <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context=".MainActivity" >
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+       	android:onClick="saveXmlClick"
+        android:text="保存Xml文件" />
+
+    </RelativeLayout>
+    
+    在MainActivity.java
+    
+    package com.m520it.xmlsave;
+
+    import android.app.Activity;
+    import android.os.Bundle;
+    import android.view.View;
+
+    public class MainActivity extends Activity {
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		
+	}
+
+	public void saveXmlClick(View v){
+		try {
+			//  有异常应该抛出异常
+			String passport="zhangsan";
+			String password="123";
+//			XmlUtil.saveXmlByStringBuilder(this,passport, password);
+			XmlUtil.saveXmlByXmlSerializer(this, passport, password);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+    }
+    
+    在XmlUtil.java帮助类
+    
+    package com.m520it.xmlsave;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+
+import org.xmlpull.v1.XmlSerializer;
+
+import android.content.Context;
+import android.util.Xml;
+
+public class XmlUtil {
+
+	/**
+	 * 通过将字符串进行拼接并且写到/files目录下
+	 * 
+	 * @throws Exception
+	 */
+
+	public static void saveXmlByStringBuilder(Context c, String passport,
+			String password) throws Exception {
+		// <map>
+		// <string name="pwd">123</string>
+		// <string name="username">5abc#12345</string>
+		// </map>
+		// 1.保存上面注释的内容，通过这个对象拼接
+		StringBuilder sb = new StringBuilder();
+		sb.append("<map>");
+		sb.append("<string name=\"pwd\">" + passport + "</string>");//遇到"转义  连接符"++"
+		sb.append("<string name=\"username\">" + password + "</string>");
+		sb.append("</map>");
+		String result = sb.toString();
+		// 2.创建一个文件的对象
+		//放到file目录下 activty继承自Context，Context是一个帮助类，可以拿到如手机型号等信息，所以传入this
+		File file = new File(c.getFilesDir(), "qqinfo.xml");
+		// 3.创建一个输出流，然后是一个字符流buggerewriter
+		BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+		// 4.开始写入这个字符串
+		writer.write(result);
+		writer.close();
+	}
+    
+    
+    02_(掌握)Xml序列化器生成xml文件
+    
+    //实现第一个方法同想的功能，但使用xmlSerializer帮助类去实现
+	public static void saveXmlByXmlSerializer(Context c, String passport,
+			String password) throws Exception {//往外执出异常
+		// xmlSerializer xml的序列器，创建xml文档的一个类，好处在于不用拼接字符串
+		XmlSerializer xmlSerializer = Xml.newSerializer();
+		// 1.告诉这个序列化，文件应该存到什么地方 android默认编码utf-8
+		// 创建一个outputstream-->创建一个文件转换流，这里用另一个方法openFileOutput创建，这个方法在context中创建
+		FileOutputStream fos = c.openFileOutput("qqinfo.xml",
+				Context.MODE_PRIVATE);
+		xmlSerializer.setOutput(fos, "utf-8");
+		// <map>
+		// <pwd>123</pwd>
+		// <username>zhangsan</username>
+		// </map>
+		// 3.写入文件
+		
+		// 告诉序列器开始写文档了,并会自动加上// <?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+		xmlSerializer.startDocument("utf-8", true);
+
+		xmlSerializer.startTag(null, "map");//null是一个命名空间，因为如果两个xml文件合并一起可能会有重复标签，所以运用命名空羊<h:table>//h是命名空间
+		
+		xmlSerializer.startTag(null, "pwd");
+		xmlSerializer.text(password);
+		xmlSerializer.endTag(null, "pwd");
+		
+		xmlSerializer.startTag(null, "username");
+		xmlSerializer.text(passport);
+		xmlSerializer.endTag(null, "username");
+
+		xmlSerializer.endTag(null, "map");
+		//4.告诉文档写完了，可以将内存中数据写到硬盘中
+		xmlSerializer.endDocument();
+	}
+
+}
+
+03_(掌握)Pull解析器工作的过程
+xml文件怎么读取的
+解析xml的几种方式:
+1. Dom解析
+DOM(文档对象模型)是W3C标准，提供了标准的解析Xml方式，但其解析效率一直不 尽如人意，这是因为DOM解析XML文档时，把所有内容一次性的装载入内存，并构建 一个驻留在内存中的树状结构(节点数)
+。如果需要解析的XML文档过大，或者我们只 对该文档中的一部分感兴趣，这样就会引起性能问题。
+特性:基于树状的xml的结构
+支持:Dom4j dom4j是一个Java的XML API，它也是一个开放源代码的软件，是jdom的 升级品，用来读写XML文件的。
+2. SAX解析
+SAX(Simple API for XML)是一种XML解析的替代方法。相比于DOM，SAX是一种速 度更快，更有效的方法，它既是一个接口，也是一个软件包.但作为接口，SAX是事件驱 
+动型XML解析的一个标准接口不会改变 SAX的工作原理简单地说就是对文档进行顺序扫 描，当扫描到文档(document)开始与结束、元素(element)开始与结束、
+文档 (document)结束等地方时通知事件处理函数，由事件处理函数做相应动作，然后继 续同样的扫描，直至文档结束。读到每个标签，每个属性都是一个事件
+3. Pull解析
+Pull是Android内置的xml解析器。Pull解析器的运行方式与SAX 解析器相似。它提供了 类似的事件，如:开始元素和结束元素事件，
+使用parser.next()可以进入下一个元素并 触发相应事件。事件将作为数值代码被发送。前面两种解析没有内置在android，这个是android自带的解析器
+
+例：
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="parseXmlClick"
+        android:text="解析Xml文件" />
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>
+
+
+MainActivity.java
+
+
+public class MainActivity extends Activity {
+
+	private TextView mXmlTv;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		
+		mXmlTv = (TextView) findViewById(R.id.textView1);
+	}
+
+	public void parseXmlClick(View v){
+		try {
+			String reslut = XmlUtil.parseXmlFile(this);
+			mXmlTv.setText(reslut);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+}
+
+qqinfo.xml
+
+<map>
+  <pwd>123</pwd>
+  <username>zhangsan</username>
+</map>
+
+XmlUtil.java
+
+
+public class XmlUtil {
+
+	/**
+	 * 解析xml文件，返回字符串，打印出username="" pwd=""
+	 * 
+	 * @throws Exception
+	 */
+	public static String parseXmlFile(Context c) throws Exception {
+		String result="";
+		// 1.创建pull解析器，这是一个接口，不能直接new 一个对象
+		XmlPullParser pullParser = Xml.newPullParser();
+		// 2。把xml文件进行关联
+		// openFileInput方法会在包/files/找到这个文件
+		FileInputStream fis = c.openFileInput("qqinfo.xml");
+		pullParser.setInput(fis, "utf-8");
+		// 3.解析文件
+		// 3.1 获取事件类型，开标签，闭标签，文本，属性，开始文档类型，结束文档类型
+		int eventType = pullParser.getEventType();
+		//Log.v("520it", eventType + " ");打印查看一个是什么类型，为0,表标最开始
+		// 3.2pullParser.next() 转到下一个标签
+		//eventType = pullParser.next();返回下一个事件的类型 2 表标starttag
+		// 3.3 pullParser.getName() 获取这个标签名称
+		//Log.v("520it", pullParser.getName() + " ");
+		// 3.4 再往下走一行，
+		// 3.5 pullParser.nextText()//显示的是pwd
+		//如果再往下走，如果是text事件，getName只会返回空
+		
+		//下面是优化版，
+		while (eventType!=XmlPullParser.END_DOCUMENT) {//如果没有到达结束标签，
+			//  <map>  <pwd>   <username>
+			if (eventType==XmlPullParser.START_TAG) {//如果是开标签
+				if (pullParser.getName().equals("username")) {//如果开标签是pwd
+					result+=("   username="+pullParser.nextText());//拿到开标签里面的text内容，pullParser.nextText()找到标签后面的文本
+				}else if (pullParser.getName().equals("pwd")) {
+					result+=("   pwd="+pullParser.nextText());
+				}
+			}
+			eventType = pullParser.next();//移动到下一个事件，事件有可能是标签，有可能是文本
+		}
+		
+		return result;
+	}
+
+}
+
+04_(掌握)解析xml的应用场景
+
+例如天气预报的解析
+解析assets/weather.xml
+
+weather.xml内容如下
+<ArrayOfString xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://WebXml.com.cn/">
+    <string>北京</string>
+    <string>2015-9-7 15:22:46</string>
+    <string>17℃/29℃</string>
+    <string>无持续风向微风</string>
+    <string>今日天气实况：气温：28℃；风向/风力：西南风 2级；湿度：44%；空气质量：暂无；紫外线强度：强</string>
+</ArrayOfString>
+
+实现效果：当点击按钮时把weather.xml加载到textview中
+activity_main.xml 布局文件内容
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/weather_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="parseXmlClick"
+        android:text="解析天气预报文件" />
+
+</LinearLayout>
+
+在MainActivity.java中
+
+import org.xmlpull.v1.XmlPullParser;
+
+	private TextView mWeatherTv;
+
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		mWeatherTv = (TextView) findViewById(R.id.weather_tv);
+	}
+	
+	
+	public void parseXmlClick(View v) throws Exception{
+		String result="";//用这个string来存储
+		//1.找到这个文件 AssetManager资源管理器
+		AssetManager assets = getAssets();
+		//assets.open("weather.xml");返回一个输入流，把这个文件读入内存中
+		InputStream fis = assets.open("weather.xml");
+		//2.创建一个pull解析器
+		XmlPullParser pullParser=Xml.newPullParser();
+		//3.绑定这个流，读这个流到pull解析器中
+		pullParser.setInput(fis, "utf-8");
+		//4.开始解析这个文档，这是事件解析，获取事件解析类型
+		int eventType = pullParser.getEventType();
+		//5.循环，结束条件，XmlPullParser.END_DOCUMENT读到文档结束
+		while (eventType!=XmlPullParser.END_DOCUMENT) {
+			//7.读取一行数据之后存到result变量中，如果是开始标签，标签名为string
+			if (eventType==XmlPullParser.START_TAG
+					&&pullParser.getName().equals("string")) {
+				result+=pullParser.nextText()+"\n";//拿到这个标签后面的文本
+			}
+			//6.读下一个标签
+			eventType=pullParser.next();
+		}
+		mWeatherTv.setText(result);//把读到的文本放到控件中
+	}
+	
+	需求：改一下app名称，改为可换行
+	找到res/values/strings.xml
+	<string name="app_name">天气\n文件</string>
+	
+	
+	05_(重点)如何创建数据库
+	当一系列数据中，数据多，数据有一定规则格式，就使用数据库
+	是一个可嵌入式的数据库，sqlite，文件小，是c代码写的
+	占用的资源非常小，只几百k就ok
+	linux,unix都支持
+	现在创建一个数据库，数据库文件后缀是db
+	首先了解创建文件
+	
+	MainActivity.java中
+	private ContactDao mDao;
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		try {
+			// 1./files/haha.txt
+			File file = new File(getFilesDir(), "haha.txt");
+			// 2.1 创建一个文件，这是第一种方式
+			file.createNewFile();
+			// 2.2 创建一个输出流，写内容进去，也能创建文件，第二种方式创建文件
+			FileOutputStream fos = new FileOutputStream(file);
+			// 3.如果创建数据库文件需要 SQLiteOpenHelper这个类，它是一个帮助类
+			DbOpenHelper helper = new DbOpenHelper(this);
+			// 4.1 getReadableDatabase 产生数据库文件
+			// helper.getReadableDatabase();
+			// 4.2 getWritableDatabase() 产生数据库文件4.2 4.1都可以产生数据库文件
+			// SQLiteDatabase db = helper.getWritableDatabase();
+			// db.execSQL(sql)
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		mDao=new ContactDao(this);
+	}
+
+	public void insertContact(View v) {
+		mDao.insertContact("zhangsan", "150122222");
+	}
+
+	public void updateContact(View v) {
+		mDao.updateContact("zhangsan", "1501111111");
+	}
+
+	public void deleteContact(View v) {
+		mDao.deleteContact("zhangsan");
+	}
+
+	public void queryContact(View v) {
+		mDao.queryContact("15018888888");
+	}
+	
+DbOpenHelper.java
+package com.m520it.sqlite3;
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.provider.BaseColumns;
+import android.util.Log;
+
+public class DbOpenHelper extends SQLiteOpenHelper implements BaseColumns{//继承这个帮助类
+
+	//1. 数据库文件名
+	public static final String DB_NAME="contact.db";
+	//2. 数据库版本
+	public static final int DB_VERSION=1;
+	//3. 数据库表名，表字段名
+	public static final String TABLE_NAME="contactinfo";
+	public static final String _USERNAME="username";
+	public static final String _PHONE="phone";
+	
+	//factory参数，用于创建cursor游标工厂类 需要一个构造器，创建数据库需数据库名，数据库版本，
+	public DbOpenHelper(Context context) {
+		super(context, DB_NAME, null, DB_VERSION);
+	}
+
+	@Override
+        //当数据库创建的时候会调用onCreate方法，这时在这个方法中可以创建数据库表了，需要sql语句 当创建一个数据库文件之后，接下来创建数据库表
+		//在软件中写sql语句，如果成功再把语句放入代码中
+		//long int short --integer
+		//string 大文本 varchar(20)-- text
+		//如何写sql语句，首先安装sqlite软件new database, 创建表，create table contactinfo (_id integer primary key autoinccrement,username text,phone text)
+	public void onCreate(SQLiteDatabase db) {
+		Log.v("520it", "onCreate");
+		db.execSQL("create table "+TABLE_NAME+" ("+_ID+" integer primary key autoincrement," +
+				_USERNAME+" text,"+_PHONE+" text);");
+		
+	}
+	@Override
+//	Update 升级数据库，当版本号DB_VERSION=2 ，发生变化时会调用这个方法，可以在方法中修改 数据库字段等，
+//  app需要更改数据库表，删除某个字段，增加一张新表，就需要这个方法
+	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+		Log.v("520it", "onUpgrade"+"  oldVersion="
+					+oldVersion+" newVersion="+newVersion);
+	}
+
+}
+
+
+06_(掌握)数据库增删改查的SQL语句
+07_(重点)数据库增删改查代码实现
+08_(重点)Sqlite3工具的使用 增删查改需要返回值
+09_(重点)数据库增删改查的Google实现 可以知道增删查改是否成功 goolge提供了一种面向对象的增删查改
+	MainActivity.java中
+	private ContactDao mDao;
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		try {
+			// 1./files/haha.txt
+			File file = new File(getFilesDir(), "haha.txt");
+			// 2.1 创建一个文件，这是第一种方式
+			file.createNewFile();
+			// 2.2 创建一个输出流，写内容进去，也能创建文件，第二种方式创建文件
+			FileOutputStream fos = new FileOutputStream(file);
+			// 3.如果创建数据库文件需要 SQLiteOpenHelper这个类，它是一个帮助类
+			DbOpenHelper helper = new DbOpenHelper(this);
+			// 4.1 getReadableDatabase 产生数据库文件
+			// helper.getReadableDatabase();
+			// 4.2 getWritableDatabase() 产生数据库文件4.2 4.1都可以产生数据库文件
+			// SQLiteDatabase db = helper.getWritableDatabase();产生数据扣对象，这个对象可对数据库增删改查
+			// db.execSQL(sql)执行一个sql语句
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		mDao=new ContactDao(this);
+	}
+
+	public void insertContact(View v) {
+		mDao.insertContact("zhangsan", "150122222");
+	}
+
+	public void updateContact(View v) {
+		mDao.updateContact("zhangsan", "1501111111");
+	}
+
+	public void deleteContact(View v) {
+		mDao.deleteContact("zhangsan");
+	}
+
+	public void queryContact(View v) {
+		mDao.queryContact("15018888888");
+	}
+	
+ContactDao.java中
+package com.m520it.sqlite3;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+ 
+/**
+ *	 实现一个dao层，实现增删查改，dao与数据库直接打交道
+ */
+public class ContactDao {
+	
+	private DbOpenHelper mHelper;
+	
+	public ContactDao(Context c) {
+		mHelper=new DbOpenHelper(c);//创建一个dbhelper对象
+	}
+
+	/**
+	 * 
+	 * @param username
+	 * @param phone
+	 */
+	 // insert into contactinfo(username,phone) values('zhangsan','123232')
+	public boolean insertContact(String username,String phone){
+		SQLiteDatabase db = mHelper.getWritableDatabase();//返回了一个可写的数据库
+		// bindArgs占位符所对应的值
+		// db.execSQL("insert into contactinfo(username,phone) values(?,?);", new String[]{username,phone});
+		// 进化db.execSQL("insert into + DbOpenHelper.TABLE_NAME+"("+DbOpenHelper._USERNAME+",+DbOpenHelper.+_PHONE") values(?,?);", new String[]{username,phone});
+		//ContentValues 占位参数，是一个键值对，key代表你要插入的那个字段名
+		ContentValues values=new ContentValues();
+		//key 使用第二种方法写sql语句  goolge提供了一种面向对象的增删查改
+		values.put(DbOpenHelper._USERNAME, username);
+		values.put(DbOpenHelper._PHONE, phone);
+		//@return 第二个参数，如果写的是username，则插入的values值中username不能为空
+		//如果第二个参数为空，则插入的值中有些字段可以为空，返回-1表示错误发生
+		long rowId = db.insert(DbOpenHelper.TABLE_NAME, null , values);
+		return rowId!=-1;
+	}
+	//update contactinfo set phone='' where username='zhangsan'; 
+	public boolean updateContact(String username,String newPhone){
+		SQLiteDatabase db = mHelper.getWritableDatabase();//拿到可写的数据库
+		//db.execSQL("update contactinfo set phone=？ where username=?;",update contactinfo set phone='
+		ContentValues values=new ContentValues();
+		values.put(DbOpenHelper._PHONE, newPhone);
+		//whereClause  第三个参数就是where语句
+		//whereArgs where语句参数绑定值
+		//@return int >0表示更新成功，成功几行就返回几
+		//db.update(table,values,whereClause,whereArgs)
+		int updateRows = db.update(DbOpenHelper.TABLE_NAME,
+				values, DbOpenHelper._USERNAME+"=?", new String[]{username});
+		return updateRows>0;
+	}
+	//delete from contactinfo where username='lishi'
+	public boolean deleteContact(String username){
+		SQLiteDatabase db = mHelper.getWritableDatabase();
+		//db.execSQL("delete from contactinfo where username=?",new String[]{username}
+		//whereClause  第三个参数就是where语句
+		//whereArgs where语句参数绑定值
+		int deleteRows = db.delete(DbOpenHelper.TABLE_NAME, "username=?", new String[]{username});                                     
+		return deleteRows>0;
+	}
+	
+	//select username from contactinfo where phone='12354556'
+	public String queryContact(String searchPhone){
+		
+		String result="";
+		
+		SQLiteDatabase db = mHelper.getReadableDatabase();//没用到修改，只是查询，所以使用read
+    	//db.rawQuery("select username from contactinfo where phone='?'",new String[]{phone}
+    	
+    	//whereClause  第三个参数就是where语句
+		//whereArgs where语句参数绑定值
+		Cursor cursor = db.query(DbOpenHelper.TABLE_NAME, 
+				new String[]{DbOpenHelper._USERNAME,DbOpenHelper._PHONE},
+				"phone=?", new String[]{searchPhone}, //返回一个游标 
+				null, null, null);
+		while (cursor.moveToNext()) {
+			//拿到该字段的列数
+			int columnIndex = cursor.getColumnIndex(DbOpenHelper._USERNAME);
+			//取出该字段的值
+			String username = cursor.getString(columnIndex);
+			
+			//拿到该字段的列数
+			int phoneColumnIndex = cursor.getColumnIndex(DbOpenHelper._PHONE);
+			//取出该字段的值
+			String phone = cursor.getString(phoneColumnIndex);
+			
+			result+=(username+"  "+phone+" \n");
+		}
+		return result;
+	}
+	
+	
+}
+DbOpenHelper.java
+package com.m520it.sqlite3;
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.provider.BaseColumns;
+import android.util.Log;
+
+public class DbOpenHelper extends SQLiteOpenHelper implements BaseColumns{//继承这个帮助类
+
+	//1. 数据库文件名
+	public static final String DB_NAME="contact.db";
+	//2. 数据库版本
+	public static final int DB_VERSION=1;
+	//3. 数据库表名，表字段名
+	public static final String TABLE_NAME="contactinfo";
+	public static final String _USERNAME="username";
+	public static final String _PHONE="phone";
+	
+	//factory参数，用于创建cursor游标工厂类 需要一个构造器，创建数据库需数据库名，数据库版本，
+	public DbOpenHelper(Context context) {
+		super(context, DB_NAME, null, DB_VERSION);
+	}
+
+	@Override
+        //当数据库创建的时候会调用onCreate方法，这时在这个方法中可以创建数据库表了，需要sql语句 当创建一个数据库文件之后，接下来创建数据库表
+		//在软件中写sql语句，如果成功再把语句放入代码中
+		//long int short --integer
+		//string 大文本 varchar(20)-- text
+		//如何写sql语句，首先安装sqlite软件new database, 创建表，create table contactinfo (_id integer primary key autoinccrement,username text,phone text)
+	public void onCreate(SQLiteDatabase db) {
+		Log.v("520it", "onCreate");
+		db.execSQL("create table "+TABLE_NAME+" ("+_ID+" integer primary key autoincrement," +
+				_USERNAME+" text,"+_PHONE+" text);");
+		
+	}
+	@Override
+//	Update 升级数据库，当版本号DB_VERSION=2 ，发生变化时会调用这个方法，可以在方法中修改 数据库字段等，
+//  app需要更改数据库表，删除某个字段，增加一张新表，就需要这个方法
+	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+		Log.v("520it", "onUpgrade"+"  oldVersion="
+					+oldVersion+" newVersion="+newVersion);
+	}
+
+}
+ 
+ 用sqlite3查看数据库的表
+//在下载的软件包中找到android-adt-bundle/sdk/tools/sqlite3.exe
+adb devices显示当前连接设备
+adb shell进shell命令
+cd /data/data/com.m520.sqlit3/database/
+ls contact.db
+sqlite3 contact.db//用命令查看这个数据库表
+.quit 退出命令
+
+
+10_(掌握)初识ListView 
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    <!-- 想在容器里面(通过代码)动态添加TextView -->
+	<LinearLayout 
+	    android:id="@+id/container_ll"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:orientation="vertical"
+	    android:visibility="gone" />
+	
+	<!-- ListView -->
+	
+	<ListView 
+	    android:id="@+id/lv"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent" />
+	
+</LinearLayout>
+
+
+MainActivity.java
+
+public class MainActivity extends Activity {
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		//1.拿到listview
+		ListView lv = (ListView) findViewById(R.id.lv);
+		//2.创建一个字符数组的数据
+		ArrayList<String> datas=new ArrayList<String>();
+		for (int i = 0; i < 300; i++) {
+			datas.add("测试"+i);
+		}
+		//3.控件与数据怎么绑定， BaseAdapter是把数据与视图绑定
+		MyAdapter adapter=new MyAdapter(this,datas);
+		lv.setAdapter(adapter);
+	}
+    //会卡顿，因创建了300次，选中代码，ALT SHIFT N 抽取成一个方法
+	private void normalMethod() {
+		LinearLayout containerLl = (LinearLayout) findViewById(R.id.container_ll);
+		//添加TextView  300个
+		int MAX_CHILD_COUNT=300;
+		for (int i = 0; i < MAX_CHILD_COUNT; i++) {
+			TextView tv=new TextView(this);//创建textview
+			//LinearLayout设置布局参数，textview需要添加到哪个容器下就使用那个容器的layoutparams
+			tv.setLayoutParams(
+					new LinearLayout.LayoutParams(
+							LinearLayout.LayoutParams.MATCH_PARENT, //宽度
+							LinearLayout.LayoutParams.WRAP_CONTENT));//高度
+			//TextView设置一下字体大小
+			tv.setTextSize(30);//px
+			tv.setTextColor(0xFFFF0000);
+			tv.setText("测试"+i);
+			//把textview添加到这个容器中
+			containerLl.addView(tv);
+		}
+	}
+
+
+}
+
+
+MyAdapter.java
+public class MyAdapter extends BaseAdapter {
+	
+	private ArrayList<String> mDatas;
+	private Context mContext;
+	
+	public MyAdapter(Context c,ArrayList<String> datas) {
+		mDatas=datas;
+		mContext=c;
+	}
+
+	//1.有多少个显示
+	@Override
+	public int getCount() {
+		return mDatas.size();
+	}
+
+	/**
+	 * @param position µ±«∞œÓµƒÀ˜“˝
+	 * @return View æÕ «“™’π æµƒƒ≥“ªœÓµƒøÿº˛≤ºæ÷
+	 * */
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent) {
+		Log.v("520it", "getView"+position);
+		//显示的是第几项position
+		String text = mDatas.get(position);
+		TextView tv=new TextView(mContext);
+		tv.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.MATCH_PARENT,
+				AbsListView.LayoutParams.WRAP_CONTENT));//设置宽高，没有会报错
+		tv.setTextSize(20);
+		tv.setText(text);
+		return tv;
+	}
+
+	@Override
+	public Object getItem(int position) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public long getItemId(int position) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+
+}
+
+
+
+
+day 5
+
+01_(掌握)常见的列表界面&原理
+
+一个listview是没有办法把数据放进去
+需要常用适配器BaseAdapter把数据放进去
+用Adapter来管理数据
+
+在activity_main.xml
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"  >
+
+    <ListView
+        android:id="@+id/lv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"  />
+
+</RelativeLayout>
+
+在MainActivity.java
+public class MainActivity extends Activity {
+
+	private ListView mListView ;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		//1.创建列表
+		mListView = (ListView) findViewById(R.id.lv);
+		//2.创建数据
+		ArrayList<String> datas=new ArrayList<String>();
+		for (int i = 0; i < 150; i++) {
+			datas.add("测试:"+i);
+		}
+		//3.放入数据
+		MyAdapter adapter=new MyAdapter(datas);
+		mListView.setAdapter(adapter);
+	}
+
+
+}
+
+
+在 MyAdapter.java中
+public class MyAdapter extends BaseAdapter {
+
+	private ArrayList<String> mDatas;
+	
+	public MyAdapter(ArrayList<String> datas) {
+		mDatas=datas;
+	}
+
+	@Override
+	public int getCount() {  //调用顺序1
+		Log.v("520it", "getCount");//会多次调用，系统要反复知道共有多少项
+		return mDatas.size();
+	}
+	
+	
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent) {//调用顺序2  parent相当于容器，return 的view都放到这个容器中
+		Log.v("520it", "getView position="+position);
+		需求1。显示的listview每一行只有一个textviw控件
+//		TextView tv=new TextView(parent.getContext());//每一个view都可以获取一个上下文context，调用方式是view.getContext()
+//		tv.setLayoutParams(new AbsListView.LayoutParams(//设置宽是与父窗体，高度包括文字的高度
+//				AbsListView.LayoutParams.MATCH_PARENT,//fill_PARENT（2。3以前使用）和MATCH_PARENT一样
+//				AbsListView.LayoutParams.WRAP_CONTENT));
+//		tv.setTextSize(30);
+//		tv.setText(mDatas.get(position));//设置数据
+		需求1。显示的listview每一行有多个控件，这样的好处是以后一个cell中的子控件只在一个布局文件中修改
+//		LayoutInflater可以将一个布局xml文件转换成一个类 
+		LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
+//		把lv_item_layout.xml布局文件转换为类
+		View view = layoutInflater.inflate(R.layout.lv_item_layout, null);//null(root)询问view是否添加到某个容器中，如果不想放入传null 
+		TextView tv=(TextView) view.findViewById(R.id.tv);
+		tv.setText(mDatas.get(position));
+		return view;
+	}
+
+	@Override
+	public Object getItem(int position) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public long getItemId(int position) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+
+}
+
+lv_item_layout.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:textSize="24sp"
+    android:textColor="#F00"
+    android:gravity="center"
+    android:id="@+id/tv" />
+    
+    
+    
+02_(重点)常用适配器BaseAdapter方法详解 （个人理解，ios的内存复用）
+
+在日常应用中，有些cell只有一个text，像这样的android为了使用简单，android已经实现这种cell布局
+以前：
+View view = layoutInflater.inflate(R.layout.lv_item_layout, null);//null(root)询问view是否添加到某个容器中，如果不想放入传null 
+现在：直接使用android的布局，这种布局就是一个cell有一个textview
+View view = layoutInflater.inflate(android.R.layout.simple_list_item_1,
+					null);
+同样：android还定义了另外一个布局，这个布局是一个cell中有两个textview，位置是在左边一向一下，一个大标题，一个小标题
+View view = layoutInflater.inflate(android.R.layout.simple_list_item_2,
+					null);
+public View getView(int position, View convertView, ViewGroup parent) {}
+					
+position相当于cell的索引，parent相当于cell容器，每个itemview里面的容器，返回的view直接添加到容器中
+convertView 有的时候打印是null，每一次创建的时候界面上的cell，打印出convertView为空，滚动的时候打印出convertView不为容，相当于ios
+cell复用，缓存的cell
+这个类似ios的tableview,界面上先创建能显示的cell内存，然后再去复用
+
+
+之间未复用时：
+	public View getView(int position, View convertView, ViewGroup parent) {//调用顺序2  parent相当于容器，return 的view都放到这个容器中
+		Log.v("520it", "getView position="+position);
+		需求1。显示的listview每一行只有一个textviw控件
+//		TextView tv=new TextView(parent.getContext());//每一个view都可以获取一个上下文context，调用方式是view.getContext()
+//		tv.setLayoutParams(new AbsListView.LayoutParams(//设置宽是与父窗体，高度包括文字的高度
+//				AbsListView.LayoutParams.MATCH_PARENT,//fill_PARENT（2。3以前使用）和MATCH_PARENT一样
+//				AbsListView.LayoutParams.WRAP_CONTENT));
+//		tv.setTextSize(30);
+//		tv.setText(mDatas.get(position));//设置数据
+		需求1。显示的listview每一行有多个控件，这样的好处是以后一个cell中的子控件只在一个布局文件中修改
+//		LayoutInflater可以将一个布局xml文件转换成一个类 
+		LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
+//		把lv_item_layout.xml布局文件转换为类
+		View view = layoutInflater.inflate(R.layout.lv_item_layout, null);//null(root)询问view是否添加到某个容器中，如果不想放入传null 
+		TextView tv=(TextView) view.findViewById(R.id.tv);
+		tv.setText(mDatas.get(position));
+		return view;
+	}
+
+复用的写法：
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent) {
+		
+		if (convertView==null) {
+			LayoutInflater layoutInflater = LayoutInflater
+					.from(parent.getContext());
+			View view = layoutInflater.inflate(android.R.layout.simple_list_item_2,
+					null);
+			convertView=view;
+			
+		}else {
+			
+		}
+		//不管是老的converView还是新的，下面都会设置数据为最新，这里只会显示android.R.layout.simple_list_item_2，因为converview为空的时候创建的simple_list_item_2
+		TextView tv = (TextView) convertView.findViewById(android.R.id.text1);
+		TextView tv2 = (TextView) convertView.findViewById(android.R.id.text2);
+		tv.setText(mDatas.get(position));
+		tv2.setText(mDatas.get(position));
+
+//		Log.v("520it", "getView view=" + view + "   convertView=" + convertView);
+		return convertView;
+	}
+	
+	
+	03_(重点)常用适配器BaseAdapter方法详解v2
+	
+	发现的问题：如果一个cell里多个控件，则如下，每个控件都需要findViewById去查找，这个很耗性能
+		TextView tv = (TextView) convertView.findViewById(android.R.id.text1);
+		TextView tv2 = (TextView) convertView.findViewById(android.R.id.text2);
+		tv.setText(mDatas.get(position));
+		tv2.setText(mDatas.get(position));
+		
+	先看tag属性，每个view都有tag属性
+	activity_max.xml中：
+	<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"  >
+
+    <Button
+        android:id="@+id/btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" 
+        android:text="按钮" />
+
+    </RelativeLayout>
+    
+    MainActivity.java
+    
+public class MainActivity extends Activity implements OnClickListener {
+
+	private Button mBtn;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		mBtn =(Button) findViewById(R.id.btn);
+		mBtn.setOnClickListener(this);
+		//设置tag，这个tag不是int类型，而是一个对象，绑定了一个对象
+		mBtn.setTag("haha");
+	}
+
+	//setOnClickListener的实现方法
+	@Override
+	public void onClick(View v) {
+		//获取tag
+		String tag = (String) v.getTag();
+		Toast.makeText(this, tag, 0).show();
+	}
+
+}
+
+
+频繁的findviewbind不太好，这里作一下改进：
+
+	class ViewHolder{
+		TextView tv1;
+		TextView tv2;
+	}
+
+	/**
+	 * position   这样实现的只会findViewById 调用7次，而不是滑动多少个cell调用多少次
+	* */
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent) {
+		ViewHolder holder=null;
+		if (convertView==null) {//一个屏幕显示7个cell，这里就创建7次，滚动到第八个的时候不会再走到这方法里面
+			LayoutInflater layoutInflater = LayoutInflater
+					.from(parent.getContext());
+			convertView = layoutInflater.inflate(android.R.layout.simple_list_item_2,
+					null);//总共创建7个convertView
+			//new ViewHolder(),会出现tv1,tv2对象
+			holder=new ViewHolder();
+			
+			holder.tv1 = (TextView) convertView.findViewById(android.R.id.text1);//ViewHolder对象中两个属性是两个textview，这里是把两个textview赋值了
+			holder.tv2 = (TextView) convertView.findViewById(android.R.id.text2);
+			
+			convertView.setTag(holder);//把ViewHolder设为convertView的tag
+			Log.v("520it", "getView");
+		}else {
+			holder=(ViewHolder) convertView.getTag();//获取到ViewHolder
+		}
+		
+		holder.tv1.setText(mDatas.get(position));//设置holder的两个控件的值
+		holder.tv2.setText(mDatas.get(position));
+
+//		Log.v("520it", "getView view=" + view + "   convertView=" + convertView);
+		return convertView;
+	}
+    

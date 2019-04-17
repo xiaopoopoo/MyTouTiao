@@ -730,3 +730,154 @@ AFN以3.X版本为主，摒弃了NSURLConnection方法，全部基于NSURLSessio
    2：实现NSURLSessionDelegate等协议以及代理方法，处理网络请求过程中涉及重定向，认证，以及网络响应处理
    3:引入AFSecurityPolicy保证安全，比如发送https请求时，涉及证书校验，公钥验证过程
    4:引入AFNetworkReachabilityManager监听网络状态，根据状态进行相关逻辑处理
+   
+   
+   
+AFURLRequestSerialzation：   
+   
+1. AFHTTPRequestSerializer：是普通的 HTTP 的编码格式的，也就是 mid=10&method=userInfo&dateInt=20160818 这种格式的。
+  
+2. AFJSONRequestSerializer：是 JSON 编码格式的，也就是 {"mid":"11","method":"userInfo","dateInt":"20160818"} 这种格式的。
+  
+3. AFPropertyListRequestSerializer：这个没用过，但是看介绍说是编码成 plist 格式的参数。
+
+
+使用：
+/* 创建网络请求对象 */
+AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
+  
+/* 设置请求和接收的数据编码格式 */
+manager.requestSerializer = [AFJSONRequestSerializer serializer]; // 设置请求数据为 JSON 数据
+manager.responseSerializer = [AFJSONResponseSerializer serializer]; // 设置接收数据为 JSON 数据
+  
+/* 设置请求头 */
+[manager.requestSerializer setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+[manager.requestSerializer setValue:@"xxx" forHTTPHeaderField:@"xxx"];
+[manager.requestSerializer setValue:@"xxx" forHTTPHeaderField:@"xxx"];
+  
+/* 请求地址 */
+NSString *url = @"http://xxx";
+  
+/* 请求参数 */
+NSDictionary *parameters = @{@"xxx" : @"xxx",
+                             @"xxx" : @"xxx",
+                             @"xxx" : @"xxx"};
+                             
+                             
+1. GET 请求
+[manager GET:url parameters:parameters progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+    
+    NSLog(@"请求成功：%@", responseObject);
+    
+} failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+    
+    NSLog(@"请求失败：%@", error);
+}];
+
+
+
+2. POST 请求
+
+[manager POST:url parameters:parameters progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+    
+    NSLog(@"请求成功：%@", responseObject);
+    
+} failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+    
+    NSLog(@"请求失败：%@", error);
+}];
+
+3. 文件上传
+
+[manager POST:url parameters:parameters constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
+    
+    /* 本地图片上传 */
+    NSURL *imageUrl = [[NSBundle mainBundle] URLForResource:@"test" withExtension:@"png"];
+    NSData *imageData = [NSData dataWithContentsOfURL:imageUrl];
+    
+    // 直接将图片对象转成 data 也可以
+    // UIImage *image = [UIImage imageNamed:@"test"];
+    // NSData *imageData = UIImageJPEGRepresentation(image, 1.0);
+    
+    /* 上传数据拼接 */
+    [formData appendPartWithFileData:imageData name:@"file" fileName:@"test.png" mimeType:@"image/png"];
+    
+} progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+    
+    NSLog(@"上传成功：%@", responseObject);
+    
+} failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+    
+    NSLog(@"上传失败：%@", error);
+}];
+
+
+4.请求结果的处理
+[manager POST:url parameters:parameters progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+    
+    /* 将得到的数据转换成 NSString 字符串 */
+    NSString *infoStr = [[NSString alloc] initWithData:responseObject encoding:NSUTF8StringEncoding];
+    NSLog(@"请求到的数据：%@", infoStr);
+    
+    /* 将得到的 JSON 数据转换成 NSDictionary 字典 */
+    NSDictionary *resultDic = [NSJSONSerialization JSONObjectWithData:responseObject options:NSJSONReadingMutableLeaves error:nil];
+    NSLog(@"请求到的数据：%@", resultDic);
+    
+        
+    /* allHeaderFields 参数获取 FNetworking 2.0 的返回参数是 AFHTTPRequestOperation ，
+       而 AFNetworking 3.0 的返回参数是 NSURLSessionDataTask,allHeaderFields 这个参数需要强转一下。 */
+    NSHTTPURLResponse *response = (NSHTTPURLResponse *)task.response;
+    NSDictionary *headerFields = response.allHeaderFields;
+    NSLog(@"请求头：%@", headerFields);
+    
+} failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+    
+    NSLog(@"请求失败：%@", error);
+}];
+
+
+5.文件下载的配置和上面几个不一样
+* 创建网络下载对象 */
+AFURLSessionManager *manager = [[AFURLSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+  
+/* 下载地址 */
+NSURL *url = [NSURL URLWithString:@"http://xxx/test.mp4"];
+NSURLRequest *request = [NSURLRequest requestWithURL:url];
+  
+/* 下载路径 */
+NSString *path = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
+NSString *filePath = [path stringByAppendingPathComponent:url.lastPathComponent];
+  
+/* 开始请求下载 */
+NSURLSessionDownloadTask *downloadTask = [manager downloadTaskWithRequest:request progress:^(NSProgress * _Nonnull downloadProgress) {
+    
+    NSLog(@"下载进度：%.0f％", downloadProgress.fractionCompleted * 100);
+    
+} destination:^NSURL * _Nonnull(NSURL * _Nonnull targetPath, NSURLResponse * _Nonnull response) {
+    
+    /* 设定下载到的位置 */
+    return [NSURL fileURLWithPath:filePath];
+    
+} completionHandler:^(NSURLResponse * _Nonnull response, NSURL * _Nullable filePath, NSError * _Nullable error) {
+    
+    NSLog(@"下载完成");
+    
+}];
+[downloadTask resume];
+
+
+7.监听网络状态
+/* 监听网络状态 */
+AFNetworkReachabilityManager *manager = [AFNetworkReachabilityManager sharedManager];
+[manager setReachabilityStatusChangeBlock:^(AFNetworkReachabilityStatus status) {
+    if (status == AFNetworkReachabilityStatusUnknown) {
+        NSLog(@"当前网络：未知网络");
+    } else if (status == AFNetworkReachabilityStatusNotReachable) {
+        NSLog(@"当前网络：没有网络");
+    } else if (status == AFNetworkReachabilityStatusReachableViaWWAN) {
+        NSLog(@"当前网络：手机流量");
+    } else if (status == AFNetworkReachabilityStatusReachableViaWiFi) {
+        NSLog(@"当前网络：WiFi");
+    }
+}];
+[manager startMonitoring];
