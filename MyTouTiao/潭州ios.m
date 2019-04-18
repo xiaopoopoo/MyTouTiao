@@ -566,5 +566,298 @@ ls -al 表示列出所有的文件详细的权限与属性 （包含隐藏
 
 
 
+05-Shell脚本语言-语法-变量-只读变量
+3.2 只读变量  类似于常量
+				关键字：readonly（只读，不能够修改）
+				脚本代码
+					name="HelloApp"
+					readonly name
+					#./hello.sh: line 35: name: readonly variable
+					name="smile2017"
+					echo "执行了"
 
+
+
+06-Shell脚本语言-语法-变量-删除变量
+	3.3 删除变量？
+				语法：unset（干掉了）
+				案例：unset 变量名
+				
+				name="HelloApp"
+				echo $name
+				unset name
+				echo $name
+				
+				
+07-Shell脚本语言-语法-变量-变量类型
+
+
+	
+变量名外面的花括号{ }：
+	花括号是可选的，加不加都行，加花括号是为了帮助解释器识别变量的边界，比如下面这种情况：
+	skill="Java"
+	echo "I am good at ${skill}Script"
+	
+将命令的结果赋值给变量：
+	第一种方式把命令用反引号包围起来，反引号和单引号非常相似，容易产生混淆，所以不推荐使用：
+	variable=`command`
+	第二种方式把命令用$()包围起来，区分更加明显，所以推荐使用这种方式。
+	variable=$(command)
+	例如：cat 命令将 log.txt 的内容读取出来，并赋值给一个变量，然后使用 echo 命令输出。
+	[mozhiyan@localhost code]$ log=$(cat log.txt)
+	[mozhiyan@localhost code]$ echo $log
+	[2017-09-10 06:53:22] 严长生正在编写Shell教程
+	[mozhiyan@localhost code]$ log=`cat log.txt`
+	[mozhiyan@localhost code]$ echo $log
+	[2017-09-10 06:53:22] 严长生正在编写Shell教程
+
+3.4 变量类型
+				3.4.1 类型一：本地变量（全局变量)作用域是运行脚本的shell进程的生命周期
+					语法：name="Dream"
+					function ace()[
+					    a="hello"//全局变量，没用local定义
+					 ]
+				3.4.2 类型二：局部变量 作用域是函数的生命周期；在函数结束时被自动销毁
+					作用域：当前代码段（修饰符：local）
+					local name="Andy"
+					 function ace()[
+					   local a="hello"//局部变量，用local定义
+					 ]
+					 echo a//外部不能访问
+					 
+				3.4.3 类型三：环境变量
+					作用域：所有的程序如qq程序启动，包括shell启动的程序，都能访问环境变量
+					      ，有些程序需要环境变量来保证其正常运行。必要的时候shell脚本也可以定义环境变量。
+					语法：export name="Dream"
+					环境变量分三种：
+					   1：对所有用户生效的永久性变量（系统级）：
+					      这类变量对系统内的所有用户都生效，所有用户都可以使用这类变量。作用范围是整个系统
+					      设置方式：
+					        1.vim打开/etc/profile文件，profile只能在root环境打开
+					        2.文件中写入export name="Dream"
+					        3.保存文件，使配置文件生效：source /etc/profile
+					        4.使用 echo name
+					   2: 对单一用户生效的永久性变量（用户级）
+					      用户A设置了此类环境变量，这个环境变量只有A可以使用。而对于其他的B,C,D,E….用户这个变量是不存在的
+					      设置方式：在用户主目录”~”下的隐藏文件 “.bashrc”中添加自己想要的环境变量
+					        1：首先切目录：cd ~    然后查看：echo .* 
+					        2：系统中可能存在两个文件，.bashrc和.bash_profile（有些系统中只有其中一个），这两个文件任意一个里面添加都是可以的。
+					        3：bash_profile文件只会在用户登录的时候读取一次  .bashrc在每次打开终端进行一次新的会话时都会读取
+					        4：利用vim打开.bashrc文件中写入export name="Dream"
+					        5：保存文件，使配置文件生效：source /etc/profile
+					        6：使用 echo name
+					   3：临时有效的环境变量（只对当前shell有效）
+					       当我们退出登录或者关闭终端再重新打开时，这个环境变量就会消失。是临时的
+					       在shell命令窗口中：
+					       	[mozhiyan@localhost code]$ export name="Dream"
+	                        [mozhiyan@localhost code]$ echo $name
+	                        
+	                设置环境变量常用的几个指令：
+	                   1：echo 变量使用时要加上符号“$”例：echo $PATH
+	                   2：export 设置新的环境变量 export 新环境变量名=内容 
+                          例:export MYNAME=”LLZZ”
+                       3：修改环境变量 例：MYNAME=”ZZLL”
+                       4：env   查看所有环境变量
+                       5：set 查看本地定义的所有shell变量
+                       6：删除一个环境变量  例 unset MYNAME
+                       7：readonly 设置只读环境变量。 
+                          例：readonly MYNAME  
+                    
+                    常用的几个环境变量：
+                       1：PATH 让我们运行程序或指令更加方便
+                       例：
+                         通过gcc编译生成的可执行文件a.out
+                         访问：./a.out 或 /home/lzk/test/a.out 
+                         如何更简单访问如：a.out 
+                         设置：export PATH=$PATH:路径 （（PATH中路径是通过冒号“:”进行分隔的）
+                              PATH="$PATH":/home/lzk/test/a.out:/home/lzk/test/b.out
+                       2：HOME 指定用户的主工作目录，即为用户登录到Linux系统中时的默认目录，即“~”
+                       3: HISTSIZE 指保存历史命令记录的条数。我们输入的指令都会被系统保存下来，这个环境变量记录的就是保持指令的条数。一般为1000
+                           历史指令都被保存在用户工作主目录“~”下的隐藏文件.bash_profile中 我们可以通过指令history来查看。
+                       4: LOGNAME 指当前用户的登录名
+                       5: HOSTNAME  指主机的名称
+                       6: SHELL 指当前用户用的是哪种shell
+                       7: LANG/LANGUGE 和语言相关的环境变量，使用多种语言的用户可以修改此环境变量
+                       8: MAIL 指当前用户的邮件存放目录
+                       9:  PS1 第一级Shell命令提示符，root用户是#，普通用户是$
+                       10: PS2 第二级命令提示符，默认是“>”
+                       11: PS3 第三级命令提示符。主要用于select循环控制结构的菜单选择提示符 ：【等待一个链接】
+                       12: 用户和系统交互过程的超时值。
+                           系统提示让用户进行输入，但用户迟迟没有输入，时间超过TMOUT设定的值后，shell将会因超时而终止执行。
+	                
+					   
+				3.4.4 类型四：位置变量  给脚本文件传参 区分变量${name} ${age}
+					脚本代码
+						#!/bin/bash
+						#文件名称
+						filename=${0}
+						#参数一
+						name=${1}
+						#参数二
+						age=${2}
+						#参数三
+						sex=${3}
+						echo "文件名称：${filename}"
+						echo "姓名：${name}   年龄：${age}  性别：${sex} "
+					执行脚本
+						./hello.sh Jeff 150 男
+					执行结果	
+					    文件名称：./hello.sh
+					    姓名：Jeff   年龄： 150  性别：男	
+						${0}表示脚本文件名称
+						参数从1开始
+				3.4.5 特殊变量
+				        ${0}:文件名称
+				        ${?}:表示命令执行状态返回值
+				             0：表示执行成功
+						     1：程序执行结果
+						     2：表示程序状态返回码（0-255）
+							    系统预留错误（1、2、127）
+						$#:参数个数
+						$*:参数列表
+						   #!/bin/bash
+							echo ${*}
+                           执行：./hello.sh Andy 200 男
+                           结果："Andy 200 男" 参数组成一个字符串
+
+					    $@:参数列表
+					       #!/bin/bash
+							echo ${@}
+                           执行：./hello.sh Andy 200 男
+                           结果："Andy" 200 "男"  每个参数都是分开的
+
+					    $$:后去当前shell进行ID
+
+					    $!:执行上一个指令PID
+					    
+08-Shell脚本语言-语法-字符串-上
+    
+		4.2 .单引号和双引号的区别：
+			#!/bin/bash
+			url="http://c.biancheng.net"
+			website1='C语言中文网：${url}'
+			website2="C语言中文网：${url}"
+			echo $website1
+			echo $website2
+
+			运行结果：
+			C语言中文网：${url}
+			C语言中文网：http://c.biancheng.net
+
+			以单引号' '包围变量的值时，单引号里面是什么就输出什么
+			以双引号" "包围变量的值时，输出时会先解析里面的变量和命令，
+			而不是把双引号中的变量名和命令原样输出
+		4.3 字符串->拼接
+					方式一：
+						脚本代码
+							#!/bin/bash
+							name="Andy"
+							age=100
+							sex="男"
+							info="${name} ${age} ${sex}"
+							echo ${info}
+							
+				
+						脚本结果："Andy 100 男"
+					方式二
+						脚本代码
+							#!/bin/bash
+							name="Andy"
+							age=100
+							sex="男"
+							info=" 姓名："${name}"   年龄："${age}"  性别："${sex}"  "
+							echo ${info}
+			4.4 字符串->获取字符串长度
+				语法结构：${#变量名}  区别：${name}获取name值 ${#name}获取长度，里面多了一个#
+				脚本代码
+					#!/bin/bash
+					name="Andy"
+					echo ${#name}
+				脚本结果：4
+				
+			4.5 字符串->截取
+				1：语法：${变量名:开始位置:截取长度}  区别：${name}获取name值  ${name:2:3}多了两个冒号
+				脚本代码
+						#!/bin/bash
+						name="I have a Dream"
+				案例一：从字符串第3个开始截取，截取3个
+					name="I have a Dream"
+					result=${name:2:3}
+					echo ${result}
+				案例二：从字符串第5个开始截取，到最后一个结束
+					方式一
+						name="I have a Dream"
+						length=${#name}
+						result=${name:5:length-1}
+						echo ${result}
+					方式二
+						name="I have a Dream"
+						result=${name:5}
+						echo ${result}
+			   2： # 号截取，删除左边字符，保留右边字符
+				   var=http://www.aaa.com/123.htm
+				   echo ${var#*//}
+				   结果是 ：www.aaa.com/123.htm
+				   其中 var 是变量名，# 号是运算符，*// 表示从左边开始删除第一个 // 号及左边的所有字符
+
+               3： ## 号截取，删除左边字符，保留右边字符
+                   var=http://www.aaa.com/123.htm
+                   echo ${var##*/}
+                   结果是 123.htm
+                   ##*/ 表示从右边/开始包括/ 从右到左删除 保留右边
+               4： %号截取，删除右边字符，保留左边字符
+                   var=http://www.aaa.com/123.htm
+                   echo ${var%/*}
+                   结果是：http://www.aaa.com
+                   %/* 表示删除掉最右边/ 包括/ 后面的所有内容
+               5： 从左边第几个字符开始，一直到结束
+                   var=http://www.aaa.com/123.htm
+                   echo ${var:7}
+                   结果是 ：www.aaa.com/123.htm
+                   其中的 7 表示左边第8个字符开始，一直到结束
+               6：  从右边第几个字符开始，及字符的个数
+                    var=http://www.aaa.com/123.htm
+                    echo ${var:0-7:3}
+                    结果是：123
+                    0-7 表示从右到左0开始数到7，不包括第7个的字符
+                    3 表示向后截取3个
+                    注：（左边的第一个字符是用 0 表示，右边的第一个字符用 0-1 表示）
+               8：  从右边第几个字符开始，一直到结束
+                    var=http://www.aaa.com/123.htm
+                    echo ${var:0-7}
+                    结果是：123.htm
+                    0-7 表示从右到左0开始数到7，不包括第7个的字符，向后截取所有字符
+                    注：（左边的第一个字符是用 0 表示，右边的第一个字符用 0-1 表示）
+               9：  ${变量名%%删除字符串 正则表达式}
+					案例一：从左到右查找第一个字符，并且删除它后面所有的字符（包含自己）
+						name="I have a Dream"
+						result=${name%%a*}
+						echo ${result}
+                    结果是：I h
+               10:  指定删除范围 从右到左，查找第一个字符a，包含a，到D,删除前面所有内容
+						name="I have a Dream"
+						result=${name%a*D}
+						echo ${result}
+                    结果是：I have a Dream
+                11: 只匹配字符串结尾，成功则删除匹配的字符串
+					案例一：查找第一个字符（匹配第一个）
+						代码一：
+							name="I have a Dream"
+							result=${name%a}
+							echo ${result}
+							结果是：I have a Dream
+						代码二：
+							name="I have a Dream"
+							result=${name%m}
+							echo ${result}
+							结果是：I have a Drea
+
+
+              总结：
+					从左边删除到右边
+						#->表示查询方向从左到右
+						##->表示查询方向从右到左
+					从右边删除到左边
+						%->表示查询方向从右到左
+						%%->表示查询方向从左到右
 
