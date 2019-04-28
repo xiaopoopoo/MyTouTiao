@@ -3788,3 +3788,743 @@ extra-cflags,extra-ldflags,enable-pic。现在Android和IOS几乎没有armv5的�
 –disable-random=LIST	component groups. LIST is a comma-separated list of NAME[:PROB] entries where NAME is a component (group) and PROB the probability associated with
 –random-seed=VALUE	种子值–启用/禁用随机
 –disable-valgrind-backtrace	  backtrace不要在valgrind下打印backtrace（仅适用于–disable optimizations builds）
+
+
+
+
+
+#!/bin/bash
+
+#1、首先：定义下载的库名称 的变量
+source="ffmpeg-3.4"
+
+#2、其次：定义".h/.m/.c"文件编译的结果目录
+#目录作用：用于保存.h/.m/.c文件编译后的结果.o文件 创建.o文件的编译目录  用于保存.h/.m/.c文件编译后的结果.o文件
+cache="cache"
+
+#3、定义".a"静态库保存目录
+#pwd命令：表示获取当前目录 返引号中代表shell命令 
+staticdir=`pwd`/"dream-ffmpeg-iOS"
+
+#4、添加FFmpeg配置选项->默认配置
+#Toolchain options:工具链选项（指定我么需要编译平台CPU架构类型，例如：arm64、x86等等…）
+#--enable-cross-compile: 交叉编译
+#Developer options:开发者选项
+#--disable-debug: 禁止使用调试模式
+#Program options选项
+#--disable-programs:禁用程序(不允许建立命令行程序)
+#Documentation options：文档选项
+#--disable-doc：不需要编译文档
+#Toolchain options：工具链选项
+#--enable-pic：允许建立与位置无关代码
+configure_flags="--enable-cross-compile --disable-debug --disable-programs --disable-doc --enable-pic"
+
+#5、定义默认CPU平台架构类型
+#arm64 armv7->真机->CPU架构类型
+#x86_64 i386->模拟器->CPU架构类型
+archs="arm64 armv7 x86_64 i386"
+
+#6、指定我们的这个库编译系统版本->iOS系统下的7.0以及以上版本使用这个静态库
+targetversion="7.0"
+
+#7、接受命令后输入参数
+#我是动态接受命令行输入CPU平台架构类型(输入参数：编译指定的CPU库)
+if [ "$*" ]
+then
+    #存在输入参数，也就说：外部指定需要编译CPU架构类型，如果未传能数，那默认编译支持"arm64 armv7 x86_64 i386"，
+    #但如果传参，则按传入的平台参数进行编译
+    archs="$*"
+fi
+
+#8、安装汇编器->yasm
+#判断一下是否存在这个汇编器
+#目的：通过软件管理器(Homebrew)，然后下载安装（或者更新）我的汇编器
+#一个命令就能够帮助我们完成所有的操作
+#错误一：`which` yasm
+#正确一：`which yasm`
+if [ ! `which yasm`  ]
+then
+    #Homebrew:软件管理器
+    #下载一个软件管理器:安装、卸载、更新、搜索等等...
+    #错误二：`which` brew
+    #正确二：`which brew`
+    if [ ! `which brew` ]
+    then
+        echo "安装brew"
+        ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" || exit 1
+    fi
+    echo "安装yasm"
+    #成功了
+    #下载安装这个汇编器
+    #exit 1->安装失败了，那么退出程序
+    brew install yasm || exit 1
+fi
+
+echo "循环编译"
+
+#9、for循环编译FFmpeg静态库
+currentdir=`pwd`
+for arch in $archs
+do
+    echo "开始编译"
+    #9.1、创建目录
+    #在编译结果目录下-创建对应的平台架构类型目录 arm7 arm6，里面是保存.o文件
+    mkdir -p "$cache/$arch"
+    #9.2、进入这个目录
+    cd "$cache/$arch"
+
+    #9.3、配置编译CPU架构类型->指定当前编译CPU架构类型 Tool chain中的参数
+    #错误三："--arch $arch"
+    #正确三："-arch $arch"
+    archflags="-arch $arch"
+
+    #9.4、判定一下你到底是编译的是模拟器.a静态库，还是真机.a静态库 $arch是输入的字符串参数变量 -o是或者
+    if [ "$arch" = "i386" -o "$arch" = "x86_64" ]
+    then
+        #模拟器
+        platform="iPhoneSimulator"
+        #支持最小系统版本->iOS系统
+        archflags="$archflags -mios-simulator-version-min=$targetversion"
+    else
+        #真机(mac、iOS都支持)
+        platform="iPhoneOS"
+        #支持最小系统版本->iOS系统 -mios-version-min=$targetversion 最小版本号
+        #-fembed-bitcode 编译成二进制
+        archflags="$archflags -mios-version-min=$targetversion -fembed-bitcode"
+        #注意:优化处理(可有可无)
+        #如果架构类型是"arm64"，那么
+        if [ "$arch" = "arm64" ]
+        then
+            #GNU汇编器（GNU Assembler），简称为GAS
+            #GASPP->汇编器预处理程序
+            #解决问题：分段错误
+            #通俗一点：就是程序运行时,变量访问越界一类的问题
+            #如果xcode5以及之前编译会出现程序运行时,变量访问越界一类的问题，分段错误
+            EXPORT="GASPP_FIX_XCODE5=1"
+        fi
+    fi
+
+
+    #10、正式编译
+    #tr命令可以对来自标准输入的字符进行替换、压缩和删除
+    #'[:upper:]'->将小写转成大写
+    #'[:lower:]'->将大写转成小写
+    #将platform->转成大写或者小写
+    #echo $platform 输出一个目录，将目录转成大写或者小写，保证统一
+    XCRUN_SDK=`echo $platform | tr '[:upper:]' '[:lower:]'`
+    #编译器->编译平台  CC指gcc编译器
+    CC="xcrun -sdk $XCRUN_SDK clang"
+
+    #架构类型->arm64
+    if [ "$arch" = "arm64" ]
+    then
+        #音视频默认一个编译命令 编译脚本，这是个文件，gas-preprocessor.pl能帮我们编译ffpeg
+        #preprocessor.pl帮助我们编译FFmpeg->arm64位静态库
+        AS="gas-preprocessor.pl -arch aarch64 -- $CC"
+    else
+        #不是arm64采用默认的编译器 默认编译平台
+        AS="$CC"
+    fi
+
+    echo "执行到了1"
+
+    #目录找到FFmepg编译源代码目录->设置编译配置->编译FFmpeg源码
+    #--target-os:目标系统->darwin(mac系统早起版本名字)
+    #darwin:是mac系统、iOS系统祖宗，是最早的系统，所以目标系统是这个
+    #--arch:CPU平台架构类型
+    #--cc：指定编译器类型选项，使用什么样的编译器类型
+    #--as:汇编程序
+    #$configure_flags最初配置
+    #--extra-cflags 最小的版本号
+    #--prefix：静态库输出目录
+    TMPDIR=${TMPDIR/%\/} $currentdir/$source/configure \ #输出到当前目录
+        --target-os=darwin \
+        --arch=$arch \
+        --cc="$CC" \ 
+        --as="$AS" \
+        $configure_flags \  #ffmpeg的配置
+        --extra-cflags="$archflags" \
+        --extra-ldflags="$archflags" \
+        --prefix="$staticdir/$arch" \ #静态库输出目录
+        || exit 1
+
+    echo "执行了"
+
+    #解决问题->分段错误问题
+    #安装->导出静态库(编译.a静态库)
+    #执行命令
+    #-j设置多核线程的设置，在编译时候支持多线程的
+    make -j3 install $EXPORT || exit 1  #最终安装导出到这个目录下 "$staticdir/$arch" \   $EXPORT是解决分段问题xcode5下
+    #回到了我们的脚本文件目录
+    cd $currentdir
+done
+
+
+
+解释：
+$*和$@以及$#的区别
+举例说：
+脚本名称叫test.sh 入参三个: 1 2 3
+运行test.sh 1 2 3后
+$*为"1 2 3"（一起被引号包住）
+$@为"1" "2" "3"（分别被包住）
+$#为3（参数数量）
+
+
+#7、接受命令后输入参数
+#我是动态接受命令行输入CPU平台架构类型(输入参数：编译指定的CPU库)
+if [ "$*" ]
+then
+    #存在输入参数，也就说：外部指定需要编译CPU架构类型，如果未传能数，那默认编译支持"arm64 armv7 x86_64 i386"，
+    #但如果传参，则按传入的平台参数进行编译
+    archs="$*"
+fi
+
+   ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" || exit 1
+   
+   下载并安装:
+    curl下载  ruby可以在命令行中执行脚本 意思是执行curl下载的脚本,安装
+    #下载安装这个汇编器
+    brew install yasm || exit 1
+    
+    
+测试是否成功：
+./ffmpeg-bulid.sh arm64
+
+if 后面要有空格
+
+报错：
+GNU assembler not found, install/update gas-preprocessor
+
+解决方法：
+1. 下载最新的gas-preprocessor.pl,地址是https://github.com/libav/gas-preprocessor
+1.下载完成后打开终端 进入gas-preprocessor文件夹
+cd 将文件拖进来回车
+2.将文件夹内的gas-preprocessor.pl文件拷贝到/usr/sbin/目录下
+sudo cp /Users/chenqiang/Downloads/gas-preprocessor-master/gas-preprocessor.pl /usr/local/bin
+
+注意上面的sudo cp(这个地方是gas-preprocessor文件下gas-preprocessor.pl的地址,只需要将gas-preprocessor.pl文件拖进来就行了) /usr/local/bin 回车
+3.修改/usr/sbin/gas-preprocessor.pl的文件权限为可执行权限
+如果1.命令如果不行就使用2.命令(我当时用的是2.命令)
+1.
+
+cd /usr/local/bin
+ sudo chmod 777 gas-preprocessor.pl
+
+
+
+20171113-第8节课-FFmpeg-第1讲-编译库
+
+FFmpeg一共：9个库->常用是7个库
+选择性编译一些库，不一定编译所有？如何选择？下面配置是选择库  默认是编译的
+configure_flags="--enable-cross-compile --disable-debug --disable-programs --disable-doc --enable-pic"
+
+#核心库(编解码->最重要的库)：avcodec 音视频的编解码库--disable-avdevice不允许编译    --enable-avcodec可以编译
+这些库在 组件选项（Component options）配置中
+configure_flags="$configure_flags --enable-avdevice --enable-avcodec --enable-avformat"
+configure_flags="$configure_flags --enable-swresample --enable-swscale --disable-postproc"
+configure_flags="$configure_flags --enable-avfilter --enable-avutil --enable-avresample "
+
+
+
+03-FFmpeg-应用-测试FFmpeg配置
+
+1 在xcode中新建ffmpeg文件夹，把ffmepg的include头文件和lib中的.a文件拷贝进来。
+2 在xcode中bulidphacs中添加依赖库
+coremedia 多媒体相关
+vedioToolBox  视频
+audioToolBox 音频
+libicon.tbd  临时生成的存储一些信息的文件，属于系统文件类似一个文件数据库
+coregraphics uikit对coregraphics高度封装
+libz.tbd
+libbz2.tbd
+3 查看库的路中是否配置
+  在xcode中bulid seting中搜索libary 
+  libar search path
+  发现有：$(PROJECT_DIR)/工程名称／库文件路径
+  $(SRCROOT)代表的项目根目录
+  $(PROJECT_DIR)代表项目的二级目录及项目目库
+4 查看头文件是否配置
+	在xcode中bulid seting中搜索header
+	在header search paths中配置头文件的路径
+    $(PROJECT_DIR)/工程名称／头文件路径
+5 在代码中测试ffmpeg配置信息
+    新建FFmpegTest类
+    
+    FFmpegTest.h
+    
+		#import <Foundation/Foundation.h>
+
+		//引入头文件
+		//核心库->音视频编解码库
+		#import <libavcodec/avcodec.h>
+		//导入封装格式库
+		#import <libavformat/avformat.h>
+
+		@interface FFmpegTest : NSObject
+
+			//测试FFmpeg配置
+			+(void)ffmpegTestConfig;
+	
+			//打开视频文件
+			+(void)ffmpegVideoOpenfile:(NSString*)filePath;
+	
+		@end
+    
+    
+    FFmpegTest.m
+    
+    #import "FFmpegTest.h"
+
+	@implementation FFmpegTest
+
+		//测试FFmpeg配置
+		+(void)ffmpegTestConfig{
+			const char *configuration = avcodec_configuration();
+			NSLog(@"配置信息: %s", configuration);
+		}
+	
+		//打开视频文件
+		+(void)ffmpegVideoOpenfile:(NSString*)filePath{
+			//第一步：注册组件
+			av_register_all();
+		
+			//第二步：打开封装格式文件
+			//参数一：封装格式上下文
+			AVFormatContext* avformat_context = avformat_alloc_context();
+			//参数二：打开视频地址->path
+			const char *url = [filePath UTF8String];
+			//参数三：指定输入封装格式->默认格式
+			//参数四：指定默认配置信息->默认配置
+			int avformat_open_input_reuslt = avformat_open_input(&avformat_context, url, NULL, NULL);
+			if (avformat_open_input_reuslt != 0){
+				//失败了
+				//获取错误信息
+	//            char* error_info = NULL;
+	//            av_strerror(avformat_open_input_reuslt, error_info, 1024);
+				NSLog(@"打开文件失败");
+				return;
+			}
+		
+			NSLog(@"打开文件成功");
+		
+		}
+	
+	@end
+	
+	
+	测试类
+	ViewController.m
+		#import "ViewController.h"
+		#import "FFmpegTest.h"
+
+		@interface ViewController ()
+
+		@end
+
+		@implementation ViewController
+
+		- (void)viewDidLoad {
+			[super viewDidLoad];
+			//测试一
+		//    [FFmpegTest ffmpegTestConfig];
+			//测试二
+		//    NSString* path = [[NSBundle mainBundle] pathForResource:@"Test" ofType:@".mov"];
+			[FFmpegTest ffmpegVideoOpenfile:@""];
+		}
+
+
+		- (void)didReceiveMemoryWarning {
+			[super didReceiveMemoryWarning];
+			// Dispose of any resources that can be recreated.
+		}
+
+
+		@end
+		
+		测试：连真机投屏  quicktime player中 新建影片设置，选择iphone就可以投屏
+		运行：配置信息如果成功就会打印出来
+		
+		
+		
+05-FFmpeg-应用-Android平台-新建NDK项目
+
+动态库的编译下一节课来讲
+  动态库是.so android是使用的.so动态库
+  1 编译.so动态库 下节课讲解
+  2 新建android平台下ndk项目 
+    本身默认的android的项目是不支持c,c++开发的，需要配置
+    ndk是基于c,c++底层开发的一套工具库
+    开发中需要手动勾选ndk
+  3 android studio
+    new project 弹出界面
+    application name 项目名
+    company domain 公司域随便填
+    package name  项目包，相当于bund id
+    include c++ support 勾选
+  4  傻傻的一下步，直到显示customize c++ support
+    勾选上下面两项，能捕获到c++异常 C/C++出错了，那么在Java程序中，我们可以铺货这个错误，并且处理
+    exceptions support(-fexceptions)
+    runtime type information support(-frtti)
+    c++ standard 默认选toolchain deafult
+    最后完成
+    安卓你需要实现的是NDK底层代码->上层Java开发你不需要关心
+  5 mainactivity.java介绍
+     src:（常用） 展开在包名下的文件：mainactivity.java
+	 mainactivity.java刚进来的时候会调用oncreate方法，该方法会调用activity_main.xml视图
+	 setcontentview(r.layout.activity_main)//将这个类和布局相关联
+	 以后安卓程序，如果写代码的部份所有都放到src下
+
+
+06-FFmpeg-应用-Android平台-配置FFmpeg环境
+   如果是在eclipse中，需要放到libs下对应库的目录。 
+   如果是在Android Studio中，则会默认匹配main下的jniLibs目录
+   配置好的库都需要下面代码作链接
+   target_link_libraries( # Specifies the target library.
+									   native-lib avcodec-57 avfilter-6 avformat-57 avutil-55 swresample-2 swscale-4
+   
+   1  在src / main /jnilibs 中复制.so文件目录和.h的include目录
+   
+   2  配置.so动态库和引入头文件 在cmakelists.txt文件中写入配置信息
+      不要手写，直接拿过来使用
+   
+			    # For more information about using CMake with Android Studio, read the
+				# documentation: https://d.android.com/studio/projects/add-native-code.html
+
+				# Sets the minimum version of CMake required to build the native library.
+
+				cmake_minimum_required(VERSION 3.4.1)
+
+				#FFMpeg配置
+				#FFmpeg配置目录
+				set(distribution_DIR ${CMAKE_SOURCE_DIR}/../../../../src/main/jniLibs)
+
+				# 编解码(最重要的库)
+				add_library(
+							avcodec-57
+							SHARED
+							IMPORTED)
+				set_target_properties(
+							avcodec-57
+							PROPERTIES IMPORTED_LOCATION
+							../../../../src/main/jniLibs/armeabi/libavcodec-57.so)
+
+
+				# 滤镜特效处理库
+				add_library(
+							avfilter-6
+							SHARED
+							IMPORTED)
+				set_target_properties(
+							avfilter-6
+							PROPERTIES IMPORTED_LOCATION
+							../../../../src/main/jniLibs/armeabi/libavfilter-6.so)
+
+				# 封装格式处理库
+				add_library(
+							avformat-57
+							SHARED
+							IMPORTED)
+				set_target_properties(
+							avformat-57
+							PROPERTIES IMPORTED_LOCATION
+							../../../../src/main/jniLibs/armeabi/libavformat-57.so)
+
+				# 工具库(大部分库都需要这个库的支持)
+				add_library(
+							avutil-55
+							SHARED
+							IMPORTED)
+				set_target_properties(
+							avutil-55
+							PROPERTIES IMPORTED_LOCATION
+							../../../../src/main/jniLibs/armeabi/libavutil-55.so)
+
+				# 音频采样数据格式转换库
+				add_library(
+							swresample-2
+							SHARED
+							IMPORTED)
+				set_target_properties(
+							swresample-2
+							PROPERTIES IMPORTED_LOCATION
+							../../../../src/main/jniLibs/armeabi/libswresample-2.so)
+
+				# 视频像素数据格式转换
+				add_library(
+							swscale-4
+							SHARED
+							IMPORTED)
+				set_target_properties(
+							swscale-4
+							PROPERTIES IMPORTED_LOCATION
+							../../../../src/main/jniLibs/armeabi/libswscale-4.so)
+
+
+				#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+				#判断编译器类型,如果是gcc编译器,则在编译选项中加入c++11支持
+				if(CMAKE_COMPILER_IS_GNUCXX)
+					set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+					message(STATUS "optional:-std=c++11")
+				endif(CMAKE_COMPILER_IS_GNUCXX)
+
+
+				#配置编译的头文件
+				include_directories(src/main/jniLibs/include)
+
+
+
+
+				# Creates and names a library, sets it as either STATIC
+				# or SHARED, and provides the relative paths to its source code.
+				# You can define multiple libraries, and CMake builds them for you.
+				# Gradle automatically packages shared libraries with your APK.
+
+				add_library( # Sets the name of the library.
+							 native-lib
+
+							 # Sets the library as a shared library.
+							 SHARED
+
+							 # Provides a relative path to your source file(s).
+							 src/main/cpp/native-lib.cpp )
+
+				# Searches for a specified prebuilt library and stores the path as a
+				# variable. Because CMake includes system libraries in the search path by
+				# default, you only need to specify the name of the public NDK library
+				# you want to add. CMake verifies that the library exists before
+				# completing its build.
+
+				find_library( # Sets the name of the path variable.
+							  log-lib
+
+							  # Specifies the name of the NDK library that
+							  # you want CMake to locate.
+							  log )
+
+				# Specifies libraries CMake should link to your target library. You
+				# can link multiple libraries, such as libraries you define in this
+				# build script, prebuilt third-party libraries, or system libraries.
+
+				target_link_libraries( # Specifies the target library.
+									   native-lib avcodec-57 avfilter-6 avformat-57 avutil-55 swresample-2 swscale-4
+
+									   # Links the target library to the log library
+									   # included in the NDK.
+									   ${log-lib} )
+									   
+	   3  配置cpu平台架构类型
+		cmake {
+					cppFlags "-frtti -fexceptions"
+					abiFilters 'armeabi' //这里是.so动态库目录的名称
+				}
+	      build.grade文件：
+	      
+				apply plugin: 'com.android.application'
+
+				android {
+					compileSdkVersion 26
+					buildToolsVersion "26.0.1"
+					defaultConfig {
+						applicationId "com.tz.dream.ffmpeg.test.demo"
+						minSdkVersion 14
+						targetSdkVersion 26
+						versionCode 1
+						versionName "1.0"
+						testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+						externalNativeBuild {
+							cmake {
+								cppFlags "-frtti -fexceptions"
+								abiFilters 'armeabi'
+							}
+						}
+					}
+					buildTypes {
+						release {
+							minifyEnabled false
+							proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+						}
+					}
+					externalNativeBuild {
+						cmake {
+							path "CMakeLists.txt"
+						}
+					}
+				}
+
+				dependencies {
+					compile fileTree(dir: 'libs', include: ['*.jar'])
+					androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+						exclude group: 'com.android.support', module: 'support-annotations'
+					})
+					compile 'com.android.support:appcompat-v7:26.+'
+					compile 'com.android.support.constraint:constraint-layout:1.0.2'
+					testCompile 'junit:junit:4.12'
+				}
+				
+			4  编译
+			   bulid -  rebulid project
+			   
+			   
+			   
+07-FFmpeg-应用-Android平台-测试FFmpeg配置
+      注：native表示这个方法是一个特殊的方法，是与java中 ndk交互的方法，它修饰的方法没有实现，它的实现在c/c++中
+          在src/main/cpp/native-lib.cpp中
+      第一步：定义Java方法->类似于定义iOS方法
+      1  在src/main/java/package name下 new - java class 
+         FFmpegTest.java:
+				package com.tz.dream.ffmpeg.test.demo;
+				/**
+				 * 作者: Dream on 2017/8/11 21:11
+				 * QQ:510278658
+				 * E-mail:510278658@qq.com
+				 */
+
+				//NDK方法
+				public class FFmpegTest {
+
+					//加载动态库
+					static {
+						System.loadLibrary("native-lib");
+					}
+
+					//1、NDK音视频编解码：FFmpeg-测试配置
+					//2、native表示这个方法是一个特殊的方法，是与java中 ndk交互的方法，它修饰的方法没有实现，它的实现在c/c++中
+					public static native void ffmpegTest();
+					//测试视频
+					public static native void ffmpegVideoOpenfile(String filepath);
+				}
+
+      2   MainActivity.java 
+				package com.tz.dream.ffmpeg.test.demo;
+				import android.os.Bundle;
+				import android.support.v7.app.AppCompatActivity;
+
+				public class MainActivity extends AppCompatActivity {
+
+					@Override
+					protected void onCreate(Bundle savedInstanceState) {
+						super.onCreate(savedInstanceState);
+						setContentView(R.layout.activity_main);
+						FFmpegTest.ffmpegTest();
+						//获取sdcard路径
+						String rootPath = Enviroment.getExternalStorageDirectory().getAbsolutePath();
+						String inFilePath = rootPath.concat("/DreamFFmpeg/Test.mov");
+						FFmpegTest.ffmpegVideoOpenfile(inFilePath);
+					}
+
+				}
+				
+	   3 
+	      注意：
+	      build.grade文件中的下面代码native-lib.cpp与src/main/cpp/native-lib.cpp文件名相同，
+	      告诉我们c++中有哪些类与java中类对应，关联java
+	      add_library( # Sets the name of the library.
+							 native-lib
+
+							 # Sets the library as a shared library.
+							 SHARED
+
+							 # Provides a relative path to your source file(s).
+							 src/main/cpp/native-lib.cpp )
+	      
+	      native-lib.cpp
+	      #include <jni.h>
+			#include <android/log.h>
+
+			//当前C++兼容C语言 ffmpeg是c开发的  
+			extern "C"{
+			//avcodec:编解码(最重要的库)include import都可以用
+			#include <libavcodec/avcodec.h>
+			//avformat:封装格式处理
+			//#include "libavformat/avformat.h"
+			//avutil:工具库(大部分库都需要这个库的支持)
+			//#include "libavutil/imgutils.h"
+            //调用Java_com_tz_dream_ffmpeg_test_demo包下FFmpegTest下的ffmpegTest方法  声明方法
+			JNIEXPORT void JNICALL Java_com_tz_dream_ffmpeg_test_demo_FFmpegTest_ffmpegTest
+					(JNIEnv *, jobject);
+			//打开视频方法声明
+			JNIEXPORT void JNICALL Java_com_tz_dream_ffmpeg_test_demo_FFmpegTest_ffmpegVideoOpenfile
+					(JNIEnv *, jobject,jstring jfilePath);
+			}
+
+			//方法实现
+			JNIEXPORT void JNICALL Java_com_tz_dream_ffmpeg_test_demo_FFmpegTest_ffmpegTest(
+					JNIEnv *env, jobject jobj) {
+				//(char *)表示C语言字符串
+				const char *configuration = avcodec_configuration();
+				__android_log_print(ANDROID_LOG_INFO,"main","%s",configuration);
+			}
+			//打开视频方法实现
+			JNIEXPORT void JNICALL Java_com_tz_dream_ffmpeg_test_demo_FFmpegTest_ffmpegVideoOpenfile
+					(JNIEnv *, jobject,jstring jfilePath);
+					//里面的代码和ios案例代码一样，都是c代码
+			
+			        //第一步：注册组件
+					av_register_all();
+		
+					//第二步：打开封装格式文件
+					//参数一：封装格式上下文
+					AVFormatContext* avformat_context = avformat_alloc_context();
+					//参数二：打开视频地址->path 将java字符串转成c字符串
+					const char *url = env->GetStringUTFChars(jfilePath,NULL);
+					//参数三：指定输入封装格式->默认格式
+					//参数四：指定默认配置信息->默认配置
+					int avformat_open_input_reuslt = avformat_open_input(&avformat_context, url, NULL, NULL);
+					if (avformat_open_input_reuslt != 0){
+						//失败了
+						//获取错误信息
+			//            char* error_info = NULL;
+			//            av_strerror(avformat_open_input_reuslt, error_info, 1024);
+						__android_log_print(ANDROID_LOG_INFO,"main","打开失败");
+						return;
+					}
+		
+					__android_log_print(ANDROID_LOG_INFO,"main","打开成功");
+		}
+
+
+
+08-FFmpeg-应用-Android平台-测试FFmpeg打开文件
+mainactive.java中增加
+			//测试视频
+					public static native void ffmpegVideoOpenfile(String filepath);
+					
+在native-lib.cpp中增加
+			//打开视频方法实现
+			JNIEXPORT void JNICALL Java_com_tz_dream_ffmpeg_test_demo_FFmpegTest_ffmpegVideoOpenfile
+					(JNIEnv *, jobject,jstring jfilePath);
+					//里面的代码和ios案例代码一样，都是c代码
+			
+			        //第一步：注册组件
+					av_register_all();
+		
+					//第二步：打开封装格式文件
+					//参数一：封装格式上下文
+					AVFormatContext* avformat_context = avformat_alloc_context();
+					//参数二：打开视频地址->path 将java字符串转成c字符串
+					const char *url = env->GetStringUTFChars(jfilePath,NULL);
+					//参数三：指定输入封装格式->默认格式
+					//参数四：指定默认配置信息->默认配置
+					int avformat_open_input_reuslt = avformat_open_input(&avformat_context, url, NULL, NULL);
+					if (avformat_open_input_reuslt != 0){
+						//失败了
+						//获取错误信息
+			//            char* error_info = NULL;
+			//            av_strerror(avformat_open_input_reuslt, error_info, 1024);
+						__android_log_print(ANDROID_LOG_INFO,"main","打开失败");
+						return;
+					}
+		
+					__android_log_print(ANDROID_LOG_INFO,"main","打开成功");
+		}
+		
+在MainActivity.java 中增加：
+						//获取sdcard路径
+						String rootPath = Enviroment.getExternalStorageDirectory().getAbsolutePath();
+						String inFilePath = rootPath.concat("/DreamFFmpeg/Test.mov");
+						FFmpegTest.ffmpegVideoOpenfile(inFilePath);
+加上sd卡打开读写权限相当于plist文件：
+在AndroidMainfest.xml中
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
