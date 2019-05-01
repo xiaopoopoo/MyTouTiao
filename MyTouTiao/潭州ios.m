@@ -4185,7 +4185,7 @@ libbz2.tbd
    
    1  在src / main /jnilibs 中复制.so文件目录和.h的include目录
    
-   2  配置.so动态库和引入头文件 在cmakelists.txt文件中写入配置信息
+   2  配置.so动态库和引入头文件 在CMakeLists.txt文件中写入配置信息,这个文件是在app的目录下的
       不要手写，直接拿过来使用
    
 			    # For more information about using CMake with Android Studio, read the
@@ -4313,7 +4313,7 @@ libbz2.tbd
 									   # included in the NDK.
 									   ${log-lib} )
 									   
-	   3  配置cpu平台架构类型
+	   3  配置cpu平台架构类型 
 		cmake {
 					cppFlags "-frtti -fexceptions"
 					abiFilters 'armeabi' //这里是.so动态库目录的名称
@@ -4335,7 +4335,7 @@ libbz2.tbd
 						externalNativeBuild {
 							cmake {
 								cppFlags "-frtti -fexceptions"
-								abiFilters 'armeabi'
+								abiFilters 'armeabi'//配置cpu架构类型
 							}
 						}
 					}
@@ -4528,3 +4528,639 @@ mainactive.java中增加
 在AndroidMainfest.xml中
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+
+
+
+第10次课-FFmepg-第3讲-Androidso动态库编译+FFmpeg介绍
+
+01-FFmpeg-编译动态库-脚本分析
+
+build-ffmpeg-armeabi.sh ：
+
+#!/bin/bash
+
+#第一步：进入到指定目录，当前sh脚本位置和ffmpeg-3.4目录同级
+cd ffmpeg-3.4
+
+#第二步：指定NDK路径(编译什么样的平台->采用什么样的平台编译器)
+#Android平台NDK技术->做C/C++开发和编译Android平台下.so动态库
+#注意：放在英文目录(中文目录报错)
+#修改一：修改为你自己NDK存放目录,ndk是一个压缩包android-ndk-r10e-darwin-x86_64.bin，可下载，可在android studio中找到
+#Mac解压NDK . bin文件
+#1.获取文件权限
+#chmod a+x android-ndk-r10c-darwin-x86_64.bin
+#a+x 是给所有人加上可执行权限，包括所有者，所属组，和其他人
+#o+x 只是给其他人加上可执行权限
+#2. 解压出文件
+#./android-ndk-r10c-darwin-x86_64.bin
+#解压后的ndk目录与.sh文件同级
+NDK_DIR=/Users/admin/Desktop/ffmpg/android-ndk-r10e
+
+#第三步：配置Android系统版本(支持最小的版本)
+#指定使用NDK Platform版本(对应系统版本)这里指定的是支持最小版本为android18
+SYSROOT=$NDK_DIR/platforms/android-18/arch-arm
+
+#第四步：指定编译工具链->(通俗：指定编译器)->CPU架构（Android手机通用的CPU架构类型）
+#：armeabi是这里要编译的架构，是android通用的架构，是arm架构的儿子
+#  Android Killer 是一个反编译工具，可反编译android的app，即能看到它使用的库和cpu架构
+TOOLCHAIN=$NDK_DIR/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64
+
+#第五步：指定CPU平台架构类型
+#指定编译后的安装目录
+ARCH=arm
+ADDI_CFLAGS="-marm"
+
+#第六步：指定编译成功之后，.so动态库存放位置
+#修改二：这个目录你需要修改为你自己目录
+PREFIX=/Users/yangshaohong/Desktop/ffmpg/android-build/$ARCH
+
+#第七步：编写执行编译脚本->调用FFmpeg进行配置
+#定义了Shell脚本函数(方法)
+function build_armeabi
+{
+./configure \  # No such file or directory  这里的\去掉，该命令并成一行
+--prefix=$PREFIX \
+--enable-shared \ #编译动态库
+--enable-gpl \
+--disable-static \ #静止编译静态库
+--disable-doc \
+--disable-ffmpeg \
+--disable-ffplay \
+--disable-ffprobe \
+--disable-ffserver \
+--disable-doc \
+--disable-symver \
+--enable-small \
+--cross-prefix=$TOOLCHAIN/bin/arm-linux-androideabi- \ #指定编译器
+--target-os=android \ #指定是android系统
+--arch=$ARCH \ #架构类型
+--enable-cross-compile \ #交叉编译
+--sysroot=$SYSROOT \
+--extra-cflags="-Os -fpic $ADDI_CFLAGS" \
+--enable-pic \
+$ADDITIONAL_CONFIGURE_FLAG
+
+make clean
+make -j4
+make install
+}
+
+#第八步：执行函数->开始编译
+build_armeabi
+echo "Android armeabi builds finished"
+
+
+
+
+02-FFmpeg-编译动态库-注意事项
+注意：
+目标编译出来.so动态库格式libavcodec.so.57.2.100，放入到andriod项目中会报错，即是是把so后面的名字修改掉也报错
+解决方案
+				首先：进入FFmpeg-3.4开发包
+				其次：打开configure文件
+				最后：修改配置 修改的大意为编译的动态库减去版本号
+原始
+			#SLIBNAME_WITH_MAJOR='$(SLIBNAME).$(LIBMAJOR)'
+			#LIB_INSTALL_EXTRA_CMD='$$(RANLIB) "$(LIBDIR)/$(LIBNAME)"'
+			#SLIB_INSTALL_NAME='$(SLIBNAME_WITH_VERSION)'
+			#SLIB_INSTALL_LINKS='$(SLIBNAME_WITH_MAJOR) $(SLIBNAME)'
+
+			修改
+			SLIBNAME_WITH_MAJOR='$(SLIBPREF)$(FULLNAME)-$(LIBMAJOR)$(SLIBSUF)'
+			LIB_INSTALL_EXTRA_CMD='$$(RANLIB) "$(LIBDIR)/$(LIBNAME)"'  #注意这里有个空格
+			SLIB_INSTALL_NAME='$(SLIBNAME_WITH_MAJOR)'
+			SLIB_INSTALL_LINKS='$(SLIBNAME)'
+
+修改后再编译：
+执行脚本，编译.so动态库（不演示了->耗时）
+		Dream$ ./build-ffmpeg-armeabi.sh
+		
+		
+
+
+
+03-FFmpeg-编译动态库-执行脚本
+注意二：找不到目录		https://www.jianshu.com/p/3fb7419f1a96
+./configure \  # No such file or directory  这里的\去掉，该命令并成一行
+
+04-FFmpeg-编译动态库-集成使用
+
+在android studio中
+切换项目模式为andrion：在gradle scripts ／bulid.gradle  中修改系统最小支持的版本号 minSdkVersion 14
+集成可看前面的，android版本的后面去测试。
+
+
+05-FFmpeg-基础知识-视频播放流程
+封装格式数据： flv mp4 mkv
+解封装格工： 把flv mp4解封装后得到音频压缩数据 视频压缩数据
+音频压缩数据： aac,mp3
+视频压缩数据：  h.264,mpeg2
+音频解码：把acc,mp3解码得到音频采样数据
+视频解码：把h.264,mpeg2解码得到视频像素数据
+音频采样数据：pcm
+视频像素数据：yuv  一个2M的mp4视频解码成yuv大概会变成200M
+音视频同步：在设备上渲染同步播放pcm yuv
+
+
+06-FFmpeg-基础知识-视频播放器
+有两种模式下的播放器：
+1：可视化界面播放器：腾讯视频 qq视频 暴风影音 爱奇艺，用户直观可以操作的，简单，是对非可视化的封装
+2：非可视化界面播放器：如ffmpeg中有一个ffplay播放器，音视频框架内置的播放器  其它的vlc mplayer播放器，是命令操作的，用户看不懂
+
+
+07-FFmpeg-基础知识-视频播放器信息查看工具
+	查看整个视频信息：MediaInfo工具帮助我们查看视频完整信息
+		音视频二进制查看信息：直接查看视频二进制数据（0101010）->UItraEdit
+		视频单项信息
+			封装格式信息工具->Elecard Format Analyzer
+			视频编码信息工具->Elecard Stream Eye
+			视频像素信息工具->YUVPlayer 查看yuv格式的信息工具
+			音频采样数据工具->Adobe Audition  查看pcm格式的信息工具
+
+
+08-FFmpeg-基础知识-封装格式
+		1、封装格式：mp4、mov、flv、wmv等等…
+		2、封装格式作用？
+			视频流+音频流按照格式进行存储在一个文件中
+		
+		3、MPEG2-TS格式，是视频压缩数据槿式
+			视频压缩数据格式：MPEG2-TS
+			特定：数据排版，不包含头文件，数据大小固定（188byte）的TS-Packet  每处理一次都会发送一个这样大小的数据包
+		4、FLV格式？
+			优势：由于它形成的文件极小、加载速度极快，使得网络观看视频文件成为可能，它的出现有效地解决了视频文件导入Flash后，使导出的SWF文件体积庞大，不能在网络上很好的使用等问题。
+ 
+			文件结构：FLV是一个二进制文件，由文件头（FLV header）和很多tag组成。tag又可以分成三类：audio,video,script，分别代表音频流，视频流，脚本流（关键字或者文件信息之类字幕，弹幕等）。
+			FLV文件=FLV头文件+ tag1+tag内容1 + tag2+tag内容2 + ...+... + tagN+tag内容N。
+			FLV头文件:(9字节)
+			1-3： 前3个字节是文件格式标识(FLV 0x46 0x4C 0x56). 格式
+			4-4： 第4个字节是版本（0x01） 版本
+			5-5： 第5个字节的前5个bit是保留的必须是0. 预留
+			6-9: 第6-9的四个字节还是保留的.其数据为 00000009 .
+			整个文件头的长度，一般是9（3+1+1+4）
+			
+			
+09-FFmpeg-基础知识-视频编码数据了解
+
+		1、视频编码作用？
+				将视频像素数据（YUV、RGB）进行压缩成为视频码流H.264，从而降低视频数据量。（减小内存暂用）
+			
+			2、视频编码格式有哪些？
+				hevc(h.265)  推出机构：mpeg/itu-t
+				h.264  推出机构：mpeg/itu-t
+				mpeg4   推出机构：mpeg
+				mpeg2   推出机构：mpeg
+				vp9    推出机构：google
+				vp8    推出机构：google
+				vc-1   推出机构：microsoft inc
+			3、H.264视频压缩数据格式？
+				非常复杂算法->压缩->占用内存那么少？（例如：帧间预测、帧内预测…）->提高压缩性能
+
+10-FFmpeg-基础知识-音频编码数据了解
+
+1、音频编码作用？
+			将音频采样数据（PCM格式）进行压缩成为音频码流，从而降低音频数据量。（减小内存暂用）
+			2、音频编码格式有哪些？
+				AAC   MPEG
+				AC-3  Dolby Inc
+				MP3   MPEG
+				WMA   Microsoft Inc
+			3、AAC格式,编解码比mp3快  音频文件更小
+				AAC，全称Advanced Audio Coding，是一种专为声音数据设计的文件压缩格式。与MP3不同，它采用了全新的算法进行编码，更加高效，具有更高的“性价比”。利用AAC格式，可使人感觉声音质量没有明显降低的前提下，更加小巧。苹果ipod、诺基亚手机支持AAC格式的音频文件。
+				优点：相对于mp3，AAC格式的音质更佳，文件更小。
+				不足：AAC属于有损压缩的格式，与时下流行的APE、FLAC等无损格式相比音质存在“本质上”的差距。加之，传输速度更快的USB3.0和16G以上大容量MP3正在加速普及，也使得AAC头上“小巧”的光环不复存在。
+				①提升的压缩率：可以以更小的文件大小获得更高的音质；
+				②支持多声道：可提供最多48个全音域声道；
+				③更高的解析度：最高支持96KHz的采样频率；
+				④提升的解码效率：解码播放所占的资源更少；
+
+
+
+11-FFmpeg-基础知识-视频像素数据格式
+			1、作用？
+				保存了屏幕上面每一个像素点的值
+			2、视频像素数据格式种类？
+				常见格式：RGB24、RGB32、YUV420P、YUV422P、YUV444P等等…一般最常见：YUV420P
+			3、视频像素数据文件大小计算？
+				例如：RGB24高清视频体积？（1个小时时长）
+				体积：3600（秒） * 25（帧率） * 1920（屏幕尺寸） * 1080（屏幕尺寸） * 3 = 559GB（非常大）
+				假设：帧率25HZ，采样精度8bit，3个字节
+			4、YUV播放器
+				人类：对色度不敏感，对亮度敏感 
+				Y表示：亮度
+				UV表示：色度
+				
+				
+12-FFmpeg-基础知识-音频采用数据格式
+1、作用？
+				保存了音频中的每一个采样点值
+			2、音频采样数据文件大小计算？
+				例如：1分钟PCM格式歌曲
+				体积：60（秒） * 44100（采样率赫兹） * 2（双声道左右声道） * 2（采样精度） = 11MB
+				分析：60表示时间，44100表示采样率（一般情况下，都是这个采样率，人的耳朵能够分辨的声音），2表示声道数量，2表示采样精度16位 = 2字节 
+			3、音频采样数据查看工具
+				Adobe Audition
+			4、PCM格式？
+				存储顺序
+				单声道 L L L L 或R R R R
+				双声道 L R L R
+				
+				
+13-FFmpeg-基础知识-命令行工具使用
+     FFMPEG是核心加插件的设计方式，它的核心库avcodec编解码库
+     
+     -h  帮助
+     -t duration 设置处理时间，格式为hh:mm:ss   截取多少秒
+     -ss position 设置起始时间，格式为hh:mm:ss  截取视频起始多少秒开始
+     -b:v bitrate 设置视频码率
+     -b:a bitrate 设置音频码率
+     -r fps 设置帧率
+     -s wxh 设置帧大小，格式为WxH
+     -c:v codec 设置视频编码器
+     -c:a codec 设置音频编码器
+     -ar freq 设置音频采样率
+     
+     注意：再转视频时，视频码率和音频码率应该等比例缩小，如同时除以二，保证音视频同步
+			1、ffmpeg.exe（视频压缩->转码来完成）
+				作用：用于对视频进行转码
+				将mp4->mov，mov->mp4，wmv->mp4等等…
+				命令格式：ffmpeg -i {指定输入文件路径} -b:v {输出视频码率} {输出文件路径}
+				测试运行：将Test.mov转成Test.mp4
+				./ffmpeg -i（执行） Test.mov（不指定目录则表示当前目录） -b:v 368（输出视频码率）  -b:a 222（音频码率）  Test.mp4
+				
+		        截取视频：./ffmpeg -i（执行） Test.mov（当前目录） -ss
+				参数解析：
+				-vcodec copy表示使用跟原视频一样的视频编解码器。
+
+				-acodec copy表示使用跟原视频一样的音频编解码器。
+
+				-i 表示源视频文件
+
+				-y 表示如果输出文件已存在则覆盖。
+				ffmpeg  -i D:/2018-08-16-14_20.avi -vcodec copy -acodec copy -ss 00:00:10 -to 00:00:15 D:/out1.mp4 -y
+			2、ffplay.exe
+				作用：播放视频
+				格式：ffplay {文件路径}
+				例如：./ffplay Test.mov
+				
+				
+				
+	摘自网络：https://blog.csdn.net/lipengshiwo/article/details/79252028
+	  强大的FFmpeg，能够实现视频采集、视频格式转化、视频截图、视频添加水印、视频切片、视频录制、视频推流、更改音视频参数功能等。
+	  平常会直接用到一些主要的功能命令，所以下述先列举功能命令，再整体的列举搜集的命令中的参数的解释说明
+	  第一组
+
+1.分离视频音频流
+
+ffmpeg -i input_file -vcodec copy -an output_file_video　　//分离视频流ffmpeg -i input_file -acodec copy -vn output_file_audio　　//分离音频流
+
+2.视频解复用
+
+ffmpeg –i test.mp4 –vcodec copy –an –f m4v test.264
+
+ffmpeg –i test.avi –vcodec copy –an –f m4v test.264
+
+3.视频转码
+
+ffmpeg –i test.mp4 –vcodec h264 –s 352*278 –an –f m4v test.264
+
+//转码为码流原始文件
+
+ffmpeg –i test.mp4 –vcodec h264 –bf 0 –g 25 –s 352*278 –an –f m4v test.264 //转码为码流原始文件
+
+ffmpeg –i test.avi -vcodec mpeg4 –vtag xvid –qsame test_xvid.avi //转码为封装文件
+
+说明：-bf B帧数目控制，-g 关键帧间隔控制，-s 分辨率控制
+
+4.视频封装
+
+ffmpeg –i video_file –i audio_file –vcodec copy –acodec copy output_file
+
+5.视频剪切
+
+ffmpeg –i test.avi –r 1 –f image2 image-%3d.jpeg //提取图片
+
+ffmpeg -ss 0:1:30 -t 0:0:20 -i input.avi -vcodec copy -acodec copy output.avi //剪切视频//-r 提取图像的频率，-ss 开始时间，-t 持续时间
+
+6.视频录制
+
+ffmpeg –i rtsp://192.168.3.205:5555/test –vcodec copy out.avi
+
+7、利用ffmpeg视频切片
+
+主要把视频源切成若干个.ts格式的视频片段然后生成一个.m3u8的切片文件索引提供给html5的video做hls直播源
+
+命令如下：
+
+ffmpeg -i 视频源地址 -strict -2 -c:v libx264 -c:a aac -f hls m3u8文件输出地址
+
+8、ffmpeg缩放视频
+
+假设原始视频尺寸是 1080p（即 1920×1080 px，16:9），使用下面命令可以缩小到 480p：
+
+命令如下：
+
+ffmpeg -i 视频源地址 -vf scale=853:480 -acodec aac -vcodec h264 视频输出地址（如：out.mp4）
+
+各个参数的含义：-i a.mov 指定待处理视频的文件名-vf scale=853:480 vf 参数用于指定视频滤镜，其中 scale 表示缩放，后面的数字表示缩放至 853×480 px，其中的 853px 是计算而得，因为原始视频的宽高比为 16:9，所以为了让目标视频的高度为 480px，则宽度 = 480 x 9 / 16 = 853-acodec aac 指定音频使用 aac 编码。注：因为 ffmpeg 的内置 aac 编码目前（写这篇文章时）还是试验阶段，故会提示添加参数 “-strict -2” 才能继续，尽管添加即可。又或者使用外部的 libfaac（需要重新编译 ffmpeg）。-vcodec h264 指定视频使用 h264 编码。注：目前手机一般视频拍摄的格式（封装格式、文件格式）为 mov 或者 mp4，这两者的音频编码都是 aac，视频都是 h264。out.mp4 指定输出文件名上面的参数 scale=853:480 当中的宽度和高度实际应用场景中通常只需指定一个，比如指定高度为 480 或者 720，至于宽度则可以传入 “-1” 表示由原始视频的宽高比自动计算而得。即参数可以写为：scale=-1:480，当然也可以 scale=480:-1
+
+9、ffmpeg裁剪
+
+有时可能只需要视频的正中一块，而两头的内容不需要，这时可以对视频进行裁剪（crop），比如有一个竖向的视频 1080 x 1920，如果指向保留中间 1080×1080 部分命令如下：ffmpeg -i 视频源地址 -strict -2 -vf crop=1080:1080:0:420 视频输出地址（如：out.mp4）
+
+其中的 crop=1080:1080:0:420 才裁剪参数，具体含义是 crop=width:height:x:y，其中 width 和 height 表示裁剪后的尺寸，x:y 表示裁剪区域的左上角坐标。比如当前这个示例，我们只需要保留竖向视频的中间部分，所以 x 不用偏移，故传入0，而 y 则需要向下偏移：(1920 – 1080) / 2 = 420
+
+10. 转视频格式
+
+ffmpeng -i source.mp4 -c:v libx264 -crf 24 destination.flv
+
+其中 -crf 很重要，是控制转码后视频的质量，质量越高，文件也就越大。
+
+此值的范围是 0 到 51：0 表示高清无损；23 是默认值（如果没有指定此参数）；51 虽然文件最小，但效果是最差的。
+
+值越小，质量越高，但文件也越大，建议的值范围是 18 到 28。而值 18 是视觉上看起来无损或接近无损的，当然不代表是数据（技术上）的转码无损。
+
+
+
+
+
+第二组
+
+1.ffmpeg 把文件当做直播推送至服务器 (RTMP + FLV)
+
+ffmpeg - re -i demo.mp4 -c copy - f flv rtmp://w.gslb.letv/live/streamid
+
+2.将直播的媒体保存到本地
+
+ffmpeg -i rtmp://r.glsb.letv/live/streamid -c copy streamfile.flv
+
+3.将一个直播流，视频改用h264压缩，音频改用faac压缩，送至另一个直播服务器
+
+ffmpeg -i rtmp://r.glsb.letv/live/streamidA -c:a libfaac -ar 44100 -ab 48k -c:v libx264 -vpre slow -vpre baseline -f flv rtmp://w.glsb.letv/live/streamb
+
+4.提取视频中的音频,并保存为mp3 然后输出
+
+ffmpeg -i input.avi -b:a 128k output.mp3
+
+
+
+
+
+第三组
+
+1.获取视频的信息
+
+ffmpeg -i video.avi
+
+2.将图片序列合成视频
+
+ffmpeg -f image2 -i image%d.jpg video.mpg
+
+上面的命令会把当前目录下的图片（名字如：image1.jpg. image2.jpg. 等...）合并成video.mpg
+
+3.将视频分解成图片序列
+
+ffmpeg -i video.mpg image%d.jpg
+
+上面的命令会生成image1.jpg. image2.jpg. ...
+
+支持的图片格式有：PGM. PPM. PAM. PGMYUV. JPEG. GIF. PNG. TIFF. SGI
+
+4.为视频重新编码以适合在iPod/iPhone上播放
+
+ffmpeg -i source_video.avi input -acodec aac -ab 128kb -vcodec mpeg4 -b 1200kb -mbd 2 -flags +4mv+trell -aic 2 -cmp 2 -subcmp 2 -s 320x180 -title X final_video.mp4
+
+5.为视频重新编码以适合在PSP上播放
+
+ffmpeg -i source_video.avi -b 300 -s 320x240 -vcodec xvid -ab 32 -ar 24000 -acodec aac final_video.mp4
+
+6.从视频抽出声音.并存为Mp3
+
+ffmpeg -i source_video.avi -vn -ar 44100 -ac 2 -ab 192 -f mp3 sound.mp3
+
+7.将wav文件转成Mp3
+
+ffmpeg -i son_origine.avi -vn -ar 44100 -ac 2 -ab 192 -f mp3 son_final.mp3
+
+8.将.avi视频转成.mpg
+
+ffmpeg -i video_origine.avi video_finale.mpg
+
+9.将.mpg转成.avi
+
+ffmpeg -i video_origine.mpg video_finale.avi
+
+10.将.avi转成gif动画（未压缩）
+
+ffmpeg -i video_origine.avi gif_anime.gif
+
+11.合成视频和音频
+
+ffmpeg -i son.wav -i video_origine.avi video_finale.mpg
+
+12.将.avi转成.flv
+
+ffmpeg -i video_origine.avi -ab 56 -ar 44100 -b 200 -r 15 -s 320x240 -f flv video_finale.flv
+
+13.将.avi转成dv
+
+ffmpeg -i video_origine.avi -s pal -r pal -aspect 4:3 -ar 48000 -ac 2 video_finale.dv
+
+或者：
+
+ffmpeg -i video_origine.avi -target pal-dv video_finale.dv
+
+14.将.avi压缩成divx
+
+ffmpeg -i video_origine.avi -s 320x240 -vcodec msmpeg4v2 video_finale.avi
+
+15.将Ogg Theora压缩成Mpeg dvd
+
+ffmpeg -i film_sortie_cinelerra.ogm -s 720x576 -vcodec mpeg2video -acodec mp3 film_terminate.mpg
+
+16.将.avi压缩成SVCD mpeg2
+
+NTSC格式：
+
+ffmpeg -i video_origine.avi -target ntsc-svcd video_finale.mpg
+
+PAL格式：
+
+ffmpeg -i video_origine.avi -target pal-dvcd video_finale.mpg
+
+17.将.avi压缩成VCD mpeg2
+
+NTSC格式：
+
+ffmpeg -i video_origine.avi -target ntsc-vcd video_finale.mpg
+
+PAL格式：
+
+ffmpeg -i video_origine.avi -target pal-vcd video_finale.mpg
+
+18.多通道编码
+
+ffmpeg -i fichierentree -pass 2 -passlogfile ffmpeg2pass fichiersortie-2
+
+19.从flv提取mp3
+
+ffmpeg -i source.flv -ab 128k dest.mp3
+
+
+
+
+
+第四组
+
+1、将文件当做直播送至live
+
+ffmpeg -re -i localFile.mp4 -c copy -f flv rtmp://server/live/streamName
+
+2、将直播媒体保存至本地文件
+
+ffmpeg -i rtmp://server/live/streamName -c copy dump.flv
+
+3、将其中一个直播流，视频改用h264压缩，音频不变，送至另外一个直播服务流
+
+ffmpeg -i rtmp://server/live/originalStream -c:a copy -c:v libx264 -vpre slow -f flv rtmp://server/live/h264Stream
+
+4、将其中一个直播流，视频改用h264压缩，音频改用faac压缩，送至另外一个直播服务流
+
+ffmpeg -i rtmp://server/live/originalStream -c:a libfaac -ar 44100 -ab 48k -c:v libx264 -vpre slow -vpre baseline -f flv rtmp://server/live/h264Stream
+
+5、将其中一个直播流，视频不变，音频改用faac压缩，送至另外一个直播服务流
+
+ffmpeg -i rtmp://server/live/originalStream -acodec libfaac -ar 44100 -ab 48k -vcodec copy -f flv rtmp://server/live/h264_AAC_Stream
+
+6、将一个高清流，复制为几个不同视频清晰度的流重新发布，其中音频不变
+
+ffmpeg -re -i rtmp://server/live/high_FMLE_stream -acodec copy -vcodec x264lib -s 640×360 -b 500k -vpre medium -vpre baseline rtmp://server/live/baseline_500k -acodec copy -vcodec x264lib -s 480×272 -b 300k -vpre medium -vpre baseline rtmp://server/live/baseline_300k -acodec copy -vcodec x264lib -s 320×200 -b 150k -vpre medium -vpre baseline rtmp://server/live/baseline_150k -acodec libfaac -vn -ab 48k rtmp://server/live/audio_only_AAC_48k
+
+7、功能一样，只是采用-x264opts选项
+
+ffmpeg -re -i rtmp://server/live/high_FMLE_stream -c:a copy -c:v x264lib -s 640×360 -x264opts bitrate=500:profile=baseline:preset=slow rtmp://server/live/baseline_500k -c:a copy -c:v x264lib -s 480×272 -x264opts bitrate=300:profile=baseline:preset=slow rtmp://server/live/baseline_300k -c:a copy -c:v x264lib -s 320×200 -x264opts bitrate=150:profile=baseline:preset=slow rtmp://server/live/baseline_150k -c:a libfaac -vn -b:a 48k rtmp://server/live/audio_only_AAC_48k
+
+8、将当前摄像头及音频通过DSSHOW采集，视频h264、音频faac压缩后发布
+
+ffmpeg -r 25 -f dshow -s 640×480 -i video=”video source name”:audio=”audio source name” -vcodec libx264 -b 600k -vpre slow -acodec libfaac -ab 128k -f flv rtmp://server/application/stream_name
+
+9、将一个JPG图片经过h264压缩循环输出为mp4视频
+
+ffmpeg.exe -i INPUT.jpg -an -vcodec libx264 -coder 1 -flags +loop -cmp +chroma -subq 10 -qcomp 0.6 -qmin 10 -qmax 51 -qdiff 4 -flags2 +dct8x8 -trellis 2 -partitions +parti8x8+parti4x4 -crf 24 -threads 0 -r 25 -g 25 -y OUTPUT.mp4
+
+10、将普通流视频改用h264压缩，音频不变，送至高清流服务(新版本FMS live=1)
+
+ffmpeg -i rtmp://server/live/originalStream -c:a copy -c:v libx264 -vpre slow -f flv “rtmp://server/live/h264Stream live=1〃
+
+参数及解释
+
+  
+a) 通用选项
+
+-L license
+-h 帮助
+-fromats 显示可用的格式，编解码的，协议的...
+-f fmt 强迫采用格式fmt
+-I filename 输入文件
+-y 覆盖输出文件
+-t duration 设置纪录时间 hh:mm:ss[.xxx]格式的记录时间也支持
+-ss position 搜索到指定的时间 [-]hh:mm:ss[.xxx]的格式也支持
+-title string 设置标题
+-author string 设置作者
+-copyright string 设置版权
+-comment string 设置评论
+-target type 设置目标文件类型(vcd,svcd,dvd) 所有的格式选项（比特率，编解码以及缓冲区大小）自动设置，只需要输入如下的就可以了：ffmpeg -i myfile.avi -target vcd /tmp/vcd.mpg
+-hq 激活高质量设置
+-itsoffset offset 设置以秒为基准的时间偏移，该选项影响所有后面的输入文件。该偏移被加到输入文件的时戳，定义一个正偏移意味着相应的流被延迟了 offset秒。 [-]hh:mm:ss[.xxx]的格式也支持
+
+
+b) 视频选项
+
+-b bitrate 设置比特率，缺省200kb/s
+-r fps 设置帧频 缺省25
+-s size 设置帧大小 格式为WXH 缺省160X128.下面的简写也可以直接使用：
+Sqcif 128X96 qcif 176X144 cif 252X288 4cif 704X576
+-aspect aspect 设置横纵比 4:3 16:9 或 1.3333 1.7777
+-croptop size 设置顶部切除带大小 像素单位
+-cropbottom size –cropleft size –cropright size
+-padtop size 设置顶部补齐的大小 像素单位
+-padbottom size –padleft size –padright size –padcolor color 设置补齐条颜色(hex,6个16进制的数，红:绿:兰排列，比如 000000代表黑色)
+-vn 不做视频记录
+-bt tolerance 设置视频码率容忍度kbit/s
+-maxrate bitrate设置最大视频码率容忍度
+-minrate bitreate 设置最小视频码率容忍度
+-bufsize size 设置码率控制缓冲区大小
+-vcodec codec 强制使用codec编解码方式。如果用copy表示原始编解码数据必须被拷贝。
+-sameq 使用同样视频质量作为源（VBR）
+-pass n 选择处理遍数（1或者2）。两遍编码非常有用。第一遍生成统计信息，第二遍生成精确的请求的码率
+-passlogfile file 选择两遍的纪录文件名为file
+
+
+c)高级视频选项
+
+-g gop_size 设置图像组大小
+-intra 仅适用帧内编码
+-qscale q 使用固定的视频量化标度(VBR)
+-qmin q 最小视频量化标度(VBR)
+-qmax q 最大视频量化标度(VBR)
+-qdiff q 量化标度间最大偏差 (VBR)
+-qblur blur 视频量化标度柔化(VBR)
+-qcomp compression 视频量化标度压缩(VBR)
+-rc_init_cplx complexity 一遍编码的初始复杂度
+-b_qfactor factor 在p和b帧间的qp因子
+-i_qfactor factor 在p和i帧间的qp因子
+-b_qoffset offset 在p和b帧间的qp偏差
+-i_qoffset offset 在p和i帧间的qp偏差
+-rc_eq equation 设置码率控制方程 默认tex^qComp
+-rc_override override 特定间隔下的速率控制重载
+-me method 设置运动估计的方法 可用方法有 zero phods log x1 epzs(缺省) full
+-dct_algo algo 设置dct的算法 可用的有 0 FF_DCT_AUTO 缺省的DCT 1 FF_DCT_FASTINT 2 FF_DCT_INT 3 FF_DCT_MMX 4 FF_DCT_MLIB 5 FF_DCT_ALTIVEC
+-idct_algo algo 设置idct算法。可用的有 0 FF_IDCT_AUTO 缺省的IDCT 1 FF_IDCT_INT 2 FF_IDCT_SIMPLE 3 FF_IDCT_SIMPLEMMX 4 FF_IDCT_LIBMPEG2MMX 5 FF_IDCT_PS2 6 FF_IDCT_MLIB 7 FF_IDCT_ARM 8 FF_IDCT_ALTIVEC 9 FF_IDCT_SH4 10 FF_IDCT_SIMPLEARM
+-er n 设置错误残留为n 1 FF_ER_CAREFULL 缺省 2 FF_ER_COMPLIANT 3 FF_ER_AGGRESSIVE 4 FF_ER_VERY_AGGRESSIVE
+-ec bit_mask 设置错误掩蔽为bit_mask,该值为如下值的位掩码 1 FF_EC_GUESS_MVS (default=enabled) 2 FF_EC_DEBLOCK (default=enabled)
+-bf frames 使用frames B 帧，支持mpeg1,mpeg2,mpeg4
+-mbd mode 宏块决策 0 FF_MB_DECISION_SIMPLE 使用mb_cmp 1 FF_MB_DECISION_BITS 2 FF_MB_DECISION_RD
+-4mv 使用4个运动矢量 仅用于mpeg4
+-part 使用数据划分 仅用于mpeg4
+-bug param 绕过没有被自动监测到编码器的问题
+-strict strictness 跟标准的严格性
+-aic 使能高级帧内编码 h263+
+-umv 使能无限运动矢量 h263+
+-deinterlace 不采用交织方法
+-interlace 强迫交织法编码仅对mpeg2和mpeg4有效。当你的输入是交织的并且你想要保持交织以最小图像损失的时候采用该选项。可选的方法是不交织，但是损失更大
+-psnr 计算压缩帧的psnr
+-vstats 输出视频编码统计到vstats_hhmmss.log
+-vhook module 插入视频处理模块 module 包括了模块名和参数，用空格分开
+
+
+d)音频选项
+
+-ab bitrate 设置音频码率
+-ar freq 设置音频采样率
+-ac channels 设置通道 缺省为1
+-an 不使能音频纪录
+-acodec codec 使用codec编解码
+
+
+e)音频/视频捕获选项
+
+-vd device 设置视频捕获设备。比如/dev/video0
+-vc channel 设置视频捕获通道 DV1394专用
+-tvstd standard 设置电视标准 NTSC PAL(SECAM)
+-dv1394 设置DV1394捕获
+-av device 设置音频设备 比如/dev/dsp
+
+
+f)高级选项
+
+-map file:stream 设置输入流映射
+-debug 打印特定调试信息
+-benchmark 为基准测试加入时间
+-hex 倾倒每一个输入包
+-bitexact 仅使用位精确算法 用于编解码测试
+-ps size 设置包大小，以bits为单位
+-re 以本地帧频读数据，主要用于模拟捕获设备
+-loop 循环输入流（只工作于图像流，用于ffserver测试）
+
+
+
+
