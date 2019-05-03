@@ -5164,3 +5164,560 @@ f)高级选项
 
 
 
+第11次课-FFmepg-第4讲-视频解码
+
+01-FFmpeg-视频解码-流程分析
+内容一：FFmpeg-命令行补充？
+	案例：视频，转为高质量 GIF 动图？
+	命令：./ffmpeg -ss 00:00:03 -t 3 -i Test.mov -s 640x360 -r “15” dongtu.gif
+	解释：
+		1、ffmpeg 是你刚才安装的程序；
+
+		2、-ss 00:00:03 表示从第 00 分钟 03 秒开始制作 GIF，如果你想从第 9 秒开始，则输入 -ss 00:00:09，或者 -ss 9，
+		支持小数点，所以也可以输入 -ss 00:00:11.3，或者 -ss 34.6 之类的，如果不加该命令，则从 0 秒开始制作；
+
+		3、-t 3 表示把持续 3 秒的视频转换为 GIF，你可以把它改为其他数字，例如 1.5，7 等等，时间越长，GIF 体积越大，
+		如果不加该命令，则把整个视频转为 GIF；
+
+		4、-i 表示 invert 的意思吧，转换；
+
+		5、Test.mov 就是你要转换的视频，名称最好不要有中文，不要留空格，支持多种视频格式；
+
+		6、-s 640x360 是 GIF 的分辨率，视频分辨率可能是 1080p，但你制作的 GIF 可以转为 720p 等，允许自定义，
+		分辨率越高体积越大，如果不加该命令，则保持分辨率不变；
+
+		7、-r “15” 表示帧率，网上下载的视频帧率通常为 24，设为 15 效果挺好了，帧率越高体积越大，如果不加该命令，则保持帧率不变；
+
+		8、dongtu.gif：就是你要输出的文件，你也可以把它命名为 hello.gif 等等。
+		
+将音视频解码在Android平台进行实现：
+
+第一步：组册组件
+			av_register_all()
+编码器，解码器都属于组件 ，这里注册表示支持哪些组件
+
+第二步：打开封装格式，其实就是去打开视频文件
+            avformat_open_input();
+			例如：.mp4、.mov、.wmv文件等等...
+			
+			
+第三步：查找视频流
+	如果是视频解码，那么查找视频流，如果是音频解码，那么就查找音频流
+	avformat_find_stream_info();
+
+		第四步：查找视频解码器
+			1、查找视频流索引位置
+			2、根据视频流索引，获取解码器上下文,即解码器信息
+			3、根据解码器上下文，获得解码器ID，然后查找解码器
+			
+第五步：打开解码器
+			avcodec_open2();
+
+第六步：读取视频压缩数据->循环读取
+	每读取一帧数据，立马解码一帧数据 得到yuv视频相素数据
+
+第七步：视频解码->得到视频像素数据->播放视频->
+
+第八步：关闭解码器->解码完成
+
+
+
+
+02-FFmpeg-视频解码-打开解码器
+  1 下载android studio 3.4
+  2 新建项目，选native c++
+  3 选android模式，Gradle Scripts/build.gradle(Module:app)打开
+    版本改成minSdkVersion 14
+    bulid.grade：
+		是配置版本信息，引用库，以及编译所需的配置
+		compileSdkVersion 21，说明要运行该源码，你必选已经安装了android API 21。
+		buildToolsVersion 21.1.2 说明要运行该源码，你必须已经安装了 android sdk build-tools 21.1.2。
+		minSdkVerison 表示向下低至android API 14，即androd 4.0和4.0以上的版本都可以运行该工程。
+		targetSdkVerision 表示采用的目标android API是 API 21即 android 5.0
+  4 导入动态库
+  切换到project模式，copy动态库.so 和include文件到src/man下面
+  5 修改CMakeLists.txt内容
+  查看CMakeLists.txt路径：
+  选android模式，Gradle Scripts/build.gradle(Module:app)打开
+   externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.10.2"
+        }
+    }
+  打开CMakeLists.txt
+  添加如下代码：
+			  # FFMpeg配置
+			# FFmpeg配置目录
+			set(distribution_DIR ${CMAKE_SOURCE_DIR}/../../../../src/main/jniLibs)
+
+			# 编解码(最重要的库)
+			add_library(
+					avcodec
+					SHARED
+					IMPORTED)
+			set_target_properties(
+					avcodec
+					PROPERTIES IMPORTED_LOCATION
+					../../../../src/main/jniLibs/armeabi/libavcodec.so)
+
+
+			# 设备
+			add_library(
+					avdevice
+					SHARED
+					IMPORTED)
+			set_target_properties(
+					avdevice
+					PROPERTIES IMPORTED_LOCATION
+					../../../../src/main/jniLibs/armeabi/libavdevice.so)
+
+
+			# 滤镜特效处理库
+			add_library(
+					avfilter
+					SHARED
+					IMPORTED)
+			set_target_properties(
+					avfilter
+					PROPERTIES IMPORTED_LOCATION
+					../../../../src/main/jniLibs/armeabi/libavfilter.so)
+
+			# 封装格式处理库
+			add_library(
+					avformat
+					SHARED
+					IMPORTED)
+			set_target_properties(
+					avformat
+					PROPERTIES IMPORTED_LOCATION
+					../../../../src/main/jniLibs/armeabi/libavformat.so)
+
+			# 工具库(大部分库都需要这个库的支持)
+			add_library(
+					avutil
+					SHARED
+					IMPORTED)
+			set_target_properties(
+					avutil
+					PROPERTIES IMPORTED_LOCATION
+					../../../../src/main/jniLibs/armeabi/libavutil.so)
+
+			add_library(
+					postproc
+					SHARED
+					IMPORTED)
+			set_target_properties(
+					postproc
+					PROPERTIES IMPORTED_LOCATION
+					../../../../src/main/jniLibs/armeabi/libpostproc.so)
+
+			# 音频采样数据格式转换库
+			add_library(
+					swresample
+					SHARED
+					IMPORTED)
+			set_target_properties(
+					swresample
+					PROPERTIES IMPORTED_LOCATION
+					../../../../src/main/jniLibs/armeabi/libswresample.so)
+
+			# 视频像素数据格式转换
+			add_library(
+					swscale
+					SHARED
+					IMPORTED)
+			set_target_properties(
+					swscale
+					PROPERTIES IMPORTED_LOCATION
+					../../../../src/main/jniLibs/armeabi/libswscale.so)
+
+
+			#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+			#判断编译器类型,如果是gcc编译器,则在编译选项中加入c++11支持
+			if(CMAKE_COMPILER_IS_GNUCXX)
+				set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+				message(STATUS "optional:-std=c++11")
+			endif(CMAKE_COMPILER_IS_GNUCXX)
+
+
+			#配置编译的头文件
+			include_directories(src/main/jniLibs/include)
+		
+			#链接动态库
+			target_link_libraries( # Specifies the target library.
+								   native-lib avcodec avdevice avfilter avformat avutil postproc swresample swscale
+
+								   # Links the target library to the log library
+								   # included in the NDK.
+								   ${log-lib} )
+							   
+		6.配置采用的cpu架构类型
+		选android模式，Gradle Scripts/build.gradle(Module:app)打开
+		修改：
+		externalNativeBuild {
+            cmake {
+                cppFlags ""
+            }
+        }
+        改后
+        externalNativeBuild {
+            cmake {
+                cppFlags "-frtti -fexceptions"
+                abiFilters 'armeabi'
+            }
+        }
+        
+        7.加上sd卡打开读写权限相当于plist文件：
+			在AndroidMainfest.xml中
+			<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+			<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+        
+        8.在MainActivity.java中定义方法：
+				package com.example.admin.myapplication;
+
+				import android.support.v7.app.AppCompatActivity;
+				import android.os.Bundle;
+				import android.os.Environment;
+				import android.util.Log;
+				import java.io.File;
+				import java.io.IOException;
+
+				public class MainActivity extends AppCompatActivity {
+
+					// Used to load the 'native-lib' library on application startup.
+					static {
+						System.loadLibrary("native-lib");
+					}
+
+					@Override
+					protected void onCreate(Bundle savedInstanceState) {
+						super.onCreate(savedInstanceState);
+						setContentView(R.layout.activity_main);
+						String rootPath = Environment.getExternalStorageDirectory()
+								.getAbsolutePath();
+						String inFilePath = rootPath.concat("/DreamFFmpeg/Test.mov");
+						String outFilePath = rootPath.concat("/DreamFFmpeg/Test.yuv");
+
+						//输出文件不存在我创建一个文件
+						File file = new File(outFilePath);
+						if (file.exists()){
+							Log.i("日志：","存在");
+						}else {
+							try {
+								file.createNewFile();
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
+
+						ffmepgDecodeVideo(inFilePath, outFilePath);
+					}
+
+					public native void ffmepgDecodeVideo(String inFilePath, String outFilePath);
+				}
+
+        8 在native-lib.cpp中关联方法的实现
+				#include <jni.h>
+				#include <string>
+				#include <android/log.h>
+
+				extern "C" {
+				//核心库
+				#include "libavcodec/avcodec.h"
+				//封装格式处理库
+				#include "libavformat/avformat.h"
+				//工具库
+				#include "libavutil/imgutils.h"
+				//视频像素数据格式库
+				#include "libswscale/swscale.h"
+
+				//视频解码
+				JNIEXPORT void JNICALL Java_com_tz_dream_ffmpeg_decodevideo_MainActivity_ffmepgDecodeVideo(JNIEnv *env, jobject jobj,
+																										   jstring jinFilePath,
+																										   jstring joutFilePath);
+
+				}
+				JNIEXPORT void JNICALL Java_com_tz_dream_ffmpeg_decodevideo_MainActivity_ffmepgDecodeVideo(
+						JNIEnv *env,
+						jobject jobj, jstring jinFilePath, jstring joutFilePath) {
+
+					//第一步：组册组件
+					 av_register_all();
+					//第二步：打开封装格式->打开文件
+					//参数一：封装格式上下文
+					//作用：保存整个视频信息.mp4类型的(解码器、编码器等等...)
+					//信息：码率、帧率等...
+					AVFormatContext* avformat_context = avformat_alloc_context();
+					//参数二：视频路径
+					const char *url = env->GetStringUTFChars(jinFilePath, NULL);
+					//在我们iOS里面
+					//NSString* path = @"/user/dream/test.mov";
+					//const char *url = [path UTF8String]
+					//参数一：把输入的视频读入到了avformat_context地址中
+					//参数三：指定输入的格式
+					//参数四：设置默认参数 
+					int avformat_open_input_result = avformat_open_input(&avformat_context, url, NULL, NULL);
+					if (avformat_open_input_result != 0){
+						//安卓平台下log
+						__android_log_print(ANDROID_LOG_INFO, "main", "打开文件失败");
+						//iOS平台下log
+						//NSLog("打开文件失败");
+						//不同的平台替换不同平台log日志
+						return;
+					}
+
+					//第三步：查找视频流->拿到视频信息 找不到视频信息就return不执行下面的代码了
+					//avformat_find_stream_info_result变量在下面没有使用
+					//参数一：封装格式上下文
+					//参数二：指定默认配置
+					int avformat_find_stream_info_result = avformat_find_stream_info(avformat_context, NULL);
+					if (avformat_find_stream_info_result < 0){
+						__android_log_print(ANDROID_LOG_INFO, "main", "查找失败");
+						return;
+					}
+
+					//第四步：查找视频解码器
+					//1、查找视频流索引位置，视频封装上下文进行查找，如果找到video类型说明找到
+					int av_stream_index = -1;
+					for (int i = 0; i < avformat_context->nb_streams; ++i) {
+						//判断流类型：视频流、音频流、字幕流等等...
+						if (avformat_context->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO){
+							av_stream_index = i;
+							break;
+						}
+					}
+
+					//2、根据视频流索引av_stream_index，获取解码器上下文
+					AVCodecContext *avcodec_context = avformat_context->streams[av_stream_index]->codec;
+
+					//3、根据解码器上下文vcodec_context，解码器ID，然后查找解码器,因为解码器有很多种
+					AVCodec *avcodec = avcodec_find_decoder(avcodec_context->codec_id);
+
+
+					//第五步：打开解码器 拿到解码器后必须要打开
+					int avcodec_open2_result = avcodec_open2(avcodec_context, avcodec, NULL);
+					if (avcodec_open2_result != 0){
+						__android_log_print(ANDROID_LOG_INFO, "main", "打开解码器失败");
+						return;
+					}
+
+					//测试一下
+					//打印信息
+					__android_log_print(ANDROID_LOG_INFO, "main", "解码器名称：%s", avcodec->name);
+
+
+
+					//第六步：读取视频压缩数据->循环读取
+					//1、分析av_read_frame参数
+					//参数一：封装格式上下文
+					//参数二：一帧压缩数据 = 一张图片
+					//av_read_frame()
+					//结构体大小计算：字节对齐原则 创建一帧h264压缩数据
+					AVPacket* packet = (AVPacket*)av_malloc(sizeof(AVPacket));
+
+					//3.2 解码一帧视频压缩数据->进行解码(作用：用于解码操作)
+					//开辟一块内存空间
+					AVFrame* avframe_in = av_frame_alloc();
+					int decode_result = 0;
+
+
+					//4、注意：视频相素格式的上下文在这里我们不能够保证解码出来的一帧视频像素数据格式是yuv格式
+					//参数一：源文件->原始视频像素数据格式宽
+					//参数二：源文件->原始视频像素数据格式高
+					//参数三：源文件->原始视频像素数据格式类型
+					//参数四：目标文件->目标视频像素数据格式宽
+					//参数五：目标文件->目标视频像素数据格式高
+					//参数六：目标文件->目标视频像素数据格式类型
+					//参数七：字节对齐的方式
+					SwsContext *swscontext = sws_getContext(avcodec_context->width,
+															avcodec_context->height,
+															avcodec_context->pix_fmt,
+															avcodec_context->width,
+															avcodec_context->height,
+															AV_PIX_FMT_YUV420P,
+															SWS_BICUBIC,
+															NULL,
+															NULL,
+															NULL);
+
+					//创建一个yuv420视频像素数据格式缓冲区(一帧数据)
+					//往下的代码表示设置avframe_yuv420p 按yuv420p这种规则进行存储
+					AVFrame* avframe_yuv420p = av_frame_alloc();
+					//给缓冲区设置类型->yuv420类型
+					//得到YUV420P缓冲区大小
+					//参数一：视频像素数据格式类型->YUV420P格式
+					//参数二：一帧视频像素数据宽 = 视频宽
+					//参数三：一帧视频像素数据高 = 视频高
+					//参数四：字节对齐方式->默认是1
+					//返回缓冲区的大小
+					int buffer_size = av_image_get_buffer_size(AV_PIX_FMT_YUV420P,
+															   avcodec_context->width,
+															   avcodec_context->height,
+															   1);
+
+					//根据大小开辟一块内存空间
+					uint8_t *out_buffer = (uint8_t *)av_malloc(buffer_size);
+					//向avframe_yuv420p->填充数据  给avframe_yuv420p填充数据，
+					//实现了avframe_yuv420p里面保存yuv420p格式，就会以这种yuv420p的方式存储数据
+					//参数一：目标->填充数据(avframe_yuv420p)
+					//参数二：目标->每一行大小
+					//参数三：原始数据
+					//参数四：目标->格式类型
+					//参数五：一帧视频宽
+					//参数六：一帧视频高
+					//参数七：字节对齐方式
+					av_image_fill_arrays(avframe_yuv420p->data,
+										 avframe_yuv420p->linesize,
+										 out_buffer,
+										 AV_PIX_FMT_YUV420P,
+										 avcodec_context->width,
+										 avcodec_context->height,
+										 1);
+
+					int y_size, u_size, v_size;
+
+
+					//5.2 将yuv420p数据写入.yuv文件中
+					//打开写入文件
+					const char *outfile = env->GetStringUTFChars(joutFilePath, NULL);
+					FILE* file_yuv420p = fopen(outfile, "wb+");
+					if (file_yuv420p == NULL){
+						__android_log_print(ANDROID_LOG_INFO, "main", "输出文件打开失败");
+						return;
+					}
+
+					int current_index = 0;
+
+					while (av_read_frame(avformat_context, packet) >= 0){//每次读取一帧，每一个是封装视频上下文，每二个是一帧压缩数据h264	
+						//>=:读取到了
+						//<0:读取错误或者读取完毕
+						//2、是否是我们的视频流 av_stream_index 是之前的索引项
+						if (packet->stream_index == av_stream_index){
+							//第七步：解码
+							//学习一下C基础，结构体
+							//3、解码一帧压缩数据->得到视频像素数据->yuv格式
+							//采用新的API
+							//3.1 发送一帧视频压缩数据给解码器上下文
+							avcodec_send_packet(avcodec_context, packet);
+							//3.2 解码一帧视频压缩数据->进行解码(作用：用于解码操作)decode_result=0 表示解码成功
+							//解码出来的一帧数据放入到avframe_in中
+							decode_result = avcodec_receive_frame(avcodec_context, avframe_in);
+							if (decode_result == 0){
+								//解码成功
+								//4、注意：在这里我们不能够保证解码出来的一帧视频像素数据格式是yuv格式
+								//视频像素数据格式很多种类型: yuv420P、yuv422p、yuv444p等等...
+								//AVPixelFormat结构体中包含了很多种相素格式的视频
+								//保证：我的解码后的视频像素数据格式统一为yuv420P->通用的格式
+								//yuv420P一般是通用格式，为4:2:0P
+								//进行类型转换: 将解码出来的视频像素点数据格式->统一转类型为yuv420P
+								//sws_scale作用：进行类型转换的
+								//参数一：swscontext视频像素数据格式上下文
+								//参数二：原来的视频像素数据格式->输入数据
+								//参数三：原来的视频像素数据格式->输入画面每一行大小
+								//参数四：原来的视频像素数据格式->输入画面每一行开始位置(填写：0->表示从原点开始读取)
+								//参数五：原来的视频像素数据格式->输入数据行数
+								//参数六：转换类型后视频像素数据格式->输出数据
+								//参数七：转换类型后视频像素数据格式->输出画面每一行大小
+								// avframe_yuv420p这里是一帧yuv420p相素数据
+								//avframe_in一帧的数据转为yuv420p
+								sws_scale(swscontext,
+										  (const uint8_t *const *)avframe_in->data,
+										  avframe_in->linesize,
+										  0,
+										  avcodec_context->height,
+										  avframe_yuv420p->data,
+										  avframe_yuv420p->linesize);
+
+								//方式一：转换后的yuv数据直接显示视频上面去
+								//方式二：写入yuv文件格式
+								//5、将yuv420p数据写入.yuv文件中
+								//5.1 计算YUV大小
+								//分析一下原理?
+								//Y表示：亮度
+								//UV表示：色度
+								//有规律
+								//YUV420P格式规范一：Y结构表示一个像素(一个像素对应一个Y)
+								//YUV420P格式规范二：4个像素点对应一个(U和V: 4Y = U = V)
+								y_size = avcodec_context->width * avcodec_context->height;
+								u_size = y_size / 4;
+								v_size = y_size / 4;
+								//5.2 写入.yuv文件 yuv的存放是先存y再存u再存v
+								//file_yuv420p是要写入的文件类型file
+								//首先->Y数据 从第1个开始写y_size这么大
+								fwrite(avframe_yuv420p->data[0], 1, y_size, file_yuv420p);
+								//其次->U数据
+								fwrite(avframe_yuv420p->data[1], 1, u_size, file_yuv420p);
+								//再其次->V数据
+								fwrite(avframe_yuv420p->data[2], 1, v_size, file_yuv420p);
+
+								current_index++;
+								__android_log_print(ANDROID_LOG_INFO, "main", "当前解码第%d帧", current_index);
+							}
+
+						}
+					}
+
+					//第八步：释放内存资源，关闭解码器
+					av_packet_free(&packet); //一帧压缩数据释放内存
+					fclose(file_yuv420p);//存的视频文件
+					av_frame_free(&avframe_in);//输入的一帧
+					av_frame_free(&avframe_yuv420p);//输入的一帧转为相素数据
+					free(out_buffer);//释放输出内存
+					avcodec_close(avcodec_context);//关闭解闭器
+					avformat_free_context(avformat_context); //关闭视频封装格式解码器
+
+
+				}
+
+
+        
+        
+        
+        
+        
+        
+        
+        分析：
+        获取avformat_context
+        avformat_open_input_result   打开文件
+        avformat_find_stream_info_result 视频流通过avformat_context查找
+        av_stream_index 查找视频流索引  avformat_context->nb_streams遍历，如果等于vedio，则找到
+        avcodec_context 解码器上下文               通过avformat_context的流，索引得到
+        avcodec 解码器id得到解码器 通过解码器上下文获取->id获取
+         avcodec_open2(avcodec_context, avcodec, NULL)
+        AVPacket* packet 一帧的数据结构体
+        AVFrame* avframe_in 输入一帧
+        SwsContext *swscontext 转换视频的上下文参数设置 包括要输出的格式及宽高
+        AVFrame* avframe_yuv420p 输出一帧缓冲区
+        int buffer_size 得到yuv420p这种缓冲帧的数据大小
+        uint8_t *out_buffer 根据大小开辟一块内存空间
+        向avframe_yuv420p->填充数据   av_image_fill_arrays
+        定义     int y_size, u_size, v_size;
+        FILE* file_yuv420p = fopen(outfile, "wb+"); 打开输出文件
+        while (av_read_frame(avformat_context, packet) >= 0){  读avformat_context，里面包含了输入的视频文件
+        avcodec_send_packet(avcodec_context, packet); 发送一帧压缩数据
+        decode_result = avcodec_receive_frame(avcodec_context, avframe_in); 解码一帧压缩数据放到avframe_in中
+        sws_scale(swscontext, 把解码的这一帧avframe_in转为yuv420p
+        //YUV420P格式规范一：Y结构表示一个像素(一个像素对应一个Y)
+                //YUV420P格式规范二：4个像素点对应一个(U和V: 4Y = U = V)
+                y_size = avcodec_context->width * avcodec_context->height;
+                u_size = y_size / 4;
+                v_size = y_size / 4;
+         //5.2 写入.yuv文件到file_yuv420p
+		//首先->Y数据
+		fwrite(avframe_yuv420p->data[0], 1, y_size, file_yuv420p);
+		//其次->U数据
+		fwrite(avframe_yuv420p->data[1], 1, u_size, file_yuv420p);
+		//再其次->V数据
+		fwrite(avframe_yuv420p->data[2], 1, v_size, file_yuv420p);
+		
+		    //第八步：释放内存资源，关闭解码器
+		av_packet_free(&packet);
+		fclose(file_yuv420p);
+		av_frame_free(&avframe_in);
+		av_frame_free(&avframe_yuv420p);
+		free(out_buffer);
+		avcodec_close(avcodec_context);
+		avformat_free_context(avformat_context);
+        
