@@ -481,3 +481,61 @@ typedef  struct H264YUVDef
 
 #pragma pack(pop)
 #endif
+
+
+
+
+
+
+
+
+
+80-87  服务器rtmp 推流rtmp 播放rtmp流
+
+rtmp服务器搭建：
+	采用第三方软件，linux服务器上搭srs
+	https://github.com/ossrs/srs
+
+	推流一般推的是flv，flv是ffmpeg支持的格式
+
+推流rtmp：
+	shell窗口推流：.sh文件中写入ffmpeg推流代码，推流地址为rtmp://
+	iphone推流：采集视频h264，音频pcm，通过librtmp库组包成rtmp流或rtsp流，通过udp或tcp推流到rtmp服务器
+
+自己总结ios推流：
+	https://blog.csdn.net/dolacmeng/article/details/81268622
+	1：采集：
+		苹果的AVFoundation实现音视频采集
+		GPUImage第三方开源实现音视频采集，是对AVFoundation封装，还可以对图像进行美化、添加各种滤镜等。并把美化后的视频保存到手机
+	2：编码：
+		 硬编码：VideoToolBox和AudioToolBox两个框架进行硬编码
+		 软编码：使用CPU进行编码，通常使用开源的ffmpeg+x264
+
+	3：推流：
+		 lflivekit livevideocoresdk  实现了采集音视频 组包编码推流工作，这里用的lflivekit
+
+
+
+播放rtmp流：
+方式1：
+  接收rtmp
+  拆分flv
+  得到h264 (pps sps) aac
+  ffmpeg解码h.264成yuv
+  ffmpeg解码aac成pcm
+  opengl es显示yuv
+  openal播放pcm或audioqueue播放音频pcm
+  
+方式2：
+  接收rtmp
+  丢给ffmpeg自动分离音视频
+  得到h264 (pps sps) aac
+  ffmpeg解码h.264成yuv
+  ffmpeg解码aac成pcm
+  opengl es显示yuv
+  openal播放pcm或audioqueue播放音频pcm
+  
+自己总结ios播放流：
+  使用Bilibili开源的IJKPlayer,来实现RTMP协议下的视频播放 
+
+  

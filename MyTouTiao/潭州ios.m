@@ -5223,7 +5223,7 @@ f)高级选项
 
 
 
-02-FFmpeg-视频解码-打开解码器
+02-FFmpeg-视频解码-打开解码器 最终输出yuv格式视频，这里只是演示，实际情况中并不输出yuv，因为太大
   1 下载android studio 3.4
   2 新建项目，选native c++
   3 选android模式，Gradle Scripts/build.gradle(Module:app)打开
@@ -5720,4 +5720,313 @@ f)高级选项
 		free(out_buffer);
 		avcodec_close(avcodec_context);
 		avformat_free_context(avformat_context);
-        
+		
+		
+		
+第12次课-FFmepg-第5讲-移动端平台-音频解码
+      基本解码流程和视频解码流程一样
+      其实和我们视频解码流程是一致的（没有太大区别）->代码逻辑发送一些改变
+	第一步：组册组件
+		av_register_all();
+
+ 	第二步：打开封装格式->打开文件
+		avformat_open_input();
+
+	第三步：查找音频流->拿到音频信息
+		avformat_find_stream_info();
+
+	第四步：查找音频解码器
+		avcodec_find_decoder();
+
+	第五步：打开音频解码器
+		avcodec_open2();
+	
+	第六步：读取音频压缩数据->循环读取
+
+	第七步：音频解码
+
+	第八步：释放内存资源，关闭音频解码器
+
+      配置方面不再重述，主要记录下面两个文件：
+      MainActivity.java
+		  package com.tz.dream.ffmpeg.audio.decode;
+
+			import android.os.Bundle;
+			import android.os.Environment;
+			import android.support.v7.app.AppCompatActivity;
+			import android.util.Log;
+
+			import java.io.File;
+			import java.io.IOException;
+
+			public class MainActivity extends AppCompatActivity {
+
+				static {
+					System.loadLibrary("native-lib");
+				}
+
+				@Override
+				protected void onCreate(Bundle savedInstanceState) {
+					super.onCreate(savedInstanceState);
+					setContentView(R.layout.activity_main);
+
+					String rootPath = Environment.getExternalStorageDirectory()
+							.getAbsolutePath();
+					String inFilePath = rootPath.concat("/DreamFFmpeg/Test.mov");
+					String outFilePath = rootPath.concat("/DreamFFmpeg/Test.pcm");
+
+					//文件不存在我创建一个文件
+					File file = new File(outFilePath);
+					if (file.exists()){
+						Log.i("日志：","存在");
+					}else {
+						try {
+							file.createNewFile();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+
+					ffmpegAudioDecode(inFilePath, outFilePath);
+				}
+
+				//音频解码
+				public native void ffmpegAudioDecode(String inFilePath, String outFilePath);
+			}
+
+    
+    
+    native-lib.cpp
+     
+     #include <jni.h>
+#include <string>
+#include "android/log.h"
+
+extern "C"{
+//支持C/C++混合编程->默认情况下是不支持(编译报错)
+//导入头文件
+//核心库
+#include "libavcodec/avcodec.h"
+//封装格式处理库
+#include "libavformat/avformat.h"
+//工具库
+#include "libavutil/imgutils.h"
+//视频像素数据格式库
+#include "libswscale/swscale.h"
+//音频采样数据格式库
+#include "libswresample/swresample.h"
+
+JNIEXPORT void JNICALL Java_com_tz_dream_ffmpeg_audio_decode_MainActivity_ffmpegAudioDecode(
+        JNIEnv *env, jobject jobj, jstring jinFilePath, jstring joutFilePath);
+
+}
+
+JNIEXPORT void JNICALL Java_com_tz_dream_ffmpeg_audio_decode_MainActivity_ffmpegAudioDecode(
+        JNIEnv *env, jobject jobj, jstring jinFilePath, jstring joutFilePath) {
+
+    //第一步：组册组件
+    av_register_all();
+
+    //第二步：打开封装格式->打开文件
+    //参数一：封装格式上下文
+    //作用：保存整个视频信息(解码器、编码器等等...)
+    //信息：码率、帧率等...
+    AVFormatContext* avformat_context = avformat_alloc_context();
+    //参数二：视频路径
+    const char *url = env->GetStringUTFChars(jinFilePath, NULL);
+    //参数三：指定输入的格式
+    //参数四：设置默认参数
+    int avformat_open_input_result = avformat_open_input(&avformat_context, url, NULL, NULL);
+    if (avformat_open_input_result != 0){
+        //安卓平台下log
+        __android_log_print(ANDROID_LOG_INFO, "main", "打开文件失败");
+        //iOS平台下log
+        //NSLog(@"打开文件失败");
+        //NSLog("打开文件失败");
+        //不同的平台替换不同平台log日志
+        return;
+    }
+
+    __android_log_print(ANDROID_LOG_INFO, "main", "打开文件成功");
+
+
+    //第三步：拿到视频基本信息
+    //参数一：封装格式上下文
+    //参数二：指定默认配置
+    int avformat_find_stream_info_result = avformat_find_stream_info(avformat_context, NULL);
+    if (avformat_find_stream_info_result < 0){
+        __android_log_print(ANDROID_LOG_INFO, "main", "查找失败");
+        return;
+    }
+
+
+
+    //第四步：查找音频解码器
+    //第一点：查找音频流索引位置
+    int av_stream_index = -1;
+    for (int i = 0; i < avformat_context->nb_streams; ++i) {
+        //判断是否是音频流
+        if (avformat_context->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO){
+            //AVMEDIA_TYPE_AUDIO->表示音频类型
+            av_stream_index = i;
+            break;
+        }
+    }
+
+    //第二点：获取音频解码器上下文
+    AVCodecContext * avcodec_context = avformat_context->streams[av_stream_index]->codec;
+
+    //第三点：获得音频解码器
+    AVCodec *avcodec = avcodec_find_decoder(avcodec_context->codec_id);
+    if (avcodec == NULL){
+        __android_log_print(ANDROID_LOG_INFO, "main", "查找音频解码器失败");
+        return;
+    }
+
+
+    //第五步：打开音频解码器
+    int avcodec_open2_result = avcodec_open2(avcodec_context, avcodec, NULL);
+    if (avcodec_open2_result != 0){
+        __android_log_print(ANDROID_LOG_INFO, "main", "打开音频解码器失败");
+        return;
+    }
+
+
+    //第六步：读取音频压缩数据->循环读取
+    //创建音频压缩数据帧
+    //音频压缩数据->acc格式、mp3格式
+    AVPacket* avpacket = (AVPacket*)av_malloc(sizeof(AVPacket));
+
+    //创建音频采样数据帧
+    AVFrame* avframe = av_frame_alloc();
+
+    //音频采样上下文->开辟了一快内存空间->pcm格式等...
+    //设置参数
+    //参数一：音频采样数据上下文
+    //上下文：保存音频信息(记录)->目录
+    SwrContext* swr_context = swr_alloc();
+    //参数二：out_ch_layout->输出声道布局类型(立体声、环绕声、机器人等等...)
+    //立体声
+    int64_t out_ch_layout = AV_CH_LAYOUT_STEREO;
+//    int out_ch_layout = av_get_default_channel_layout(avcodec_context->channels);
+    //参数三：out_sample_fmt->输出采样精度->编码
+    //直接指定
+//    int out_sample_fmt = AV_SAMPLE_FMT_S16;
+    //动态获取，保持一致
+    AVSampleFormat out_sample_fmt = avcodec_context->sample_fmt;
+    //例如：采样精度8位 = 1字节，采样精度16位 = 2字节
+    //参数四：out_sample_rate->输出采样率(44100HZ)
+    int out_sample_rate = avcodec_context->sample_rate;
+    //参数五：in_ch_layout->输入声道布局类型
+    int64_t in_ch_layout = av_get_default_channel_layout(avcodec_context->channels);
+    //参数六：in_sample_fmt->输入采样精度
+    AVSampleFormat in_sample_fmt = avcodec_context->sample_fmt;
+    //参数七：in_sample_rate->输入采样率
+    int in_sample_rate = avcodec_context->sample_rate;
+    //参数八：log_offset->log日志->从那里开始统计
+    int log_offset = 0;
+    //参数九：log_ctx->log上下文
+    swr_alloc_set_opts(swr_context,
+                       out_ch_layout,
+                       out_sample_fmt,
+                       out_sample_rate,
+                       in_ch_layout,
+                       in_sample_fmt,
+                       in_sample_rate,
+                       log_offset, NULL);
+    //初始化音频采样数据上下文
+    swr_init(swr_context);
+
+    //输出音频采样数据
+    //缓冲区大小 = 采样率(44100HZ) * 采样精度(16位 = 2字节)
+    int MAX_AUDIO_SIZE = 44100 * 2;
+    uint8_t *out_buffer = (uint8_t *)av_malloc(MAX_AUDIO_SIZE);
+
+    //输出声道数量
+    int out_nb_channels = av_get_channel_layout_nb_channels(out_ch_layout);
+
+    int audio_decode_result = 0;
+
+    //打开文件
+    const char *coutFilePath = env->GetStringUTFChars(joutFilePath, NULL);
+    FILE* out_file_pcm = fopen(coutFilePath, "wb");
+    if (out_file_pcm == NULL){
+        __android_log_print(ANDROID_LOG_INFO, "main", "打开音频输出文件失败");
+        return;
+    }
+
+    int current_index = 0;
+
+    //计算：4分钟一首歌曲 = 240ms = 4MB
+    //现在音频时间：24ms->pcm格式->8.48MB
+    //如果是一首4分钟歌曲->pcm格式->85MB
+    //avpacket 音频压缩数据->acc格式，mp3格式  >= 0读取音频压缩数据1帧成功
+    while (av_read_frame(avformat_context, avpacket) >= 0){
+        //读取一帧音频压缩数据成功
+        //判定是否是音频流  av_stream_index是之前获取到的索引，这个索引拿到解码器
+        if (avpacket->stream_index == av_stream_index){
+            //第七步：音频解码
+            //1、发送一帧音频压缩数据包->音频压缩数据帧   
+            avcodec_send_packet(avcodec_context, avpacket);
+            //2、解码一帧音频压缩数据包->得到->一帧音频采样数据->音频采样数据帧 AUY帧
+            audio_decode_result = avcodec_receive_frame(avcodec_context, avframe);
+            if (audio_decode_result == 0){//成功
+                //解码出来有很多格式，这里转成pcm格式  类似于yuv格式
+                //表示音频压缩数据解码成功 
+                //3、类型转换(音频采样数据格式有很多种类型)
+                //我希望我们的音频采样数据格式->pcm格式->保证格式统一->输出PCM格式文件音频采样格式即是最终格式
+                //swr_convert:表示音频采样数据类型格式转换器
+                //参数一：音频采样数据上下文
+                //参数二：输出音频采样数据
+                //参数三：输出音频采样数据->大小
+                //参数四：输入音频采样数据
+                //参数五：输入音频采样数据->大小
+                swr_convert(swr_context,
+                            &out_buffer,
+                            MAX_AUDIO_SIZE,
+                            (const uint8_t **)avframe->data,
+                            avframe->nb_samples);
+
+                //4、获取缓冲区实际存储大小
+                //参数一：行大小
+                //参数二：输出声道数量
+                //参数三：输入大小
+                int nb_samples = avframe->nb_samples;
+                //参数四：输出音频采样数据格式
+                //参数五：字节对齐方式
+                int out_buffer_size = av_samples_get_buffer_size(NULL,
+                                           out_nb_channels,
+                                           nb_samples,
+                                           out_sample_fmt,
+                                           1);
+
+                //5、写入文件(你知道要写多少吗？)
+                fwrite(out_buffer, 1, out_buffer_size, out_file_pcm);
+
+                current_index++;
+                __android_log_print(ANDROID_LOG_INFO, "main", "当前音频解码第%d帧", current_index);
+            }
+        }
+    }
+
+    //第八步：释放内存资源，关闭音频解码器
+    fclose(out_file_pcm);
+
+    av_packet_free(&avpacket);
+
+    swr_free(&swr_context);
+
+    av_free(out_buffer);
+
+    av_frame_free(&avframe);
+
+    avcodec_close(avcodec_context);
+
+    avformat_close_input(&avformat_context);
+}
+
+分析：找开视频，拿到视频封装格式上下文
+     通过视频封装格式上下文，拿到视频流的index
+     通过index和视频封装格式上下文拿到解码器上下文
+     通过解码器上下文和id拿到解码器 
+   
