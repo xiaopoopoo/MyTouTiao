@@ -483,7 +483,26 @@ typedef  struct H264YUVDef
 #endif
 
 
+15-20
+讲解linux搭建服务器，通过v4l采集yuv ，通过x264组成h.264，再通过tcp/udp的socket传给
+iphone，iphone通过ffmpeg解压成yuv数据，再把yuvframe交给opengl es 转成rgb，再用opengl es播放
+或都iphone通过ffmpeg解压成yuv数据，把yuv数据通过sw_scale()转成rgb，rgb交给opengl es播放
+iphone可以不通过ffmpeg解码h264,可以通过iphone的硬件进行解码，效率更高，服务器搭建可以通过后面学的
+rmtp协议开源软件进行搭建。 ios项目可查看IntelliDev
 
+21
+音频编解码：
+pcm的分类：ADPCM 1:4压缩  G.711 1:2压缩  AAC 目常最常用
+采样率：8000普通说话能听清 44100音乐 192000 播放的时候也得使用相同的采样率播放
+声道：左声道 右声道 双声道 立体声
+播放器：AUDIOQUEUE OPENAL SDL
+
+22
+H264 i/p/b帧
+i帧：是关键帧 存着一幅完整的jpeg压缩图片，是一个帧组gop的基础帧，第一帧，是b,p帧的参考帧，保存背景和运动组体信息
+p帧：预测编码帧 是预测下一帧和i帧的区别信息存放在这里，推算出下一帧
+b帧：p帧预测可能有误差，这些误差存放入b帧，顺序是i/b/p   b 帧是通过i和p帧计算出来的，通过i,b,p会得到一帧精确的画面
+几帧图像分成一组gop序列，这组中图像差异不大，i预测p，i和p再预测b帧
 
 
 
@@ -502,7 +521,7 @@ rtmp服务器搭建：
 	shell窗口推流：.sh文件中写入ffmpeg推流代码，推流地址为rtmp://
 	iphone推流：采集视频h264，音频pcm，通过librtmp库组包成rtmp流或rtsp流，通过udp或tcp推流到rtmp服务器
 
-自己总结ios推流：
+自己总结ios采集推流：
 	https://blog.csdn.net/dolacmeng/article/details/81268622
 	1：采集：
 		苹果的AVFoundation实现音视频采集
@@ -513,6 +532,8 @@ rtmp服务器搭建：
 
 	3：推流：
 		 lflivekit livevideocoresdk  实现了采集音视频 组包编码推流工作，这里用的lflivekit
+		 
+	4： 比特率5120就好了，帧率5，这样就好了，不影响iphone的传输大小，4秒延时可以接受
 
 
 
@@ -537,5 +558,6 @@ rtmp服务器搭建：
   
 自己总结ios播放流：
   使用Bilibili开源的IJKPlayer,来实现RTMP协议下的视频播放 
+  
 
   
