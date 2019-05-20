@@ -5971,7 +5971,7 @@ JNIEXPORT void JNICALL Java_com_tz_dream_ffmpeg_audio_decode_MainActivity_ffmpeg
             //2、解码一帧音频压缩数据包->得到->一帧音频采样数据->音频采样数据帧 AUY帧
             audio_decode_result = avcodec_receive_frame(avcodec_context, avframe);
             if (audio_decode_result == 0){//成功
-                //解码出来有很多格式，这里转成pcm格式  类似于yuv格式
+                //解码出来有很多格式，这里转成pcm格式  类似于yuv格式  aac是压缩数据格式
                 //表示音频压缩数据解码成功 
                 //3、类型转换(音频采样数据格式有很多种类型)
                 //我希望我们的音频采样数据格式->pcm格式->保证格式统一->输出PCM格式文件音频采样格式即是最终格式
@@ -5981,6 +5981,7 @@ JNIEXPORT void JNICALL Java_com_tz_dream_ffmpeg_audio_decode_MainActivity_ffmpeg
                 //参数三：输出音频采样数据->大小
                 //参数四：输入音频采样数据
                 //参数五：输入音频采样数据->大小
+                //保存转换信息的上下文swr_context
                 swr_convert(swr_context,
                             &out_buffer,
                             MAX_AUDIO_SIZE,

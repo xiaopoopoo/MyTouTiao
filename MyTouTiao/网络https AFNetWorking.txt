@@ -881,3 +881,58 @@ AFNetworkReachabilityManager *manager = [AFNetworkReachabilityManager sharedMana
     }
 }];
 [manager startMonitoring];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+导出密码123456
+
+config setup  
+    uniqueids=never #允许多个客户端使用同一个证书
+
+conn %default  #定义连接项, 命名为 %default 所有连接都会继承它
+    compress = yes #是否启用压缩, yes 表示如果支持压缩会启用.
+    dpdaction = hold #当意外断开后尝试的操作, hold, 保持并重连直到超时.
+    dpddelay = 30s #意外断开后尝试重连时长
+    dpdtimeout = 60s #意外断开后超时时长, 只对 IKEv1 起作用
+    inactivity = 300s #闲置时长,超过后断开连接.
+    leftdns = 8.8.8.8,8.8.4.4 #指定服务端与客户端的dns, 多个用","分隔
+    rightdns = 8.8.8.8,8.8.4.4
+
+conn IKEv2-BASE
+    leftca = "C=CN, O=iSoft, CN=iSoft wendell CA" #服务器端根证书DN名称
+    leftsendcert = always #是否发送服务器证书到客户端
+    rightsendcert = never #客户端不发送证书
+
+conn IKEv2-EAP  
+    keyexchange=ikev2       #默认的密钥交换算法, ike 为自动, 优先使用 IKEv2
+    left=%any       #服务器端标识,%any表示任意  
+    leftid=47.93.230.87     #服务器端ID标识  
+    leftsubnet=0.0.0.0/0        #服务器端虚拟ip, 0.0.0.0/0表示通配.  
+    leftcert = server.cert.pem     #服务器端证书  
+    leftauth=pubkey     #服务器校验方式，使用证书  
+    right=%any      #客户端标识，%any表示任意  
+    rightsourceip = 10.1.0.0/24    #客户端IP地址分配范围  
+    rightauth=eap-mschapv2  #eap-md5#客户端校验方式#KEv2 EAP(Username/Password)  
+    #rightauth=rsa      #客户端校验方式，使用证书#IKEv2 Certificate  
+    #rightcert=clientCert.pem       #客户端端证书#IKEv2 Certificate  
+    #eap_identity=%any      #   
+
+    also=IKEv2-BASE
+    eap_identity = %any #指定客户端eap id
+    rekey = no #不自动重置密钥
+    fragmentation = yes #开启IKE 消息分片
+    auto = add  #当服务启动时, 应该如何处理这个连接项. add 添加到连接表中.
+
+
