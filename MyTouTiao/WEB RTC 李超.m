@@ -1783,3 +1783,138 @@ function hangup(){
 btnStart.onclick = start;
 btnCall.onclick = call;
 btnHangup.onclick = hangup;
+
+
+sdp协议规范，类似json,xml文件，只是不同于它存入的是媒体信息
+
+会话层：会话层相当于全局的音视频信息设置
+    会话的名称与目的
+    会话存在的存活时间0为永远
+
+媒体层：相当于局部的音视频信息设置，局部的可覆盖全局的设置
+   多个媒体信息：
+   媒体格式  音频视频
+   传输协议  udp tcp
+   传输ip和端口   如果用webrtc，这个影响不大，因为ip和端口是从ice服务器得到
+   媒体负载类型    vp8 vp9 h.264
+
+具体格式：
+多个<type>=<value>组成
+一个sdp包含一个会话层，一个会话层包含多个媒体信息
+
+会话层具体描述：对与我们使用意义不大
+   v=(具体版本)  必选
+   o=(sessionid) 必选
+   s=(session名称) 必选
+   c=(连接ipv4,v6，网络连接session level 等连接信息)
+   a=(全局设置0或更多的session属性)
+   时间：
+     t=(存活时间)
+     r=(重复次数)
+     
+媒体层：
+   m=(媒体名字和传输地址) 必选 m=<media audio><port><transport><fmtp/payload type list>//负载类型，可确定用什么解码器
+   c=(传输相关信息)
+   b=(带宽)
+   a=(对m描述的一大堆属性，对m进行具体解释) a=framerate:<帧率>    a=rtpmap:修饰payload type 帧率，采样率
+
+
+
+webrtc中的SDP规范  rtcp是控制网络反馈的，对网络质量都通过rtcp反馈 rcp协议包
+会话元：和sdp规范一样的会话层
+      v=(具体版本)  
+      o=(sessionid session版本 in英特网  ip4 127.23.43.2) 
+      s=-(session名乐)
+      t=(起始时间 结束时间)
+网络描述：单独对网络进行描述
+      c=(连接ipv4,v6，网络连接session level 等连接信息)
+      a=(对c属性进行具体描述) 
+流描述：对流描述
+      a=group:bundle 0 一组流进行绑定
+      a=msid-sematic 一组媒体流id
+      m=(video 9(端口号) udp/tls（加密）/rtp（上层）/savpf（加密） 96 99 98 （具体在a中作解释）)
+      m以下都是媒体层，可用多个m
+      c=in ip4 0.0.0.0
+      a=(对m描述的一大堆属性，对m进行具体解释) a=fmtp a=rtpmap
+      a=setup:actpass 媒体协商可自选为作服务端或客户端
+      a=mid:0 这个0对应a=group:bundle 0 的0
+      a=extmap:2 urn:ietf:param:rtp-hdrext:toffset  对媒体rtp头扩展
+      a=sendrecv 发送和接收
+      a=rtpmap:96 vp8/90000  rtc/90000 rtc表重传 ，如重传，它的type是98  red 允许发冗余包，包丢失可通过冗余包找到
+      a=fmtp:99 apt=98 99和98关联
+      a=ssrc: 每一种编码协议对应一种ssrc
+安全描述：
+      a=crypto 加密算法
+      a=ice-options:trickle 先不收集链路，每收集一个链路再检测，增快效率
+      a=ice-frag:ctqt a=ice-pwd 通过这两个对有效路径是否合法进行检测，是否非法用户
+      a=fingerprint 指纹，对数据加密，验证证书是否有效
+
+服务质量：
+      整个网络的反馈 a=rtcp-fb  a=group 把多个音频流媒体流绑定在一起，可复用
+      a=rtcpmux  rtp与rtcp端口复用同一个
+      a=rtcp-rsize 控制rtcp包数据量
+      a=rtcp-fb:96 goog-remb 接收端带宽评估
+      a=rtcp-fb:98 transport-cc 支持transport-cc
+
+      
+      
+      
+      
+webrtc中offer_answerSDP
+
+
+
+
+
+
+
+12-1实战stun_turn服务器搭建  收集可用的链路和端口
+rfc5766-turn-server google的
+resturn是比较老的
+coturn是升级，支持udp,tcp,ip4 ip6
+
+coturn服务器搭建:
+
+	下载coturn
+
+	./configure --prefix=/usr/local/coturn 生成makefile
+
+	编译安装： make && make install
+
+具体：
+打开github，下载coturn
+./configure --prefix=/usr/local/coturn 指定编译后coturn安装地址
+ls -atl Makefile 查看是否生成makefile
+编译安装： make -j 8 
+sudo make install
+
+cd /usr/local/coturn 安装的文件都在下面
+bin目录下有多个工具
+etc下有配置文件
+环境变量：
+vi ~/bashrc   :为分隔符
+$PATH:/usr/local/coturn/bin: 
+启动：
+turnserver -c ./etc/turn
+turnserver -c ./etc/turnserver.conf
+ 
+ 
+coturn的配置：
+cd /usr/local/coturn/turnserver.conf
+listening-port=3478
+external-ip= 外网ip 
+user=aaa:bbb 用户名和密码
+realm=stun.xxx.cn  域名一定得写
+
+ps -ef | grep turn查看是否启用
+
+
+进入webrtc.github.io/samples
+点：ice candidate gathering from sturn
+添加自己的turn ip：turn:stun.al.learningrtc.cn:3478
+在githup上添加自己的turn ip，点收集
+relay表只收集中继服务器的
+
+
+
+
