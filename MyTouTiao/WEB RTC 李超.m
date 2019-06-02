@@ -1916,5 +1916,638 @@ ps -ef | grep turn查看是否启用
 relay表只收集中继服务器的
 
 
+再论RTCPeerConnection
 
+pc = new RTCPeerConnection([configuration])
+
+RTCCofiguration:
+    sequence<RTCIceServer> iceServer  //stun turn 多个服务，可获得反射地址和中继地址
+    RTCIceTransportPolicy iceTransportPolicy="all"  //传输策略 all支持本机地址host relay中继地址
+    RTCBundlePolicy  bundlePolicy="balanced"  //平衡策略
+    RTCRtcpMuxPolicy  rtcpMuxPolicy ="require"  //复用策略
+    DOMString   peerIdentity   //标识
+    sequence<RTCCertificate>  certificates  //每一个可连通后选者都有一个证书，如果复用只会一个证书
+    [EnforceRange]
+    octet   iceCandidatePoolSize = 0 ;  //收集候选者池子的大小
+
+
+bundlePolicy  
+   balanced:所有音频轨使用一个通道，所有视频轨使用一个通道
+   max-compat:每个轨都有自己的通道
+   max-bundle:音视频都绑定到同一个传输通道
+   
+   
+certificates  
+    可能提供证书，可以不提供，则自己产生证书
+   每一个可连通后选者都有一个证书，如果复用只会一个证书
+   
+iceCandidatePoolSize 
+   16位整数指定候选者数量，如果值重新设置，则重收集候选者
+   
+iceTransportPolicy
+   传输策略 all支持本机地址host relay中继地址
+   
+iceServer  
+   stun turn 多个服务，可获得反射地址和中继地址
+   credential  只有turn服务使用
+   credentialtype 凭据类型可以是password或oauth
+   urls   stun turn每一个都是一个url
+   username
+   
+rtcpMuxPolicy  复用
+   negotiate  收集rtcp与rtp复用的ice候选者，如果rtcp能复用就与rtp复用
+              如果不能复用，它们就单独使用
+   require    只能收集rtcp与rtp复用的ice候选者，如果rtcp不能复用，则失败
+   
+   
+addIceCandidate
+   aPromise = pc.addIceCandidate(candidate)
+   
+candidate
+    candidate  候选者描述信息
+    sdpMid     与候选者相关的媒体流的识别标签，代表每一路流，视频是0
+    sdpMLineIndex  在sdp中m =的索引值  代表两路，引入视频是1 音频是2
+    usernameFragment  包括了远端的唯一标识 ice-fragment就是这个标识
+    
+
+
+实战直播系统中加入信令服务器
+
+   客户端信令消息：
+       join  加入房间
+       leave  离开房间
+       message  发送端对端的消息，通过信令服务器转发
+          offer 消息  获取到本机的媒体信息 是用sdp格式进行描述的
+          answer 消息  收到offer后，也要发送answer,把本地媒体信息发给请求端
+          candidate 消息  双方通信要知道彼此的通路ip端口，进行连通信检测，找出可用候选者
+    
+    服务端信令：
+       joined消息  已经加入房间
+       otherjoin   告诉别人另外一个人加入了
+       full       告诉加入者房间已经满
+       leaved     已离开房间
+       bye        告诉其它客户端有一个已经离开
+       
+信令流程：              
+	a b都与信令服务器建立连接 
+	a 加入房间join  信令服务器回一个joined
+	b 加入房间join  信令服务器回一个joined   
+	信令服务器回一个 otherjoin给a告诉说b已经加入，这时候a和b就可以媒体协商了
+	c 想加入房间，因为a,b一对一通话，所以信令服务器回一个full，告诉房间已满
+	媒体协商：发送message消息offer  answer candidate
+	b发送leave给信令服务器，信令服务器发送一个bye给a，告诉b离开了，信令服务器回一个leaved给b
+   
+   
+实战，改造之前搭的socketio服务器，把多人聊天室改成1v1聊天室，打开server.js
+var USERCOUNT = 3;
+
+		if(users < USERCOUNT){
+			socket.emit('joined', room, socket.id); //发给除自己之外的房间内的所有人
+			if(users > 1){
+				socket.to(room).emit('otherjoin', room, socket.id);//给其它人发
+			}
+		
+		}else{
+			socket.leave(room);	//房间以满提出房间
+			socket.emit('full', room, socket.id);//告诉它房间已经满了
+		}
+  
+	   
+	socket.on('leave', (room)=>{
+		var myRoom = io.sockets.adapter.rooms[room]; 
+		var users = (myRoom)? Object.keys(myRoom.sockets).length : 0;
+		logger.debug('the user number of room is: ' + (users-1));
+		//socket.emit('leaved', room, socket.id);
+		//socket.broadcast.emit('leaved', room, socket.id);
+		socket.to(room).emit('bye', room, socket.id);//告诉其它人我离开了
+		socket.emit('leaved', room, socket.id);//给自己发leaved
+		//io.in(room).emit('leaved', room, socket.id);
+	});
+	
+	
+	socket.on('message', (room, data)=>{
+		socket.to(room).emit('message',room, data);//给其它人转发消息
+	});
+	
+	
+	
+	
+再讨论CreateOffer
+   aPromise=myPeerConnection.createOffer([options])
+
+Options 可选
+   iceRestart: 该选项会重启ice，重新进行candidate收集，比如wifi切成4g 或网络不好了，就重新选则路
+   voiceActivityDetection: 是否开启静音检测，默认是开启的，当没有检测到人声的时候，可以不发送环境里的其它声音
+   接收远端音频：
+   接收远端视频：
+   
+   
+实战testCreateOffer项目
+
+index.html
+   <html>
+	<head>
+		<title>
+			test createOffer from different client
+		</title>
+	</head>
+
+	<body>
+		<button id="start">Start</button>
+		<button id="restart">reStart ICE</button>
+		<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+		<script src="js/main.js"></script>
+	</body>
+</html>
+   
+
+main.js
+
+function getPc1Answer(desc){
+
+	console.log('getPc1Answer', desc.sdp);
+	pc2.setLocalDescription(desc);//pc2设置answer到自己本地
+	pc1.setRemoteDescription(desc);//pc1接收到pc2的
+}
+function getPc1Offer(desc){
+
+	console.log('getPc1Offer', desc.sdp);
+	pc1.setLocalDescription(desc);
+	pc2.setRemoteDescription(desc);//pc2设置到远端
+	pc2.createAnswer().then(getPc1Answer).catch(handleError);//回一个answer
+
+}
+
+function getMediaStream(stream){
+
+	stream.getTracks().forEach((track) => {
+		pc1.addTrack(track, stream);	
+	});
+  
+    
+	var offerConstraints = {
+		offerToReceiveAudio: 1,
+		offerToRecieveVideo: 1,
+		iceRestart:false   //不重启ice
+	}
+
+	pc1.createOffer(offerConstraints)
+		.then(getPc1Offer)//拿到offer
+		.catch(handleError);//创建offer
+
+} 
+
+
+执行代码：
+可查看到offer以及answer中ice-ufrag的值发生了变化
+ice-ufrag:80oi再点击后会发生变化，如果发生变化就说明icerestart重启了
+
+
+客户端状态：
+收到joined后会变成joined状态
+收到otherjoin后会变成joined_conn
+收到bye消息变成joined_unbind
+
+
+客户端流程：
+开始获取音视频
+与信令服务器连接，并注册信令函数 
+如果收到joined，创建并绑定媒体流
+此时如果另一用房加入，是joined_unbind，即收到bye消息，则创建并绑定媒体流
+如果不是joined_unbind，设置为joined_conn,开始媒体协商
+如果收到full，设置状态为full,关闭pc,关闭本地媒体流
+收到服务端leaved，关闭连接disconnect离开
+发送leave到服务端，关闭pc，关闭流媒体
+收到bye,变更为joined_unbind，关闭pc
+
+
+sturn/turn 是服务器，电脑端可连接它得到可用的传输网络通道
+
+
+实战客户端webrtc
+连接信令服务器要在获得音视频媒体之后
+当一端离开房间，另一端peerconnection也要关闭连接，保证干净
+服务器都是异步处理的
+
+打开12中peerconnection_onebyone
+room.html: 
+连接 离开按钮，远程本地video标签 信令服务器引用的脚本
+       
+				<button id="connserver">Connect Sig Server</button>
+
+				<button id="leave" disabled>Leave</button>	
+			<div >
+					<h2>Local:</h2>
+					<video id="localvideo" autoplay playsinline muted></video>
+					<h2>Offer SDP:</h2>
+					<textarea id="offer"></textarea>
+				</div>
+				<div>
+					<h2>Remote:</h2>
+					<video id="remotevideo" autoplay playsinline></video>
+					<h2>Answer SDP:</h2>
+					<textarea id="answer"></textarea>
+				</div>
+				<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+
+main.js
+function connSignalServer(){
+	
+	//开启本地视频
+	start();
+
+	return true;
+}
+				
+
+function getMediaStream(stream){
+
+	conn();//连接信令服务器
+
+}
+
+function leave() {
+
+	if(socket){
+		socket.emit('leave', roomid); //notify server
+	}
+
+	hangup();
+	closeLocalMedia();
+
+	offer.value = '';
+	answer.value = '';
+	btnConn.disabled = false;
+	btnLeave.disabled = true;
+}
+//获取到本地answer
+function getAnswer(desc){
+	pc.setLocalDescription(desc);//通知本地存放answer
+	answer.value = desc.sdp;
+
+	//send answer sdp
+	sendMessage(roomid, desc);//发送给拔号端
+}
+function conn(){
+
+	socket = io.connect();//与信令服务器建立连接
+    //接收到回的joined响应
+	socket.on('joined', (roomid, id) => {
+		console.log('receive joined message!', roomid, id);
+		state = 'joined'//改变状态
+
+		//如果是多人的话，第一个人不该在这里创建peerConnection
+		//都等到收到一个otherjoin时再创建
+		//所以，在这个消息里应该带当前房间的用户数
+		//
+		//create conn and bind media track
+		createPeerConnection();//媒体协商
+		bindTracks();
+
+		btnConn.disabled = true;
+		btnLeave.disabled = false;
+		console.log('receive joined message, state=', state);
+	});
+    //接收到服务端返回的otherjoin
+	socket.on('otherjoin', (roomid) => {
+		console.log('receive joined message:', roomid, state);
+
+		//如果是多人的话，每上来一个人都要创建一个新的 peerConnection
+		//
+		if(state === 'joined_unbind'){//如果是只有一个人在房间，那就是断开的，要重新连接
+			createPeerConnection();
+			bindTracks();
+		}
+
+		state = 'joined_conn';
+		call();
+
+		console.log('receive other_join message, state=', state);
+	});
+    //接收到服务端返回的full客间满员
+	socket.on('full', (roomid, id) => {
+		console.log('receive full message', roomid, id);
+		hangup();//断掉没进入房间用户的连接 
+		closeLocalMedia();
+		state = 'leaved';//需要离开
+		console.log('receive full message, state=', state);
+		alert('the room is full!');
+	});
+    //接收到服务端返回自己离开消息
+	socket.on('leaved', (roomid, id) => {
+		console.log('receive leaved message', roomid, id);
+		state='leaved'
+		socket.disconnect();
+		console.log('receive leaved message, state=', state);
+
+		btnConn.disabled = false;
+		btnLeave.disabled = true;
+	});
+    //接收到服务端返回其它成员离开的消息
+	socket.on('bye', (room, id) => {
+		console.log('receive bye message', roomid, id);
+		//state = 'created';
+		//当是多人通话时，应该带上当前房间的用户数
+		//如果当前房间用户不小于 2, 则不用修改状态
+		//并且，关闭的应该是对应用户的peerconnection
+		//在客户端应该维护一张peerconnection表，它是
+		//一个key:value的格式，key=userid, value=peerconnection
+		state = 'joined_unbind';//收到对方离开的状态
+		hangup();//关闭连接
+		offer.value = '';
+		answer.value = '';
+		console.log('receive bye message, state=', state);
+	});
+
+	socket.on('disconnect', (socket) => {
+		console.log('receive disconnect message!', roomid);
+		if(!(state === 'leaved')){
+			hangup();
+			closeLocalMedia();
+
+		}
+		state = 'leaved';
+	
+	});
+    //信令服务器发offer answer消息  当收到一端发过来offer，解发此函数
+	socket.on('message', (roomid, data) => {
+		console.log('receive message!', roomid, data);
+
+		if(data === null || data === undefined){
+			console.error('the message is invalid!');
+			return;	
+		}
+
+		if(data.hasOwnProperty('type') && data.type === 'offer') {
+			
+			offer.value = data.sdp;
+
+			pc.setRemoteDescription(new RTCSessionDescription(data));//把offer发到远端,RTCSessionDescriptionl(data)转换成对象
+
+			//create answer
+			pc.createAnswer()
+				.then(getAnswer)
+				.catch(handleAnswerError);//创建answer
+
+		}else if(data.hasOwnProperty('type') && data.type == 'answer'){
+			answer.value = data.sdp;
+			pc.setRemoteDescription(new RTCSessionDescription(data));//设置到远端answer
+		
+		}else if (data.hasOwnProperty('type') && data.type === 'candidate'){//收到candidate
+			var candidate = new RTCIceCandidate({
+				sdpMLineIndex: data.label,//媒体行号
+				candidate: data.candidate
+			});//生成candidate
+			pc.addIceCandidate(candidate);//加入到本端	
+		
+		}else{
+			console.log('the message is invalid!', data);
+		
+		}
+	
+	});
+
+
+	roomid = getQueryVariable('room');
+	socket.emit('join', roomid);//发送一个自己加入房间的消息
+
+	return true;
+}
+
+var pcConfig = {
+  'iceServers': [{
+    'urls': 'turn:stun.al.learningrtc.cn:3478',//turn stun地址
+    'credential': "mypasswd",//密码
+    'username': "garrylea"//用户名
+  }]
+};
+//远端的视频数据
+function getRemoteStream(e){
+	remoteStream = e.streams[0];
+	remoteVideo.srcObject = e.streams[0];//把获取到的视频参数给这标签
+		//创建offer，会产生音频和视频的媒体流，包括一些媒体参数
+	localStream.getTracks().forEach((track)=>{
+		pc.addTrack(track, localStream);	
+	});
+
+}
+//创建连接，临听候选者事件，通过信令，发到另一端，	
+function createPeerConnection(){
+
+	//如果是多人的话，在这里要创建一个新的连接.
+	//新创建好的要放到一个map表中。
+	//key=userid, value=peerconnection
+	console.log('create RTCPeerConnection!');
+	if(!pc){
+		pc = new RTCPeerConnection(pcConfig);
+
+		pc.onicecandidate = (e)=>{//监听到有候先者时
+
+			if(e.candidate) {
+				sendMessage(roomid, {//发消息给对端候选者
+					type: 'candidate',
+					label:event.candidate.sdpMLineIndex, 
+					id:event.candidate.sdpMid, 
+					candidate: event.candidate.candidate
+				});
+			}else{
+				console.log('this is the end candidate');
+			}
+		}
+
+		pc.ontrack = getRemoteStream;//收到ontrack即远端流后调用此函数
+	}else {
+		console.warning('the pc have be created!');
+	}
+
+	return;	
+}
+
+function leave() {
+
+	if(socket){
+		socket.emit('leave', roomid); //notify server
+	}
+
+	hangup();
+	closeLocalMedia();
+
+	offer.value = '';
+	answer.value = '';
+	btnConn.disabled = false;
+	btnLeave.disabled = true;
+}
+
+//关闭自己的媒体
+function closeLocalMedia(){
+
+	if(localStream && localStream.getTracks()){
+		localStream.getTracks().forEach((track)=>{
+			track.stop();
+		});
+	}
+	localStream = null;
+}
+
+function sendMessage(roomid, data){
+
+	console.log('send message to other end', roomid, data);
+	if(!socket){
+		console.log('socket is null');
+	}
+	socket.emit('message', roomid, data);//发送消息给房间
+}
+function getOffer(desc){
+	pc.setLocalDescription(desc);//收及本端offer
+	offer.value = desc.sdp;
+	offerdesc = desc;
+
+	//send offer sdp
+	sendMessage(roomid, offerdesc);	//把offer发给房间中另一端,另一端临听通过socket.on('message')
+
+}
+//发起端才调用call
+function call(){
+	
+	if(state === 'joined_conn'){//表示另外一个人也加入了房间，才能发起call
+
+		var offerOptions = {//接收远端音视频
+			offerToRecieveAudio: 1,
+			offerToRecieveVideo: 1
+		}
+       //创建offer
+		pc.createOffer(offerOptions)
+			.then(getOffer)
+			.catch(handleOfferError);
+	}
+}
+
+
+举一反三，共享远程桌面  webrtc录屏,共享远程桌面
+getDisplayMedia  无法采集音频的同时采集桌面，思考即能共享桌面声音和视频一起  同时是否要调整分辨率，以及共享区域
+
+var promise = navigator.mediaDevices.getDisplayMedia(constraints);
+constraints可选
+constraints中约束与getUserMedia函数中一致
+
+这个功能只有在最新的chrome中才有
+输入：chrome://flags/#enable-experimental-web-platform-features
+找到Experimental Web Platform features  将它打开
+重新启动
+
+
+//把所有的getUserMedia换成getDisplayMedia
+vi client.js
+if(!navigator.mediaDevices ||
+		!navigator.mediaDevices.getDisplayMedia){
+
+		console.log('getUserMedia is not supported!');
+		return;
+
+	}else{
+
+		var deviceId = videoSource.value; 
+		var constraints = {
+			video : {
+				width: 640,	
+				height: 480,
+				frameRate:15,
+				facingMode: 'enviroment',
+				deviceId : deviceId ? {exact:deviceId} : undefined 
+			}, 
+			audio : false 
+		}
+
+		navigator.mediaDevices.getDisplayMedia(constraints)
+			.then(gotMediaStream)
+			.then(gotDevices)
+			.catch(handleError);
+	}
+	
+	
+
+端与端的互通
+rtp media
+
+ RTCPeerConnection 底下一层rtp media涉及到数据传输的
+ 管理通路，流量，帧率等
+ 
+ rtp media下面两个类
+ receiver和sender（接收器和发送器）
+ 
+getReceivers：  RTCPeerConnection 的getReceivers获取到一组RTCRtpReceiver对象，用于接收数据
+  每一个媒体轨对应一个RTCRtpReceiver
+getSender:用于发送数据，获取一组RTCRtpSender对象
+
+RTCRtpSender和RTCRtpReceiver的属性：
+MediaStreamTrack: 对应一个媒体轨，通过它知道是audio还是audio
+RTCDtlsTransport: 通过Transport传输，如果是复用，则都用同一个Transport传输
+RTCDtlsTransport: 描述rtcpTransport和rtcp传输相关的属性，收了多少，发了多少，抖动多少，根据这些降低流量控制
+
+RTCRtpReceiver方法：
+getParameters:获取编码器h.264 还是vp8,vp9，通道数等
+getSynchronizationSources:共享了桌面，音频，视频，每一个都是共享源，不重复
+getContributingSources:混音，三个人同时说话，混成一路，但有三个源
+getStats:统计发了多少，流量多少
+getCapabilities:	媒体支持哪些能力，支持哪些协商
+
+RTCRtpSender方法：
+getParameters:获取编码器h.264 还是vp8,vp9，通道数等
+setParameters:设置编码器h.264 还是vp8,vp9，通道数等
+getStats:统计发了多少，流量多少
+replaceTrack:一个Track替换成另一个Track,摄像头替换
+getCapabilities:	媒体支持哪些能力，及本机系统支持哪些
+
+
+RTPMedia的结构体
+第一层：
+RTCRtpHeaderExtensionParameters:扩展头
+  id  
+  uri 
+  encrypted(false)  加密
+RTCRtcpParameters:第一个rtp都有一个rtcp与之对应
+  cname 
+  reduceSize  带宽不够保留基本消息
+RTCRtpCodecParameter: 编解码相关
+  playloadType  哪种编码
+  mimeType  
+  clockRate 
+  channels  
+  sdpFmtpLine
+第二层：
+RTCRtpParameters继承第一层:
+  headerExtensions 
+  codecs 
+  rtcp
+第三层：
+RTCDegradationPreference:
+  maintain-framerate  
+  maintain-resolution 
+  blanced
+RTCRtpReceiveParameters继承RTCRtpParameters:
+  encodings
+RTCRtpSendParameters继承RTCRtpParameters和RTCDegradationPreference:（最关键的）
+  transactionID   唯一标识
+  encoding 
+  degradationPreference   设置帧率和分bian率来降码流
+  priority
+第四层：
+RTCRtpDecodingParameters继承RTCRtpReceiveParameters:
+RTCRtpEncodingParameters继承RTCRtpSendParameters  编码器的设置
+  codecPayloadType 
+  dtx 
+  active 
+  ptime 
+  maxBitrate 
+  maxFramerate 
+  scaleResolutionDownBY
+第五层：
+RTCRtpCodingParameters继承RTCRtpDecodingParameters
+  rid
+  
+  
+  
+RTCRtpTransceiver:封装了一对RTCRtpSender和RTCRtpReceiver
+属性：getTransceivers：获取一组RTCRtpTransceiver
+方法：stop ：停止接收和发送
 
