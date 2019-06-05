@@ -2551,3 +2551,1772 @@ RTCRtpTransceiver:封装了一对RTCRtpSender和RTCRtpReceiver
 属性：getTransceivers：获取一组RTCRtpTransceiver
 方法：stop ：停止接收和发送
 
+
+实战：传输速率控制
+
+index.html
+
+			<div>//选择速率的标签
+				<label>Bandwidth:</label>
+				<select id = "bandwidth" disabled>
+					<option value="unlimited" selected>unlimited</option>
+					<option value="2000">2000</option>
+					<option value="1000">1000</option>
+					<option value="500">500</option>
+					<option value="250">250</option>
+					<option value="125">125</option>
+				</select>
+				kbps
+			</div>
+
+
+main_bw.js
+var bandwidth = document.querySelector('select#bandwidth');
+
+bandwidth.onchange = change_bw;
+
+function change_bw(){
+    //参数设置不成功按钮先关闭
+	bandwidth.disabled = true;
+	var bw = bandwidth.options[bandwidth.selectedIndex].value;//用户选择的值
+
+	var vsender = null;
+	var senders = pc.getSenders();//获取到所有发送器
+
+	senders.forEach(sender => {
+		if(sender && sender.track.kind === 'video'){
+			vsender = sender;//找到发送器
+		}
+	});
+
+	var parameters = vsender.getParameters();//拿到它的参数
+	
+	if(!parameters.encodings){
+		parameters.encodings=[{}];	//如果没有内容就不处理
+	}
+
+	if(bw === 'unlimited'){
+		delete parameters.encodings[0].maxBitrate;
+	}else{
+		parameters.encodings[0].maxBitrate = bw * 1000;	//设取速率
+	}
+
+	vsender.setParameters(parameters)//添加回sender中
+		.then(()=>{
+			bandwidth.disabled = false;	//参数设置成功再打开
+		})
+		.catch(err => {
+			console.error(err)
+		});
+
+	return;
+}
+
+
+//呼方收到answer需要打开设置速率
+else if(data.hasOwnProperty('type') && data.type === 'answer'){
+			pc.setRemoteDescription(new RTCSessionDescription(data));
+			bandwidth.disabled = false;
+		
+		}
+//接收方创建answer需要打开设置速率
+function getAnswer(desc){
+	pc.setLocalDescription(desc);
+	bandwidth.disabled = false;
+
+	//send answer sdp
+	sendMessage(roomid, desc);
+}
+
+
+
+chrome浏览器调试：
+chrome://webrtc-internals
+查看：stats graphs for sscr..
+可看到发送的流量是1m还是其它的，也就是码率
+
+
+
+实战：webrtc统计信息流量也就是码率以及每秒发送的包数
+index.html
+            //显示流量及包数
+			<div class="graph-container" id="bitrateGraph">
+				<div>Bitrate</div>
+				<canvas id="bitrateCanvas"></canvas>//画图用的
+			</div>
+			<div class="graph-container" id="packetGraph">
+				<div>Packets sent per second</div>
+				<canvas id="packetCanvas"></canvas>
+			</div>
+			//画图的js
+		<script src="js/third_party/graph.js"></script>
+		
+		
+
+main_bw.js
+//每秒回调一次这个函数，像定时器
+window.setInterval(() => {
+  if (!pc) {
+    return;
+  }
+  const sender = pc.getSenders()[0];//因为只有一个轨，视频，如果有其它轨需要判断
+  if (!sender) {
+    return;
+  }
+  sender.getStats().then(res => {//then 成功获取状态报道
+    res.forEach(report => {
+      let bytes;
+      let packets;
+      if (report.type === 'outbound-rtp') {//如果是输出的
+        if (report.isRemote) {//如果是远端的，则不处理，只处理本地的
+          return;
+        }
+        const now = report.timestamp;//报告生成的时间数
+        bytes = report.bytesSent;//这次报告的字节
+        packets = report.packetsSent;//发送的包数
+        if (lastResult && lastResult.has(report.id)) {//如果和这次是同一个id，则处理
+          // calculate bitrate
+          const bitrate = 8 * (bytes - lastResult.get(report.id).bytesSent) /
+            (now - lastResult.get(report.id).timestamp);//8位*（现在的-上一次的）／（现在-上一秒）
+
+          // append to chart  流量相关的图
+          bitrateSeries.addPoint(now, bitrate);//添加一个点
+          bitrateGraph.setDataSeries([bitrateSeries]);//坐标
+          bitrateGraph.updateEndDate();
+
+          // calculate number of packets and append to chart
+          packetSeries.addPoint(now, packets -
+            lastResult.get(report.id).packetsSent);//包的点  这次减去上次的
+          packetGraph.setDataSeries([packetSeries]);//坐标
+          packetGraph.updateEndDate();
+        }
+      }
+    });
+    lastResult = res;//上一次的报告
+  });
+}, 1000);
+
+//获取到流的时候要初使化状态图
+function getMediaStream(stream){
+
+	localStream = stream;	
+	localVideo.srcObject = localStream;
+
+	//这个函数的位置特别重要，
+	//一定要放到getMediaStream之后再调用
+	//否则就会出现绑定失败的情况
+	
+	//setup connection
+	conn();
+
+	bitrateSeries = new TimelineDataSeries();
+	bitrateGraph = new TimelineGraphView('bitrateGraph', 'bitrateCanvas');
+	bitrateGraph.updateEndDate();
+
+	packetSeries = new TimelineDataSeries();
+	packetGraph = new TimelineGraphView('packetGraph', 'packetCanvas');
+	packetGraph.updateEndDate();
+}
+
+
+webrtc非音视频数据传输
+
+ RTCPeerConnection下createDataChannel
+ aPromise = pc.createDataChannel(label,[options]);//LABLE告诉是文本还是什么
+ options:
+   ordered:是否是按顺序到达，音视频是无序的
+   maxPacketLifeTime/maxRetransmits :包的最大存活时间/包的最多重传次数
+   negotiated:协商
+       false:一端用createDataChannel创建通道，另一端监听onedatachannel事件
+       true,两端都可以调用createDataChannel创建通道，通过id标识是否是同一通道
+ id: 协疯时候通道id
+
+例：
+aPromise = pc.createDataChannel("chat",{ negotiated:true,id:0});
+
+
+事件：
+onmessage:对方有消息传来，回收到这事件
+onopen:对方有消息传来或我们创建好createDataChannel调用此事件
+onclose:DataChannel关闭
+onerror:DataChannel数据出错的时候
+
+
+非视频传输：
+tcp/udp/sctp ：可靠/非可靠/可配置   sctp是在udp之上  tcp／sctp都是有序的/可配有序的
+
+实实文本聊天：
+index.html
+
+<div>
+					<h2>Chat:<h2>
+					<textarea id="chat" disabled></textarea>
+					<textarea id="sendtxt" disabled></textarea>
+					<button id="send" disabled>Send</button>
+				</div>
+
+main_bw.js
+
+var chat = document.querySelector('textarea#chat');
+var send_txt = document.querySelector('textarea#sendtxt');
+var btnSend = document.querySelector('button#send');
+
+btnSend.onclick = sendText;
+function sendText(){
+	var data = send_txt.value;
+	if(data != null){
+		dc.send(data);
+	}
+
+	//更好的展示，发送完添空
+	send_txt.value = "";
+	chat.value += '<- ' + data + '\r\n';//显示的窗口累加
+}
+
+//在第二个人加入创建datachannel
+	socket.on('otherjoin', (roomid) => {
+		console.log('receive joined message:', roomid, state);
+
+		//如果是多人的话，每上来一个人都要创建一个新的 peerConnection
+		//
+		if(state === 'joined_unbind'){
+			createPeerConnection();
+			bindTracks();
+		}
+
+		//create data channel for transporting non-audio/video data
+		dc = pc.createDataChannel('chatchannel');
+		dc.onmessage = receivemsg;
+		dc.onopen = dataChannelStateChange;
+		dc.onclose = dataChannelStateChange;
+
+		state = 'joined_conn';
+		call();
+
+		console.log('receive other_join message, state=', state);
+	});
+var dc = null;	
+function receivemsg(e){
+	var msg = e.data;
+	if(msg){//收到对方的消息
+		console.log(msg);
+		chat.value += "->" + msg + "\r\n";
+	}else{
+		console.error('received msg is null');
+	}
+}
+function dataChannelStateChange() {
+  var readyState = dc.readyState;//获取到状态，是打开还是断开
+  console.log('Send channel state is: ' + readyState);
+  if (readyState === 'open') {
+    send_txt.disabled = false;
+    send.disabled = false;
+  } else {
+    send_txt.disabled = true;
+    send.disabled = true;
+  }
+}
+
+
+另一方获取dc的方式：
+		pc.ondatachannel = e=> {
+			if(!dc){
+				dc = e.channel;
+				dc.onmessage = receivemsg; 
+				dc.onopen = dataChannelStateChange;
+				dc.onclose = dataChannelStateChange;
+			}
+
+		}
+		
+
+文件的实实传输：
+通过js的FileReader从文件中读取数据
+以数据块为单位发送数据，而不是一次发送整个文件
+发送数据先要将文件的信息以信令的方式传给对方，告诉对方数据是什么，大小，类型，让对方知道文件大小，怎么存类型
+还可上报服务器，传到哪里了
+
+rtp-srtp协议头讲解
+ web浏览器普通协议栈：
+    xhr sse websocket
+    http 1/2
+    session(tls) 加密证书
+    transport(tcp)
+    ip协议
+  支持webrtc协议的浏览器：
+    rtcpeerconnection   datachannel
+    srtp                 sctp(流传输)
+         session(tls)（加密用的可选）
+         ice ,stun, turn
+         ip协议
+         
+webrtc传输协议
+   rtp/srtp:
+       rtp查看传输链路质量，传输视频数据,srtp是相对rtp的数据加密
+   rtcp/srtcp
+       发送rtp包的时候，延时，丢包，抖动的数量都能过rtcp进行上报的,srtcp把统计报告进行加密
+   dtls
+       rtp/rtcp加密之前对证书的加密
+       
+       
+rtp：其实就是webrtc传输中一个头协议，头中包含版本，包顺序等，体中其实就是h.264,vp8,vp9的帧数据
+
+   头解析：
+   v： 2位版本号
+   p： 1位，填充标识，最后一个字节是填充字节，含个数
+   x： 1位，扩展标识，
+   cc：4位，第一个c，和第二个c，分别控制头下面的数据
+   m： 1位，用于区分帧之间的边界，因一帧拆成多个包，确保哪些包属于这一帧
+   pt: 7位，playload type 描述体内数据是h.264 vp8 vp9
+   seq number:  16位，标识包的顺序
+   timestamp：   32位，如果是同一个时间，表示这几个包都是属于某一帧的，配合排序
+   ssrc：        32位，一个视频源使用一个ssrc，一个音频源使用一个ssrc
+   csrc：        32位，多路混音，多人聊天混成一路，这一路是一个csrc
+   
+rtcp包：
+   rtcp包是在udp之上的，所以第一个是udp header
+   rtcp包包括:rtcp header rtcp data
+   
+rtcp的端口为rtp端口+1
+rtp,rtcp有时会复用端口，因为net穿越会产生多个端口比较麻烦
+一个rtcp包中一般包含多个报告
+
+rtcp payload type:
+   100 sr   发送者的报告包
+   201 rr   接收者的报告包
+   202 sdes 源的一个描述，cname源的名字
+   203 bye  不想共享源
+   204 app  自定义自己的类型
+   
+rtcp中的header：
+   p: 1位 填充标识，最后一个字节是填充字节，含个数
+   rc: 5位 接收报告块的个数，可以是0
+   pt: 8位，数据包类型
+   length: 16位 ，包长度，包括头和包数据
+   ssrc  32位，发送者的ssrc
+   
+rtcp playload type中 具体包结构：
+   发送者的报告包：
+      sender information block:发送者的报告信息包括如下：
+            ntp 64位，网络时间，用于不同源之间同步
+            rtp timestamp  32位，和rtp包时间一致，相对时间
+            packet count   32位，总发包数，ssrc变化时会重置
+            octet count    32位，总共发送的字节数
+              
+      receiver report block：同时作为接收者的报告信息
+            ssrc_n  32位，接收到每个媒体源，多个用n表示
+            faction lost 8位，上一次报告与本次报告的丢包比例
+            packets lost  24位，自接收开始丢包总数，迟到的包不算
+            hightest seq num  低16位表示收到的最大seq,高16位表示seq循环次数
+            jitter  估计rtp包到达时间间隔的统计方差
+            last sr  32位，上一次发送报告的ntp时间
+            delay lsr 记录sr的时候与这次sr的时间差
+    接收者的报告包 ：
+         receiver report block：同时作为接收者的报告信息
+            ssrc_n  32位，接收到每个媒体源，多个用n表示
+            faction lost 8位，上一次报告与本次报告的丢包比例
+            packets lost  24位，自接收开始丢包总数，迟到的包不算
+            hightest seq num  低16位表示收到的最大seq,高16位表示seq循环次数
+            jitter  估计rtp包到达时间间隔的统计方差
+            last sr  32位，上一次发送报告的ntp时间
+            delay lsr 记录sr的时候与这次sr的时间差
+            
+         
+
+发送者与接收者发送时机：
+    接收端只发接收者的报告包报文
+    即是发送端又是接收端，在上一次报告有发送过数据时，则发sr发送者的报告包
+    
+    
+协议规范，sdes
+   rtcp payload type:
+   202 sdes 源的一个描述，cname源的名字   
+
+dtls 及证书交换
+srtp 的结构
+
+wireshark工具查看rtp，rtcp包
+
+
+
+android与浏览器的互通
+获取权限：
+    摄像头权限
+    录制音频
+    访问互联网
+      申请静态权限 <uses-permissionandroid:name="android">
+      申请动态权限 void requestPermissions api申请动态权限
+引入webrtc库 socket.io库
+      implementation 'org.webrtc:google-webrtc:1.0+' 引入官方编译好的库
+      implementation 'io.socket:socket.io-client1.0.0'
+      easypermission   //更简单获取权限的库
+          implementation 'pub.devrel:easypermissions:1.1.3'
+信令处理
+   客户端：
+      join leave message(offer,answer,candidate)
+   服务端返回：
+       joined leaved other_joined bye full
+webrtc处理流程
+
+
+使用socket.io
+    发消息：
+    socket.emit("join",agrs);
+    收消息：
+    socket.on("joined",listener)
+
+
+  
+android中使用：
+    PeerConnectionFactioyInterface 工厂
+         可创建:
+             PeerConnectionObserver  观察者：观察是join bye
+             PeerConnectionInterface  连接
+             LocalMediaStreamInterface  本地流
+             LocalVideo/Audio TrackInterface   本地轨
+webrtc处理流程
+    video capture捕获数据  
+    source  捕获到的视频数据源
+    track   封装成track
+    sink render 渲染显示到控件上
+    
+重要的类：
+    PeerConnectionFactory
+    PeerConnection
+    MediaStream  流
+    VideoCapture 捕获视频
+    VideoSource/Video Track
+    AudioSource/Audio Track
+两个观察者
+    PeerConnection.Observer
+    SdpObserver sdp观察者
+    
+
+实战：
+   权限，库引入，展示的界面
+	   在Manifests文件中添加权限
+	   在Module级的gradle中引入依赖库
+	   编写界面
+	   
+	    
+app/src/main/AndroidManifest.xml
+
+    <uses-feature android:name="android.hardware.camera" />
+    <uses-feature android:name="android.hardware.camera.autofocus" />
+    <uses-feature
+        android:glEsVersion="0x00020000"
+        android:required="true" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+        
+Gradle Scripts/build.gradle(Module:app)  
+引入库
+    dependencies {
+    implementation 'io.socket:socket.io-client:1.0.0'
+    implementation 'org.webrtc:google-webrtc:1.0.+'
+    implementation 'pub.devrel:easypermissions:1.1.3'
+}
+
+增加编译选项防止某些机型报错：
+    compileOptions {
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
+    }  
+有些机型不适配：
+    minSdkVersion 16    
+    
+MainActivity:
+    信令服务器地址和房间号须填写
+CallActivity
+
+界面：
+res/layout/activity_call.xml
+res/layout/activity_call.xml
+
+
+收发信令：
+实现Activity的切换
+编写signal类，连接信令socket.io发送加入房间等信令
+在CallActivity中使用signal对象实现信令的触发
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        final EditText serverEditText = findViewById(R.id.ServerEditText);
+        final EditText roomEditText = findViewById(R.id.RoomEditText);
+        findViewById(R.id.JoinRoomBtn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String addr = serverEditText.getText().toString();
+                String roomName = roomEditText.getText().toString();
+                if (!"".equals(roomName)) {
+                    //跳转页面
+                    Intent intent = new Intent(MainActivity.this, CallActivity.class);
+                    intent.putExtra("ServerAddr", addr);//传参
+                    intent.putExtra("RoomName", roomName);
+                    startActivity(intent);
+                }
+            }
+        });
+        //动态申请权限
+        String[] perms = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO};
+        if (!EasyPermissions.hasPermissions(this, perms)) {
+            EasyPermissions.requestPermissions(this, "Need permissions for camera & microphone", 0, perms);
+        }
+    }
+    //权限申请的结果，用户同意了该作什么
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    }
+
+    
+    
+信令部份：SignalClient.java
+public class SignalClient {
+
+    private static final String TAG = "SignalClient";
+
+    private static SignalClient mInstance;//单例模式
+    private OnSignalEventListener mOnSignalEventListener;
+
+    private Socket mSocket;//socketio对象
+    private String mRoomName;//房间号
+
+    public interface OnSignalEventListener {
+        void onConnected();
+        void onConnecting();
+        void onDisconnected();
+        void onUserJoined(String roomName, String userID);
+        void onUserLeaved(String roomName, String userID);
+        void onRemoteUserJoined(String roomName);
+        void onRemoteUserLeaved(String roomName, String userID);
+        void onRoomFull(String roomName, String userID);
+        void onMessage(JSONObject message);
+    }
+    //单例
+    public static SignalClient getInstance() {
+        synchronized (SignalClient.class) {
+            if (mInstance == null) {
+                mInstance = new SignalClient();
+            }
+        }
+        return mInstance;
+    }
+
+    public void setSignalEventListener(final OnSignalEventListener listener) {
+        mOnSignalEventListener = listener;
+    }
+    //加入房间
+    public void joinRoom(String url, String roomName) {
+        Log.i(TAG, "joinRoom: " + url + ", " + roomName);
+        //连接
+        try {
+            mSocket = IO.socket(url);
+            mSocket.connect();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            return;
+        }
+        //mUserId = userId;
+        mRoomName = roomName;
+        listenSignalEvents();//监听器
+
+        mSocket.emit("join", mRoomName);
+    }
+
+    public void leaveRoom() {
+
+        Log.i(TAG, "leaveRoom: " + mRoomName);
+        if (mSocket == null) {
+            return;
+        }
+
+        mSocket.emit("leave", mRoomName);
+        mSocket.close();
+        mSocket = null;
+    }
+
+    public void sendMessage(JSONObject message) {
+        Log.i(TAG, "broadcast: " + message);
+        if (mSocket == null) {
+            return;
+        }
+        mSocket.emit("message", mRoomName, message);
+    }
+
+    //侦听从服务器收到的消息 注册监听器
+    private void listenSignalEvents() {
+
+        if (mSocket == null) {
+            return;
+        }
+
+        mSocket.on(Socket.EVENT_CONNECT_ERROR, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+
+                Log.e(TAG, "onConnectError: " + args);
+            }
+        });
+
+        mSocket.on(Socket.EVENT_ERROR, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+
+                Log.e(TAG, "onError: " + args);
+            }
+        });
+
+        mSocket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                String sessionId = mSocket.id();
+                Log.i(TAG, "onConnected");
+                if (mOnSignalEventListener != null) {
+                    mOnSignalEventListener.onConnected();
+                }
+            }
+        });
+
+        mSocket.on(Socket.EVENT_CONNECTING, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Log.i(TAG, "onConnecting");
+                if (mOnSignalEventListener != null) {
+                    mOnSignalEventListener.onConnecting();
+                }
+            }
+        });
+
+        mSocket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Log.i(TAG, "onDisconnected");
+                if (mOnSignalEventListener != null) {
+                    mOnSignalEventListener.onDisconnected();
+                }
+            }
+        });
+
+        mSocket.on("joined", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                String roomName = (String) args[0];
+                String userId = (String) args[1];
+                if (/*!mUserId.equals(userId) &&*/ mOnSignalEventListener != null) {
+                    //mOnSignalEventListener.onRemoteUserJoined(userId);
+                    mOnSignalEventListener.onUserJoined(roomName, userId);
+                }
+                //Log.i(TAG, "onRemoteUserJoined: " + userId);
+                Log.i(TAG, "onUserJoined, room:" + roomName + "uid:" + userId);
+            }
+        });
+
+        mSocket.on("leaved", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                String roomName = (String) args[0];
+                String userId = (String) args[1];
+                if (/*!mUserId.equals(userId) &&*/ mOnSignalEventListener != null) {
+                    //mOnSignalEventListener.onRemoteUserLeft(userId);
+                    mOnSignalEventListener.onUserLeaved(roomName, userId);
+                }
+                Log.i(TAG, "onUserLeaved, room:" + roomName + "uid:" + userId);
+            }
+        });
+
+        mSocket.on("otherjoin", new Emitter.Listener() {
+
+            @Override
+            public void call(Object... args) {
+                String roomName = (String) args[0];
+                String userId = (String) args[1];
+                if (mOnSignalEventListener != null) {
+                    mOnSignalEventListener.onRemoteUserJoined(roomName);
+                }
+                Log.i(TAG, "onRemoteUserJoined, room:" + roomName + "uid:" + userId);
+            }
+        });
+
+        mSocket.on("bye", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                String roomName = (String) args[0];
+                String userId = (String) args[1];
+                if (mOnSignalEventListener != null) {
+                    mOnSignalEventListener.onRemoteUserLeaved(roomName, userId);
+                }
+                Log.i(TAG, "onRemoteUserLeaved, room:" + roomName + "uid:" + userId);
+
+            }
+        });
+
+        mSocket.on("full", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+
+                //释放资源
+                mSocket.disconnect();
+                mSocket.close();
+                mSocket = null;
+
+                String roomName = (String) args[0];
+                String userId = (String) args[1];
+
+                if (mOnSignalEventListener != null) {
+                    mOnSignalEventListener.onRoomFull(roomName, userId);
+                }
+
+                Log.i(TAG, "onRoomFull, room:" + roomName + "uid:" + userId);
+
+            }
+        });
+
+        mSocket.on("message", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                String roomName = (String)args[0];
+                JSONObject msg = (JSONObject) args[1];
+
+                if (mOnSignalEventListener != null) {
+                    mOnSignalEventListener.onMessage(msg);
+                }
+
+                Log.i(TAG, "onMessage, room:" + roomName + "data:" + msg);
+
+            }
+        });
+    }
+}
+
+
+创建PeerConnection
+	音视频数据采集
+	创建PeerConnection
+媒体协商
+    媒体能力协商
+    Candidate连通性检测（后选者）
+    视频渲染
+    
+CallActivity.java
+
+public class CallActivity extends AppCompatActivity {
+
+    private static final int VIDEO_RESOLUTION_WIDTH = 1280;
+    private static final int VIDEO_RESOLUTION_HEIGHT = 720;
+    private static final int VIDEO_FPS = 30;
+
+    private String mState = "init";
+
+    private TextView mLogcatView;
+
+    private static final String TAG = "CallActivity";
+
+    public static final String VIDEO_TRACK_ID = "1";//"ARDAMSv0";
+    public static final String AUDIO_TRACK_ID = "2";//"ARDAMSa0";
+
+    //用于数据传输
+    private PeerConnection mPeerConnection;
+    private PeerConnectionFactory mPeerConnectionFactory;
+
+    //OpenGL ES
+    private EglBase mRootEglBase;
+    //纹理渲染
+    private SurfaceTextureHelper mSurfaceTextureHelper;
+
+    //继承自 surface view
+    private SurfaceViewRenderer mLocalSurfaceView;
+    private SurfaceViewRenderer mRemoteSurfaceView;
+
+    private VideoTrack mVideoTrack;
+    private AudioTrack mAudioTrack;
+
+    private VideoCapturer mVideoCapturer;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_call);
+
+        mLogcatView = findViewById(R.id.LogcatView);
+
+        mRootEglBase = EglBase.create();
+
+        mLocalSurfaceView = findViewById(R.id.LocalSurfaceView);
+        mRemoteSurfaceView = findViewById(R.id.RemoteSurfaceView);
+
+        mLocalSurfaceView.init(mRootEglBase.getEglBaseContext(), null);
+        mLocalSurfaceView.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL);
+        mLocalSurfaceView.setMirror(true);
+        mLocalSurfaceView.setEnableHardwareScaler(false /* enabled */);
+
+        mRemoteSurfaceView.init(mRootEglBase.getEglBaseContext(), null);
+        mRemoteSurfaceView.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL);
+        mRemoteSurfaceView.setMirror(true);
+        mRemoteSurfaceView.setEnableHardwareScaler(true /* enabled */);
+        mRemoteSurfaceView.setZOrderMediaOverlay(true);
+
+        //创建 factory， pc是从factory里获得的
+        mPeerConnectionFactory = createPeerConnectionFactory(this);
+
+        // NOTE: this _must_ happen while PeerConnectionFactory is alive!
+        Logging.enableLogToDebugOutput(Logging.Severity.LS_VERBOSE);
+
+        mVideoCapturer = createVideoCapturer();
+
+        mSurfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", mRootEglBase.getEglBaseContext());
+        VideoSource videoSource = mPeerConnectionFactory.createVideoSource(false);
+        mVideoCapturer.initialize(mSurfaceTextureHelper, getApplicationContext(), videoSource.getCapturerObserver());
+
+        mVideoTrack = mPeerConnectionFactory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
+        mVideoTrack.setEnabled(true);
+        mVideoTrack.addSink(mLocalSurfaceView);
+
+        AudioSource audioSource = mPeerConnectionFactory.createAudioSource(new MediaConstraints());
+        mAudioTrack = mPeerConnectionFactory.createAudioTrack(AUDIO_TRACK_ID, audioSource);
+        mAudioTrack.setEnabled(true);
+
+        SignalClient.getInstance().setSignalEventListener(mOnSignalEventListener);
+
+        String serverAddr = getIntent().getStringExtra("ServerAddr");
+        String roomName = getIntent().getStringExtra("RoomName");
+        SignalClient.getInstance().joinRoom(serverAddr, roomName);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mVideoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, VIDEO_FPS);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            mVideoCapturer.stopCapture();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        doLeave();
+        mLocalSurfaceView.release();
+        mRemoteSurfaceView.release();
+        mVideoCapturer.dispose();
+        mSurfaceTextureHelper.dispose();
+        PeerConnectionFactory.stopInternalTracingCapture();
+        PeerConnectionFactory.shutdownInternalTracer();
+        mPeerConnectionFactory.dispose();
+    }
+
+    public static class SimpleSdpObserver implements SdpObserver {
+        @Override
+        public void onCreateSuccess(SessionDescription sessionDescription) {
+            Log.i(TAG, "SdpObserver: onCreateSuccess !");
+        }
+
+        @Override
+        public void onSetSuccess() {
+            Log.i(TAG, "SdpObserver: onSetSuccess");
+        }
+
+        @Override
+        public void onCreateFailure(String msg) {
+            Log.e(TAG, "SdpObserver onCreateFailure: " + msg);
+        }
+
+        @Override
+        public void onSetFailure(String msg) {
+
+            Log.e(TAG, "SdpObserver onSetFailure: " + msg);
+        }
+    }
+
+    private void updateCallState(boolean idle) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (idle) {
+                    mRemoteSurfaceView.setVisibility(View.GONE);
+                } else {
+                    mRemoteSurfaceView.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+    }
+
+    public void doStartCall() {
+        logcatOnUI("Start Call, Wait ...");
+        if (mPeerConnection == null) {
+            mPeerConnection = createPeerConnection();
+        }
+        MediaConstraints mediaConstraints = new MediaConstraints();
+        mediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
+        mediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
+        mediaConstraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
+        mPeerConnection.createOffer(new SimpleSdpObserver() {
+            @Override
+            public void onCreateSuccess(SessionDescription sessionDescription) {
+                Log.i(TAG, "Create local offer success: \n" + sessionDescription.description);
+                mPeerConnection.setLocalDescription(new SimpleSdpObserver(), sessionDescription);
+                JSONObject message = new JSONObject();
+                try {
+                    message.put("type", "offer");
+                    message.put("sdp", sessionDescription.description);
+                    SignalClient.getInstance().sendMessage(message);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, mediaConstraints);
+    }
+
+    public void doLeave() {
+        logcatOnUI("Leave room, Wait ...");
+        hangup();
+
+        SignalClient.getInstance().leaveRoom();
+
+    }
+
+    public void doAnswerCall() {
+        logcatOnUI("Answer Call, Wait ...");
+
+        if (mPeerConnection == null) {
+            mPeerConnection = createPeerConnection();
+        }
+
+        MediaConstraints sdpMediaConstraints = new MediaConstraints();
+        Log.i(TAG, "Create answer ...");
+        mPeerConnection.createAnswer(new SimpleSdpObserver() {
+            @Override
+            public void onCreateSuccess(SessionDescription sessionDescription) {
+                Log.i(TAG, "Create answer success !");
+                mPeerConnection.setLocalDescription(new SimpleSdpObserver(),
+                                                    sessionDescription);
+
+                JSONObject message = new JSONObject();
+                try {
+                    message.put("type", "answer");
+                    message.put("sdp", sessionDescription.description);
+                    SignalClient.getInstance().sendMessage(message);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, sdpMediaConstraints);
+        updateCallState(false);
+    }
+
+    private void hangup() {
+        logcatOnUI("Hangup Call, Wait ...");
+        if (mPeerConnection == null) {
+            return;
+        }
+        mPeerConnection.close();
+        mPeerConnection = null;
+        logcatOnUI("Hangup Done.");
+        updateCallState(true);
+    }
+
+    public PeerConnection createPeerConnection() {
+        Log.i(TAG, "Create PeerConnection ...");
+
+        LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
+
+        PeerConnection.IceServer ice_server =
+                    PeerConnection.IceServer.builder("turn:xxxx:3478")
+                                            .setPassword("xxx")
+                                            .setUsername("xxx")
+                                            .createIceServer();
+
+        iceServers.add(ice_server);
+
+        PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
+        // TCP candidates are only useful when connecting to a server that supports
+        // ICE-TCP.
+        rtcConfig.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.DISABLED;
+        //rtcConfig.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
+        //rtcConfig.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE;
+        rtcConfig.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
+        // Use ECDSA encryption.
+        //rtcConfig.keyType = PeerConnection.KeyType.ECDSA;
+        // Enable DTLS for normal calls and disable for loopback calls.
+        rtcConfig.enableDtlsSrtp = true;
+        //rtcConfig.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
+        PeerConnection connection =
+                mPeerConnectionFactory.createPeerConnection(rtcConfig,
+                                                            mPeerConnectionObserver);
+        if (connection == null) {
+            Log.e(TAG, "Failed to createPeerConnection !");
+            return null;
+        }
+
+        List<String> mediaStreamLabels = Collections.singletonList("ARDAMS");
+        connection.addTrack(mVideoTrack, mediaStreamLabels);
+        connection.addTrack(mAudioTrack, mediaStreamLabels);
+
+        return connection;
+    }
+
+    public PeerConnectionFactory createPeerConnectionFactory(Context context) {
+        final VideoEncoderFactory encoderFactory;
+        final VideoDecoderFactory decoderFactory;
+
+        encoderFactory = new DefaultVideoEncoderFactory(
+                                mRootEglBase.getEglBaseContext(),
+                                false /* enableIntelVp8Encoder */,
+                                true);
+        decoderFactory = new DefaultVideoDecoderFactory(mRootEglBase.getEglBaseContext());
+
+        PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(context)
+                .setEnableInternalTracer(true)
+                .createInitializationOptions());
+
+        PeerConnectionFactory.Builder builder = PeerConnectionFactory.builder()
+                .setVideoEncoderFactory(encoderFactory)
+                .setVideoDecoderFactory(decoderFactory);
+        builder.setOptions(null);
+
+        return builder.createPeerConnectionFactory();
+    }
+
+    /*
+     * Read more about Camera2 here
+     * https://developer.android.com/reference/android/hardware/camera2/package-summary.html
+     **/
+    private VideoCapturer createVideoCapturer() {
+        if (Camera2Enumerator.isSupported(this)) {
+            return createCameraCapturer(new Camera2Enumerator(this));
+        } else {
+            return createCameraCapturer(new Camera1Enumerator(true));
+        }
+    }
+
+    private VideoCapturer createCameraCapturer(CameraEnumerator enumerator) {
+        final String[] deviceNames = enumerator.getDeviceNames();
+
+        // First, try to find front facing camera
+        Log.d(TAG, "Looking for front facing cameras.");
+        for (String deviceName : deviceNames) {
+            if (enumerator.isFrontFacing(deviceName)) {
+                Logging.d(TAG, "Creating front facing camera capturer.");
+                VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
+                if (videoCapturer != null) {
+                    return videoCapturer;
+                }
+            }
+        }
+
+        // Front facing camera not found, try something else
+        Log.d(TAG, "Looking for other cameras.");
+        for (String deviceName : deviceNames) {
+            if (!enumerator.isFrontFacing(deviceName)) {
+                Logging.d(TAG, "Creating other camera capturer.");
+                VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
+                if (videoCapturer != null) {
+                    return videoCapturer;
+                }
+            }
+        }
+        return null;
+    }
+
+    private PeerConnection.Observer mPeerConnectionObserver = new PeerConnection.Observer() {
+        @Override
+        public void onSignalingChange(PeerConnection.SignalingState signalingState) {
+            Log.i(TAG, "onSignalingChange: " + signalingState);
+        }
+
+        @Override
+        public void onIceConnectionChange(PeerConnection.IceConnectionState iceConnectionState) {
+            Log.i(TAG, "onIceConnectionChange: " + iceConnectionState);
+        }
+
+        @Override
+        public void onIceConnectionReceivingChange(boolean b) {
+            Log.i(TAG, "onIceConnectionChange: " + b);
+        }
+
+        @Override
+        public void onIceGatheringChange(PeerConnection.IceGatheringState iceGatheringState) {
+            Log.i(TAG, "onIceGatheringChange: " + iceGatheringState);
+        }
+
+        @Override
+        public void onIceCandidate(IceCandidate iceCandidate) {
+            Log.i(TAG, "onIceCandidate: " + iceCandidate);
+
+            try {
+                JSONObject message = new JSONObject();
+                //message.put("userId", RTCSignalClient.getInstance().getUserId());
+                message.put("type", "candidate");
+                message.put("label", iceCandidate.sdpMLineIndex);
+                message.put("id", iceCandidate.sdpMid);
+                message.put("candidate", iceCandidate.sdp);
+                SignalClient.getInstance().sendMessage(message);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onIceCandidatesRemoved(IceCandidate[] iceCandidates) {
+            for (int i = 0; i < iceCandidates.length; i++) {
+                Log.i(TAG, "onIceCandidatesRemoved: " + iceCandidates[i]);
+            }
+            mPeerConnection.removeIceCandidates(iceCandidates);
+        }
+
+        @Override
+        public void onAddStream(MediaStream mediaStream) {
+            Log.i(TAG, "onAddStream: " + mediaStream.videoTracks.size());
+        }
+
+        @Override
+        public void onRemoveStream(MediaStream mediaStream) {
+            Log.i(TAG, "onRemoveStream");
+        }
+
+        @Override
+        public void onDataChannel(DataChannel dataChannel) {
+            Log.i(TAG, "onDataChannel");
+        }
+
+        @Override
+        public void onRenegotiationNeeded() {
+            Log.i(TAG, "onRenegotiationNeeded");
+        }
+
+        @Override
+        public void onAddTrack(RtpReceiver rtpReceiver, MediaStream[] mediaStreams) {
+            MediaStreamTrack track = rtpReceiver.track();
+            if (track instanceof VideoTrack) {
+                Log.i(TAG, "onAddVideoTrack");
+                VideoTrack remoteVideoTrack = (VideoTrack) track;
+                remoteVideoTrack.setEnabled(true);
+                remoteVideoTrack.addSink(mRemoteSurfaceView);
+            }
+        }
+    };
+
+    private SignalClient.OnSignalEventListener
+            mOnSignalEventListener = new SignalClient.OnSignalEventListener() {
+
+        @Override
+        public void onConnected() {
+
+            logcatOnUI("Signal Server Connected !");
+        }
+
+        @Override
+        public void onConnecting() {
+
+            logcatOnUI("Signal Server Connecting !");
+        }
+
+        @Override
+        public void onDisconnected() {
+
+            logcatOnUI("Signal Server Disconnected!");
+        }
+
+        @Override
+        public void onUserJoined(String roomName, String userID){
+
+            logcatOnUI("local user joined!");
+
+            mState = "joined";
+
+            //这里应该创建PeerConnection
+            if (mPeerConnection == null) {
+                mPeerConnection = createPeerConnection();
+            }
+        }
+
+        @Override
+        public void onUserLeaved(String roomName, String userID){
+            logcatOnUI("local user leaved!");
+
+            mState = "leaved";
+        }
+
+        @Override
+        public void onRemoteUserJoined(String roomName) {
+            logcatOnUI("Remote User Joined, room: " + roomName);
+
+            if(mState.equals("joined_unbind")){
+                if (mPeerConnection == null) {
+                    mPeerConnection = createPeerConnection();
+                }
+            }
+
+            mState = "joined_conn";
+            //调用call， 进行媒体协商
+            doStartCall();
+        }
+
+        @Override
+        public void onRemoteUserLeaved(String roomName, String userID) {
+            logcatOnUI("Remote User Leaved, room: " + roomName + "uid:"  + userID);
+            mState = "joined_unbind";
+
+            if(mPeerConnection !=null ){
+                mPeerConnection.close();
+                mPeerConnection = null;
+            }
+        }
+
+        @Override
+        public void onRoomFull(String roomName, String userID){
+            logcatOnUI("The Room is Full, room: " + roomName + "uid:"  + userID);
+            mState = "leaved";
+
+            if(mLocalSurfaceView != null) {
+                mLocalSurfaceView.release();
+                mLocalSurfaceView = null;
+            }
+
+            if(mRemoteSurfaceView != null) {
+                mRemoteSurfaceView.release();
+                mRemoteSurfaceView = null;
+            }
+
+            if(mVideoCapturer != null) {
+                mVideoCapturer.dispose();
+                mVideoCapturer = null;
+            }
+
+            if(mSurfaceTextureHelper != null) {
+                mSurfaceTextureHelper.dispose();
+                mSurfaceTextureHelper = null;
+
+            }
+
+            PeerConnectionFactory.stopInternalTracingCapture();
+            PeerConnectionFactory.shutdownInternalTracer();
+
+            if(mPeerConnectionFactory !=null) {
+                mPeerConnectionFactory.dispose();
+                mPeerConnectionFactory = null;
+            }
+
+            finish();
+        }
+
+        @Override
+        public void onMessage(JSONObject message) {
+
+            Log.i(TAG, "onMessage: " + message);
+
+            try {
+                String type = message.getString("type");
+                if (type.equals("offer")) {
+                    onRemoteOfferReceived(message);
+                }else if(type.equals("answer")) {
+                    onRemoteAnswerReceived(message);
+                }else if(type.equals("candidate")) {
+                        onRemoteCandidateReceived(message);
+                }else{
+                    Log.w(TAG, "the type is invalid: " + type);
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void onRemoteOfferReceived(JSONObject message) {
+            logcatOnUI("Receive Remote Call ...");
+
+            if (mPeerConnection == null) {
+                mPeerConnection = createPeerConnection();
+            }
+
+            try {
+                String description = message.getString("sdp");
+                mPeerConnection.setRemoteDescription(
+                                            new SimpleSdpObserver(),
+                                            new SessionDescription(
+                                                                SessionDescription.Type.OFFER,
+                                                                description));
+                doAnswerCall();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void onRemoteAnswerReceived(JSONObject message) {
+            logcatOnUI("Receive Remote Answer ...");
+            try {
+                String description = message.getString("sdp");
+                mPeerConnection.setRemoteDescription(
+                                    new SimpleSdpObserver(),
+                                    new SessionDescription(
+                                            SessionDescription.Type.ANSWER,
+                                            description));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            updateCallState(false);
+        }
+
+        private void onRemoteCandidateReceived(JSONObject message) {
+            logcatOnUI("Receive Remote Candidate ...");
+            try {
+                IceCandidate remoteIceCandidate =
+                        new IceCandidate(message.getString("id"),
+                                            message.getInt("label"),
+                                            message.getString("candidate"));
+
+                mPeerConnection.addIceCandidate(remoteIceCandidate);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void onRemoteHangup() {
+            logcatOnUI("Receive Remote Hangup Event ...");
+            hangup();
+        }
+    };
+
+    private void logcatOnUI(String msg) {
+        Log.i(TAG, msg);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                String output = mLogcatView.getText() + "\n" + msg;
+                mLogcatView.setText(output);
+            }
+        });
+    }
+}
+
+
+
+
+IOS WEBRTC
+
+本地视频采集与展示
+创建RTCPeerConnection的rtp udp进行传输
+媒体协商
+远端视频的展示
+
+打开权限
+plist中privacy - camera usage
+       privacy - microphone usage
+  
+  
+    
+ios引入webrtc库
+通过pod方式引入
+编译webrtc源码，手动引入，下载源码需要翻墙
+
+编写podfile中
+pod install
+
+
+source 'https://github.com/CocoaPods/Specs.git'
+use_frameworks!//使用编译好的二进制的库，解决socket.io只有swift版本的问题
+platform:ios,'11.0'
+target 'WebRTC4iOS2' do //工程名
+  pod 'GoogleWebRTC'
+  pod 'Socket.IO-Client-Swift','~>13.3.0'
+end
+
+保证swift的socketio能在pod中正常安装
+在bulid setting中搜索swift
+查看到版本号SWIFT_VERSION 4.2
+所以在bulid setting 加号 用户定义增加一行：SWIFT_VERSION 4.2
+
+
+
+ios端 socketio的使用
+
+通过socket.io连接服务端
+发送消息
+注册侦听的消息，哪些加入房间等
+
+NSURL *URL = 
+manager = [SocketManager alloc]initWithSocketURL:url
+                                   config:@{
+                                       @"log":@YES,
+                                       @"forcePolling":@YES,
+                                       @"forceWebsock":@YES
+                                   }
+socket = manager.defaultSocket;
+if(socket.status==SocketIOStatusConnected){//如果建立成功
+    [socket emit:@"join" with:@[room]];//房间名字
+}
+
+[socket on:@"connect" callback:^(NSArray* data,SocketAckEmitter *ack){
+      NSLog(@"连接成功");
+}]
+
+
+
+具体代码：
+bulid settings 搜索bitco ，关闭enable bitcode 因为webrtc不能使用bitcode
+在ViewController.m中
+@import SocketIO
+@interface ViewController(){
+    SocketManager *manager;
+    SocketIOClient* socket;
+}
+-(void)viewDidLoad{
+    [self connect];
+}
+-(void)connect{
+    //socket.io服务器地址
+	NSURL *url = [[NSUrl alloc] initWithString:@"https://learningrtc.cn"];
+	manager = [SocketManager alloc]initWithSocketURL:url
+									   config:@{
+										   @"log":@YES,
+										   @"forcePolling":@YES,
+										   @"forceWebsock":@YES
+									   }
+	socket = manager.defaultSocket;
+	[socket connect];
+	if(socket.status==SocketIOStatusConnected){//如果建立成功
+		[socket emit:@"join" with:@[@"111111"]];//房间名字ID
+	}
+    //监听消息
+	[socket on:@"connect" callback:^(NSArray* data,SocketAckEmitter *ack){
+		  NSLog(@"连接成功");
+		  	if(socket.status==SocketIOStatusConnected){//如果建立成功
+				[self->socket emit:@"join" with:@[@"111111"]];//房间名字ID
+			}
+	}]
+	
+	[socket on:@"joined" callback:^(NSArray* data,SocketAckEmitter *ack){
+		  NSLog(@"joinde");
+		  	NSString *room = [data objectAtIndex:0];
+		  	NSString *userid = [data objectAtIndex:1];
+	}]
+
+}
+
+
+
+ios界面的布局
+ViewController.m
+	UITextField* addr;
+	UITextField* room;
+	CallViewController *call;
+	self.joinBtn
+    -(void)btnClick:{
+      [self addChildViewController:self.call];
+      [self.call didMoveToParentViewController:self];
+      //在内部建立了socketio的连接
+      [self.view addSubview:self.call.view];
+      //拿到连接成功的SignalClient单例
+      sigclient = [SignalClient getInstance];
+      //加入房间
+      [sigclient joinRoom:@"111111"];
+    }
+
+CallViewController.m
+	UITextField* myaddr;
+	UITextField* myroom;
+-(instancetype)initAddr:(NSString*)addr withRoom:(NSString*)room{
+    myaddr = addr;
+    myroom = room;
+}
+
+
+IOS本地视频的采集和展示
+CallViewController.m
+
+#import <WebRTC/WebRTC.h>
+#import <MBProgressHUD/MBProgressHUD.h>
+@interface CallViewController()<SignalEventNotify,RTCPeerConnectionDelegate,RTCVideoViewDelegate>
+{
+     NSString *myAddr;
+     NSString *myRoom;
+     NSString *myState;
+     SignalClient *sigclient;
+     RTCPeerConnectionFactory *factory;
+     RTCCameraVideoCapturer *capture;
+     //RTCMediaStream *localStream;
+     RTCPeerConnection *peerConnection;
+     
+     RTCVideoTrack *videoTrack;
+     RTCAudioTrack *audioTrack;
+     
+     RTCVideoTrack *remoteVideoTrack;
+     CGSize remoteVideoSize;
+     
+     NSMutableArray *ICEServers;
+}
+
+@property (strong, nonatomic) RTCEAGLVideoView *remoteVideoView;//展示远端视频窗口，读Track数据
+@property (strong, nonatomic) RTCCameraPreviewView *localVideoView;//展示本地，读本地source源数据
+@property (strong, nonatomic) UIButton *leaveBtn;
+
+@end
+
+@implementation CallViewController
+static CGFloat const kLocalVideoViewSize = 120;
+static CGFloat const kLocalVideoViewPadding =8;
+static NSString *const RTCSTUNServerURL = @"turn:stun.al.learningrtc.cn:3478";
+
+-(instancetype)initAddr:(NSString*)addr withRoom:(NSString*)room{
+    myAddr = addr;
+    myRoom = room;
+    return self;
+}
+
+-(void)viewDidLoad {
+    [super viewDidLoad];
+    CGRect bounds = self.view.bounds;
+    self.remoteVideoView = [[RTCEAGLVideoView alloc]initWithFrame:self.view.bounds];
+    self.remoteVideoView.delegate = self;
+    [self.view addSubview:self.remoteVideoView];
+    
+    self.localVideoView = [[RTCCameraPreviewView alloc]initWithFrame:CGRectZero];
+    [self.view addSubview:self.localVideoView];
+    
+    CGRect localVideoFrame = CGRectMake(0,0,kLocalVideoViewSize,kLocalVideoViewSize);
+    localVideoFrame.origin.x = CGRectGetMaxX(bounds);
+    
+    localVideoFrame.origin.x = CGRectGetMaxX(bounds)-localVideoFrame.size.height-kLocalVideoViewPadding;
+    localVideoFrame.origin.y = CGRectGetMaxY(bounds)-localVideoFrame.size.height-kLocalVideoViewPadding;
+    [self.localVideoView setFrame:localVideoFrame];
+    
+    self.leaveBtn = [[UIButton alloc]init];
+    [self.leaveBtn setTitleColor:[UIColor whitecolor] forState:UIControlStateNormal];
+    [self.leaveBtn setFrame:CGRectMake(self.view.bounds.size.width/2-40,self.view.bounds.size.height-140,80,80)];
+    [self.leaveBtn addTarget:self action:@selector(leaveRoom:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:self.leaveBtn];
+    //创建工厂，工厂可创建videosource connection
+    [self createPeerConnectionFactory];
+    //本地视频数据采集，渲染
+    [self captureLocalMedia];
+    //建立一个连接
+    sigclient = [signalClient getInstance];
+    sigclient.delegate = self;
+    [sigclient createConnect:myAddr];
+
+}
+
+-(void)createPeerConnectionFactory{
+   //设置ssl传输，工厂创建前必须调用
+   [RTCPeerConnectionFactory initialize];
+   if(!factory){
+       //指定自己偏好的编码器解码器
+       RTCDefaultVideoDecoderFactory *decoderFactory = [[RTCDefaultVideoDecoderFactory alloc]init];
+       RTCDefaultVideoDecoderFactory *encoderFactory = [[RTCDefaultVideoDecoderFactory alloc]init];
+       //获取出所支持的所有编码器
+        NSArray *codecs = [encoderFactory supportedCodecs];
+        //把自己偏好的编码器设置进去
+       [encoderFactory setPreferredCodec:codecs[2]];
+       factory = [[RTCPeerConnectionFactory alloc]initWithEncoderFactory:encoderFactory decoderFactory:decoderFactory];		
+       //factory = [[RTCPeerConnectionFactory alloc]init];
+   }
+}
+
+-(void)captureLocalMedia{
+    NSDictionary *mandatoryConstraints = @{};
+    [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatoryConstraints optionalConstraints:nil]];
+    RTCAudioSource *audioSource = [factory audioSourceWithConstraints:constraints];
+    audioTrack = [factory audioTrackWithSource:audioSource trackId:@"ADRAMSa0"];
+    //获取到所有移动端支持的设备video
+    NSArray<AVCaptureDevice*>*catureDevices = [RTCCameraVideoCapturer captureDevices];
+    //默认前置摄像头
+    AVCaptureDevicePosition  position = AVCaptureDevicePositionFront;
+    AVCaptureDevice* device = captureDevices[0];
+    for(AVCaptureDevice*obj in catureDevices){
+         if(obj.position ==position){
+             device = obj;//找到前置摄像头
+             break;
+         }
+    }
+    //检查摄像头权限
+    AVAuthorizationStatus authStatus = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo];
+    if(authStatus == AVAuthorizationStatusRestricted ||authStatus==AVAuthorizationStatusDenied){
+        NSLog(@"相机访问受限");
+        return;
+    }
+    if(device){
+        //设备采集的数据先输送给这个viceosource，view展示视频从viceosource的代理去拿
+        RTCVideoSource *videoSource = [factory videoSource];
+        //videoSource观察设备的采集
+        capture = [[RTCCameraVideoCapturer alloc]initWithDelegate:videoSource];
+        AVCaptureDeviceFormat *format = [[RTCCameraVideoCaturer supportedFormatsForDevice:device]lastObject];
+        CGFloat fps = [[format videoSupportedFrameRateRanges] firstObject].macFrameRate;
+        //videoSource与track建立联系，用于传输数据用的
+        videoTrack =[factory videoTrackWithSource:videoSource trackId:@"ARDAMSv0"];
+        //本地显示videoSource的视频
+        self.localVideoView.captureSession = capture.captureSession;
+        //启动的时候就会去展示数据
+        [capture startCaptureWithDevice:device format:format fps:fps];
+    }
+    
+}
+-(void)leaved:(NSString*)room{
+    NSLog(@"leave");
+}
+//SignalClient中加入房间后成功后的回调
+-(void)joined:(NSString*)room{
+    myState = @"joined";
+    //这里创建PeerConnection
+    if(!peerConnection){
+        peerConnection = [self createPeerConnection];
+    }
+}
+-(void)otherjoin:(NSString*)room User:(NSString*)uid
+{
+    //其它用户加入房间自己会收到joined_unbind
+    if([myState isEqualToString:@"joined_unbind"]){
+        if(!peerConnection){
+          peerConnection = [self createPeerConnection];
+        }
+    }
+    myState = @"joined_conn";
+    //调用call 进行媒体协商
+    [self doStartCall];
+}
+-(void)full:(NSString *)room {
+   //房间满了的回调
+   myState = @"leaved";
+   if(peerConnection){
+       [peerConnection close];
+       peerConnection = nil;
+   }
+   if(self.localVideoView){
+      //[self.localVideoView removeFromSuperview];
+      //self.localVideoView = nil;
+   }
+}
+
+-(void) doStartCall{
+   if(!peerConnection){
+       peerConnection = [self createPeerConnection];
+   }
+   //创建offer
+   [peerConnection offerForConstraints:[self defaultPeerConnContraints] completionHandler:^(RTCSessionDescription *_Nullable sdp,NSError*_Nullable error){
+         if(error){
+           NSLog(@"创建offer失败");
+         }else{
+            __weak RTCPeerConnnection* weakPeerConntion =  self ->peerConnection;
+            [self setLocalOffer:weakPeerConnction withSdp:sdp];//把offer存在本地
+         }
+   }];
+}
+//设置本地offer
+-(void)setLocalOffer:(RTCPeerConnection*)pc withSdp:(RTCSessionDescription*)sdp{
+    [pc setLocalDescription:sdp completionHandler:^(NSError *_Nullable error){
+            if(!error){
+               //成功设置offer到本地
+            }else{
+               //没有成功设置offer到本地
+            }
+    }];
+    __weak NSString* weakMyRoom = myRoom;
+    dispatch_async(dispatch_get_main_queue,^{
+        NSDictionary* dict = [NSDictionary alloc]initWithObject:@[@"offer",sdp.sdp] forkeys:@[@"type",@"sdp"]];
+        //发送offer
+        [[SignalClient getInstance]sendMessage:weakMyRoom withMsg:dict];
+    });
+}
+//接收到远端answer
+-(void)answer:(NSString*)room message:(NSDictionary*)dict{
+     //接收到一个answer的message
+     NSString *remoteAnswerSdp =  dict[@"sdp"];
+     //生成sdp对象
+     RTCSessionDescription *remoteSdp = [[RTCSessionDescription alloc]initWithType:RTCSdpTypeAnswer sdp:remoteAnswerSdp];
+     [peerConnection setRemoteDescription:remoteSdp completionHandler:^(NSError *_Nullable error){
+          if(!error){
+            //设置answer到远端成功
+          }else{
+            //设置answer到本地成功
+          }
+     }];
+}
+//作为远端设置本地answer
+-(void)setLocalAnswer:(RTCPeerConnection*)pc withSdp:(RTCSessionDescription*)sdp{
+     [pc  setLocalDescription:sdp completionHandler:^(NSError *_Nullable error){
+           if(!error){
+              //设置answer成功
+           }else{
+             //设置answer失败
+           }
+     
+     }]
+
+}
+
+
+//主要用于端与端音视频数据的传输
+-(RTCPeerConnection  *)createPeerConnection{
+    //得到ICEServer，收集穿越后的ip地址，p2p打通，打不通要turn服务中转
+    if(!ICEServers){
+        ICEServers = [NSMutableArray array];
+        [ICEServers addObject:[self defaultSTUNServer]];
+    }
+    //用工厂来创建连接
+    RTCConfiguration *configuration = [[RTCConfiguration alloc]init];
+    [configuration setIceServers:ICEServers];//设置iceserver
+    //[self defaultPeerConnContraints]限制是否只传音频或视频，是否打开dtls方式加密
+    RTCPeerConnection *conn = [factory peerConnectionWithConfiguration:configuration constraints:[self defaultPeerConnContraints]delegate:self];
+    NSArray<NSString*>* mediaStreamLabels = @[@"ARDAMS"];
+    //协商前把要传的轨加进去
+    [conn addTrack:videoTrack streamIds:mediaStreamLabels];
+    [conn addTrack:audioTrack streamIds:mediaStreamLabels];
+}
+@end
+
+SignalClient.m
+-(void)createConnect:(NSString*)addr{
+    //socket.io服务器地址
+	NSURL *url = [[NSUrl alloc] initWithString:@"https://learningrtc.cn"];
+	manager = [SocketManager alloc]initWithSocketURL:url
+									   config:@{
+										   @"log":@YES,
+										   @"forcePolling":@YES,
+										   @"forceWebsock":@YES
+									   }
+	socket = manager.defaultSocket;
+	[socket connect];
+	if(socket.status==SocketIOStatusConnected){//如果建立成功
+		[socket emit:@"join" with:@[@"111111"]];//房间名字ID
+	}
+    //监听消息
+	[socket on:@"connect" callback:^(NSArray* data,SocketAckEmitter *ack){
+		  NSLog(@"连接成功");
+		  	if(socket.status==SocketIOStatusConnected){//如果建立成功
+				[self->socket emit:@"join" with:@[@"111111"]];//房间名字ID
+			}
+	}]
+	
+	[socket on:@"joined" callback:^(NSArray* data,SocketAckEmitter *ack){
+		  NSLog(@"joinde");
+		  	NSString *room = [data objectAtIndex:0];
+		  	NSString *userid = [data objectAtIndex:1];
+		  	[self.delegate joined:room];
+	}]
+
+}
+
+}
+
+-(void)sendMessage:(NSString*)room withMsg:(NSDictionary*)msg{
+      if(socket.status == SocketIOStatusConnected){
+            if(msg){
+                NSLog(@"json:%@",msg);
+                [socket emit:@"message" with:@[room,msg]];
+            }else{
+                //msg是空
+            }
+      }else{
+          //socket是断开
+      }
+}
