@@ -252,7 +252,7 @@ npm install serve-index
 
 node server.js
 
-nestat -ntpl | grep 80 查看被占用的端口
+netstat -ntpl | grep 80 查看被占用的端口
 kill -9 杀不死
 进入到server.js 所在目录forever stop server.js  停止占用的80端口
 
@@ -1060,6 +1060,16 @@ webrtc信令服务器原理
 如果两客户端不在一个网络类，需要打洞后连接p2p，对称的是打通不了的
 非对称的可尝试打通，如果打通不了只能通过服务进行中转
 
+传通的方式：
+    局域网内：a主机通过掩码可算出判断目标b是否是同一局域网，如果是，直接把自己的ip,mac和b的ip,
+		mac地址通过arp包发送给b，互相知道ip和mac地址后则可通讯
+    外网：a主机通过掩码可算出判断目标b不是同一局域网，是不同网段，a把自己的ip,mac和b的ip，mac发给网关，
+        网关通过路由发arp包一跳一跳的去广域网找目标主机b，给过多次路由找到b，最终发送数据，发送的数据是
+        通过多个路由中转的
+打洞方式：
+    不同网段内两台主机直接映射出外网地址和端口号，这时通讯更明确，不需要路由经下一路由中转数据，而是直达数据
+    
+
 两个客户端连接前，需要交换信息，交换信息分两方面：
 1：客户端所处的网络类的相关信息，通过信令服务器传给另一端，以判断是否支持p2p
 2:解码器支持哪种，视频支持哪种格式，都需要信令服务器
@@ -1589,7 +1599,7 @@ RTCPeerConnection方法分类：
        
     重要事件：
        onnegotiationneeded：媒体协商触发，需要协商
-       onicecandidate:收到ice后选者，会解发这个事件
+       onicecandidate:收到ice后选者，会触发这个事件
        
 传输相关协议rtp：查看传输链路质量
 统计相关方法：编解码器 传输链路信息获取
@@ -2200,9 +2210,11 @@ function conn(){
 		//都等到收到一个otherjoin时再创建
 		//所以，在这个消息里应该带当前房间的用户数
 		//
-		//create conn and bind media track
+		//create conn and bind media track，我加入房间了，创建pc候选者连接，
+		//并且监听如果收到远端对方流显示在屏幕上
+		//并监听自己如果有候选者产生，发送给对方
 		createPeerConnection();//媒体协商
-		bindTracks();
+		bindTracks();//创建完连接后一定要把本地采集的流中的轨添加到pc中
 
 		btnConn.disabled = true;
 		btnLeave.disabled = false;
@@ -2214,21 +2226,21 @@ function conn(){
 
 		//如果是多人的话，每上来一个人都要创建一个新的 peerConnection
 		//
-		if(state === 'joined_unbind'){//如果是只有一个人在房间，那就是断开的，要重新连接
-			createPeerConnection();
+		if(state === 'joined_unbind'){//如果我和其它另一个用户，另一个用户离开则是joined_unbind，那就是断开的，要重新连接
+			createPeerConnection();//收到另一个用户离开，我自己需要重新连接，等待其它新用户加入
 			bindTracks();
 		}
 
-		state = 'joined_conn';
-		call();
+		state = 'joined_conn';//otherjoin和joined_conn都表示第二个用户加入房间
+		call();//当另一个用户加入，我创建offer，并发送offer给对方
 
 		console.log('receive other_join message, state=', state);
 	});
     //接收到服务端返回的full客间满员
 	socket.on('full', (roomid, id) => {
 		console.log('receive full message', roomid, id);
-		hangup();//断掉没进入房间用户的连接 
-		closeLocalMedia();
+		hangup();//断掉没进入房间用户的连接 ，我想加入房间，房间满了，我会断掉自己的pc
+		closeLocalMedia();//同时停止本地流中的轨
 		state = 'leaved';//需要离开
 		console.log('receive full message, state=', state);
 		alert('the room is full!');
@@ -2237,7 +2249,7 @@ function conn(){
 	socket.on('leaved', (roomid, id) => {
 		console.log('receive leaved message', roomid, id);
 		state='leaved'
-		socket.disconnect();
+		socket.disconnect();//我自己主动离开房间了，就把socket关闭掉
 		console.log('receive leaved message, state=', state);
 
 		btnConn.disabled = false;
@@ -2253,7 +2265,7 @@ function conn(){
 		//在客户端应该维护一张peerconnection表，它是
 		//一个key:value的格式，key=userid, value=peerconnection
 		state = 'joined_unbind';//收到对方离开的状态
-		hangup();//关闭连接
+		hangup();//关闭pc连接
 		offer.value = '';
 		answer.value = '';
 		console.log('receive bye message, state=', state);
@@ -2261,7 +2273,7 @@ function conn(){
 
 	socket.on('disconnect', (socket) => {
 		console.log('receive disconnect message!', roomid);
-		if(!(state === 'leaved')){
+		if(!(state === 'leaved')){//如果不是自己主动离开房间，都需要关掉pc，如果是自己主动离开，关掉socketio
 			hangup();
 			closeLocalMedia();
 
@@ -2281,19 +2293,19 @@ function conn(){
 		if(data.hasOwnProperty('type') && data.type === 'offer') {
 			
 			offer.value = data.sdp;
-
+            //收到offer存到远端，创建answer
 			pc.setRemoteDescription(new RTCSessionDescription(data));//把offer发到远端,RTCSessionDescriptionl(data)转换成对象
 
-			//create answer
+			//create answer成功，把answer保存到本地，再发送给我
 			pc.createAnswer()
 				.then(getAnswer)
 				.catch(handleAnswerError);//创建answer
 
-		}else if(data.hasOwnProperty('type') && data.type == 'answer'){
+		}else if(data.hasOwnProperty('type') && data.type == 'answer'){//收到的是answer，发送到自己远端
 			answer.value = data.sdp;
 			pc.setRemoteDescription(new RTCSessionDescription(data));//设置到远端answer
 		
-		}else if (data.hasOwnProperty('type') && data.type === 'candidate'){//收到candidate
+		}else if (data.hasOwnProperty('type') && data.type === 'candidate'){//收到对方发来的candidate
 			var candidate = new RTCIceCandidate({
 				sdpMLineIndex: data.label,//媒体行号
 				candidate: data.candidate
@@ -2309,11 +2321,11 @@ function conn(){
 
 
 	roomid = getQueryVariable('room');
-	socket.emit('join', roomid);//发送一个自己加入房间的消息
+	socket.emit('join', roomid);//连接成功后发送一个自己加入房间的消息
 
 	return true;
 }
-
+//turn sturn服务器的地址，很关键很关键
 var pcConfig = {
   'iceServers': [{
     'urls': 'turn:stun.al.learningrtc.cn:3478',//turn stun地址
@@ -2341,7 +2353,7 @@ function createPeerConnection(){
 	if(!pc){
 		pc = new RTCPeerConnection(pcConfig);
 
-		pc.onicecandidate = (e)=>{//监听到有候先者时
+		pc.onicecandidate = (e)=>{//监听到自己产生有候先者时
 
 			if(e.candidate) {
 				sendMessage(roomid, {//发消息给对端候选者
@@ -2361,6 +2373,29 @@ function createPeerConnection(){
 	}
 
 	return;	
+}
+
+//绑定永远与 peerconnection在一起，
+//所以没必要再单独做成一个函数
+function bindTracks(){
+
+	console.log('bind tracks into RTCPeerConnection!');
+
+	if( pc === null || pc === undefined) {
+		console.error('pc is null or undefined!');
+		return;
+	}
+
+	if(localStream === null || localStream === undefined) {
+		console.error('localstream is null or undefined!');
+		return;
+	}
+
+	//add all track into peer connection 把本地的轨添加到pc中
+	localStream.getTracks().forEach((track)=>{
+		pc.addTrack(track, localStream);	
+	});
+
 }
 
 function leave() {
@@ -4254,6 +4289,45 @@ static NSString *const RTCSTUNServerURL = @"turn:stun.al.learningrtc.cn:3478";
 
 }
 
+//远端接收到offer
+-(void)offer:(NSString *)room message:(NSDictionary*)dict{
+    NSString *remoteOfferSdp = dict[@"sdp"];
+    RTCSessionDescription *remoteSdp = [[RTCSessionDescription alloc]initWithType:RTCSdpTypeOffer sdp:remoteOfferSdp];
+    if(!peerConnection){
+        peerConnection = [self createPeerConnection];
+    }
+    __weak RTCPeerConnection *weakPeerConnection = peerConnection;
+    //设置到远端offer
+    [weakPeerConnection setRemoteDescription:remoteSdp CompletionHandler:^(NSError *_Nullable error){
+        if(!error){
+            //设置成功拿到answer
+           [self getAnswer:weakPeerConnection];
+        }else{
+            //设置到远端失败
+        }
+    
+    }];
+}
+
+-(void)getAnswer:(RTCPeerConnection*)pc{
+    //作为远端收到的offer设置到远端成功后创建answer
+    [pc answerForConstraints:[self defaultPeerConnContraints]completionHandler:^(RTCSessionDescription * _Nullable sdp,NSError* _Nullable error){
+        if(!error){
+          __weak RTCPeerConnection *weakPeerConn = pc;
+          //创建answer成功后设置本地answer
+          [self setLocalAnswer:weakPeerConn withSdp:sdp];
+        }else{
+            //创建本地answer失败
+        }
+    }]
+}
+
+-(void)offer:(NSString*)room message:(NSDictionary*)dict{
+     //接收到offer消息
+     NSString *remoteOfferSdp = dict[@"sdp"];
+     RTC
+}
+
 
 //主要用于端与端音视频数据的传输
 -(RTCPeerConnection  *)createPeerConnection{
@@ -4265,12 +4339,67 @@ static NSString *const RTCSTUNServerURL = @"turn:stun.al.learningrtc.cn:3478";
     //用工厂来创建连接
     RTCConfiguration *configuration = [[RTCConfiguration alloc]init];
     [configuration setIceServers:ICEServers];//设置iceserver
-    //[self defaultPeerConnContraints]限制是否只传音频或视频，是否打开dtls方式加密
+    //[self defaultPeerConnContraints]限制是否只传音频或视频，是否打开dtls方式加密，这里代理，就回收到候远者，数据的回调，添加流，或信令变化，协商时
     RTCPeerConnection *conn = [factory peerConnectionWithConfiguration:configuration constraints:[self defaultPeerConnContraints]delegate:self];
     NSArray<NSString*>* mediaStreamLabels = @[@"ARDAMS"];
     //协商前把要传的轨加进去
     [conn addTrack:videoTrack streamIds:mediaStreamLabels];
     [conn addTrack:audioTrack streamIds:mediaStreamLabels];
+}
+
+- (RTCMediaConstraints*) defaultPeerConnContraints {
+    RTCMediaConstraints* mediaConstraints =
+    [[RTCMediaConstraints alloc] initWithMandatoryConstraints:@{
+                                                                kRTCMediaConstraintsOfferToReceiveAudio:kRTCMediaConstraintsValueTrue,
+                                                                kRTCMediaConstraintsOfferToReceiveVideo:kRTCMediaConstraintsValueTrue
+                                                                }
+                                          optionalConstraints:@{ @"DtlsSrtpKeyAgreement" : @"true" }];
+    return mediaConstraints;
+}
+
+//每收到候选者都发给另一端进行连通性检测
+- (void)peerConnection:(RTCPeerConnection *)peerConnection
+didGenerateIceCandidate:(RTCIceCandidate *)candidate{
+    NSLog(@"%s",__func__);
+    
+    NSString* weakMyRoom = myRoom;
+    dispatch_async(dispatch_get_main_queue(), ^{
+    
+        NSDictionary* dict = [[NSDictionary alloc] initWithObjects:@[@"candidate",
+                                                                [NSString stringWithFormat:@"%d", candidate.sdpMLineIndex],
+                                                                candidate.sdpMid,
+                                                                candidate.sdp]
+                                                           forKeys:@[@"type", @"label", @"id", @"candidate"]];
+    
+        [[SignalClient getInstance] sendMessage: weakMyRoom
+                                    withMsg:dict];
+    });
+}
+//渲染
+- (void)peerConnection:(RTCPeerConnection *)peerConnection
+        didAddReceiver:(RTCRtpReceiver *)rtpReceiver
+               streams:(NSArray<RTCMediaStream *> *)mediaStreams{
+    NSLog(@"%s",__func__);
+    //拿到track
+    RTCMediaStreamTrack* track = rtpReceiver.track;
+    if([track.kind isEqualToString:kRTCMediaStreamTrackKindVideo]){
+   
+        if(!self.remoteVideoView){
+            NSLog(@"error:remoteVideoView have not been created!");
+            return;
+        }
+        
+        remoteVideoTrack = (RTCVideoTrack*)track;
+        
+        //dispatch_async(dispatch_get_main_queue(), ^{
+            //内部自动渲染视频
+            [remoteVideoTrack addRenderer: self.remoteVideoView];
+        //});
+        //[remoteVideoTrack setIsEnabled:true];
+        
+        //[self.view addSubview:self.remoteVideoView];
+    }
+    
 }
 @end
 
@@ -4320,3 +4449,97 @@ SignalClient.m
           //socket是断开
       }
 }
+
+
+
+
+IOS的远端渲染
+RTCPeerConnection 委托
+
+didGenerateIceCandidate:每收集到一个候选者都会收到这个事件
+didAddReceiver:收到数据就会回调，相当于ontrack
+didOpenDataChannel:非视频数据回调
+
+
+
+
+
+
+
+
+自己搭建nodejs服务器
+
+1：使用finalshell连接远端服务器
+2：安装nodejs
+    yum方式 参考
+
+	curl -sL https://rpm.nodesource.com/setup_10.x | bash -
+	yum install -y nodejs
+
+	[root@localhost /]# node -v
+	v10.9.0
+	[root@localhost /]# npm -v
+	6.2.0 //NPM是随同NodeJS一起安装的包管理工具
+3:环境变量(自动配好了，所以这一步不需要)
+  vi ~/.bashrc
+  增加路径：
+  export PATH=$PATH:/usr/local/nodejs/bin
+  使配置生效：
+  source ~/.bashrc
+4:安装forever保证nodejs在后台可以运行
+  npm install forever -g 
+5:在/下创建https_server2目录，拷贝server.js到该目录下
+   forever start server.js //开启nodejs http服务
+6：第5中只是搭建了一个简单的http证书，实现服务器有发布目录，需要安装下面两个模块
+   注意：要https必须淘宝上买证书，证书需要域名和系统类型
+   安装模块：
+	npm install express 
+	npm install serve-index
+   安装出错，采用下面的国内镜像：
+   npm install -g cnpm --registry=https://registry.npm.taobao.org
+   	cnpm install express 
+	cnpm install serve-index
+7:在根目录下创建webserver，并在webserver下创建发布目录public 和cert
+    cert下放淘宝买的https证书
+    public是发布目录
+注意：nodejs退出命令窗口为 .exit不成功可用ctrl c
+    查看所有进程和某个端口的进程：
+		netstat -ntpl查看到已经启动
+		netstat - ntpl | grep 443
+		
+		
+8： 一：搭建turn stun服务器
+    二：解释：
+     1在另一台服务器上搭建该服务器，用于收集候远者，再通过socket.io信令服务器交换候远者
+     2开始采集本地的流，把本地的轨添加到本地流中，同时conn建立socket.io的连接。加入房间，发送join
+     3socket.io连接成功，收到如下：
+       joined：自己加入房间成功  
+            处理事件：创建pc，本地有候选者产生，就发送给远端，同时监听一旦有远端的流过来，把流显示在屏幕上
+                     把2本地流中的所有轨添加到pc的轨中，注：创建pc和加入轨是一起的
+       otherjoin:其它人加入房间的状态，会有两种状态
+            joined_unbind：其它人又离开房间， 重新创建pc，重新把2本地流中的所有轨添加到pc的轨中，以准备好候远者等待下次新人加入
+            joined_conn：其它人加入房间，创建offer，存offer到本地，并发送offer
+       full：自己要加入，但房间满了，关闭自己的pc，停止本地流中的轨，状态变成leaved
+       leaved：自己要离开房间，收到leaved，则关闭掉sockedio
+       by: 收到别人离开房间，状态机改为joined_unbind，停止本地流中的轨
+       disconnect：如果socket.io没有连接成功，则关闭自己的pc，停止本地流中的轨，状态变成leaved
+       message：表明我已经生成好了offer，对方生成好了answer
+                 offer:如果对方收到我的offer，存offer到远端，同时对方创建answer,
+                       存answer到本地，并发answer给我
+                 answer：自己收到对方的answer，把它设到远端
+                 candidate：收到对方的候选者，则pc添加候选者pc.addIceCandidate(candidate);
+    三： turn stun服务器的地址
+        var pcConfig = {
+				  'iceServers': [{
+					'urls': 'turn:stun.al.learningrtc.cn:3478',
+					'credential': "mypasswd",
+					'username': "garrylea"
+				  }]
+				};
+		pc = new RTCPeerConnection(pcConfig);
+		
+	四： 具体实现步聚如下：
+       
+
+
+
