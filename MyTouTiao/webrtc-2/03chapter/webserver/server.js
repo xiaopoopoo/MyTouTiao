@@ -14,8 +14,8 @@ app.use(serveIndex('./public'));
 app.use(express.static('./public'));
 
 var options = {
-	key  : fs.readFileSync('./cert/1557605_www.learningrtc.cn.key'),
-	cert : fs.readFileSync('./cert/1557605_www.learningrtc.cn.pem') 
+	key  : fs.readFileSync('./cert/2_www.maoyingyu.com.key'),
+	cert : fs.readFileSync('./cert/1_www.maoyingyu.com_bundle.pem') 
 }
 
 var https_server = https.createServer(options, app);

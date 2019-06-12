@@ -1223,8 +1223,8 @@ log4js.configure({
 
 配置好以后 ：forever stop server.js
 
-node server.js
-forver start server.js
+node server.js  或
+forever start server.js
 
 
 

@@ -187,9 +187,15 @@ pod search 框架名，没有找到我们上传的框架，为什么？
 因为本地索引库没有更新，同步远和索引库
 在githhup上specs可以看到刚上传的文件
 更新cocoapod本地索引库
-查看一个检索资源库，在个人／caches/cocoapods/search_index.json 有13mb大小，把这个文件删除掉，这个是克隆的老的cocoapod检索文件
+查看一个检索资源库，在个人／caches/cocoapods/search_index.json 有13mb大小,~/Library/Caches/CocoaPods，把这个文件删除掉，这个是克隆的老的cocoapod检索文件
 pod setup 这时重新安装检索资源库
 再pod search 框架命，可以找到我们上传的框架
+pod setup慢解决办法：
+	clone  https://github.com/CocoaPods/Specs.git 里面的代码Specs-master
+	执行 pod setup的时候产生~/.cocoapods/repos/master文件
+	把master文件中的.git拷贝到Specs-master中
+	再把Specs-master重命名为master替换掉之前的master
+	再pod setup试试
 
 
 

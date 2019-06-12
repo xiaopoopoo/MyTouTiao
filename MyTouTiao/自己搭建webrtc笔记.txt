@@ -38,8 +38,145 @@
 		netstat -ntpl查看到已经启动
 		netstat - ntpl | grep 443
 		
+8:搭建信令服务器socket.io ,它是websocket的超集，底层是tcp
+    a.安装： cnpm install socket.io log4js
+    b.重写nodejs服务器的server.js文件
+		'use strict'
+
+		var http = require('http');
+		//引入https模块
+		var https = require('https');
+		//引入读取证书的模块
+		var fs = require('fs');
+        //引入管理模块
+		var express = require('express');
+		//引入发布目录
+		var serveIndex = require('serve-index');
+
+		//socket.io
+		var socketIo = require('socket.io');
+
+		//
+		var log4js = require('log4js');
+
+		log4js.configure({
+			appenders: {
+				file: {
+					type: 'file',
+					filename: 'app.log',
+					layout: {
+						type: 'pattern',
+						pattern: '%r %p - %m',
+					}
+				}
+			},
+			categories: {
+			   default: {
+				  appenders: ['file'],
+				  level: 'debug'
+			   }
+			}
+		});
+
+		var logger = log4js.getLogger();
+
+		var app = express();
+		app.use(serveIndex('./public'));
+		app.use(express.static('./public'));
+
+		//http server服务监听80端口
+		var http_server = http.createServer(app);
+		http_server.listen(80, '0.0.0.0');
+
+		var options = {
+			key : fs.readFileSync('./cert/2_www.maoyingyu.com.key'),
+			cert: fs.readFileSync('./cert/1_www.maoyingyu.com_bundle.pem')
+		}
+
+		//https server 服务监听443端口
+		var https_server = https.createServer(options, app);
+
+		//bind socket.io with https_server   socket.io与https绑定
+		var io = socketIo.listen(https_server);
+
+		//connection 监听socket.io
+		io.sockets.on('connection', (socket)=>{
+
+			socket.on('message', (room, data)=>{
+				socket.to(room).emit('message', room, data)//房间内所有人,除自己外
+			});
+
+			//该函数应该加锁
+			socket.on('join', (room)=> {
+
+				socket.join(room);
+
+				var myRoom = io.sockets.adapter.rooms[room];
+				var users = Object.keys(myRoom.sockets).length;
+
+				logger.log('the number of user in room is: ' + users);
+
+				//在这里可以控制进入房间的人数,现在一个房间最多 2个人
+				//为了便于客户端控制，如果是多人的话，应该将目前房间里
+				//人的个数当做数据下发下去。
+				if(users < 3) {
+					socket.emit('joined', room, socket.id);	
+					if (users > 1) {
+						socket.to(room).emit('otherjoin', room);//除自己之外
+					}
+				}else {
+					socket.leave(room);
+					socket.emit('full', room, socket.id);	
+				}
+				//socket.to(room).emit('joined', room, socket.id);//除自己之外
+				//io.in(room).emit('joined', room, socket.id)//房间内所有人
+				//socket.broadcast.emit('joined', room, socket.id);//除自己，全部站点	
+			});
+
+			socket.on('leave', (room)=> {
+				var myRoom = io.sockets.adapter.rooms[room];
+				var users = Object.keys(myRoom.sockets).length;
+				//users - 1;
+
+				logger.log('the number of user in room is: ' + (users-1));
+
+				socket.leave(room);
+				socket.to(room).emit('bye', room, socket.id)//房间内所有人,除自己外
+				socket.emit('leaved', room, socket.id);	
+				//socket.to(room).emit('joined', room, socket.id);//除自己之外
+				//io.in(room).emit('joined', room, socket.id)//房间内所有人
+				//socket.broadcast.emit('joined', room, socket.id);//除自己，全部站点	
+			});
+
+		});
+        //https一般都是443端口
+		https_server.listen(443, '0.0.0.0');
+      c：配置好后重启server.js
+           forever stop server.js
+           node server.js 或
+           forever start server.js
+      d:启动时说找不到socket.io模块，解决方法：
+           npm install supervisor -g //安装全局支持
+           重新安装下面模块：
+               cnpm install express
+               cnpm install serve-index
+               cnpm install  log4js
+           再次forever start server.js提示找不到forver命令
+               重安装forver会显示forver路径/usr/lib/node_modules/forever/bin/forever
+               sudo vim /etc/profile
+               在最后一行加入：注意，只到bin就可以
+               export PATH=$PATH：/usr/lib/node_modules/forever/bin
+               source /etc/profile     //使环境变量生效
+           再次forever start server.js提示
+
+           
+      d：搭建一对一的聊天室代码看第08demo
+
+
+
 		
-8： 一：搭建turn stun服务器
+		
+9： 一：搭建turn stun服务器
     二：解释：
      1在另一台服务器上搭建该服务器，用于收集候远者，再通过socket.io信令服务器交换候远者
      2开始采集本地的流，把本地的轨添加到本地流中，同时conn建立socket.io的连接。加入房间，发送join
@@ -70,7 +207,205 @@
 		pc = new RTCPeerConnection(pcConfig);
 		
 	四： 具体实现步聚如下：
-       
+	     ls命令不能找到解决方法：export PATH=/bin:/usr/bin:$PATH
+	     没有stun服务器案例说明：10／peerconnection 是没有turn stun的视频通话，
+							  只能在局域网内同一机器通话10/peerconnection_sdp 是视频通话
+							  显示内容都是同一摄像头
+							  
+							  sdp数据包的，有兴趣可以看一下
+							  chmod 777 文件名 FTP上传记得打开权限
+			  
+							  查看web rtc李超.m 的2163行开始有详细说明
+							  实现时创建了p1,p2，p1代表本地，p2代表远端，用于传输offer,answer
+							  创建本地pc，需要添加轨如下：
+									pc = new RTCPeerConnection();
+									localStream.getTracks().forEach((track)=>{
+										pc.addTrack(track, localStream);	
+									});
+							  远端无需添加轨，但远端的流通过监听
+									pc2.ontrack = gotRemoteStream;
+									function getRemoteStream(e){
+										remoteStream = e.streams[0];
+										remoteVideo.srcObject = e.streams[0];//把获取到的
+										     //视频参数给这标签
+									}
+							  收到对方的answer,offer需存储到远端
+							      pc.setRemoteDescription
+							  发送answer.offer需存储到本地
+							      pc.setLocalDescription(desc)
+							  收到对方发的候选者，需要进行存储
+							      pc.addIceCandidate(candidate);
+		有stun服务器的搭建：
+		   注：可参照查看web rtc李超.m 的2163行开始有详细说明
+		   说明：查看12／peerconnection_onebyone项目，显示同一局域网不同机器的摄像头语音通话和桌面共享
+		        查看12／testCreateOffer项目只是显示ice的包
+		   奇怪现象：在没有搭建turn/sturn服务器时仍然无论是一个局域网还是两台机器处于不同的外网，
+		   都可以显示两台不同机器的视频通话
+		   原因分析：查看debug发现发送的offer对方并未收到，远程的流数据是通过：
+		   pc.ontrack = getRemoteStream;获取到的，目前分析可能是通过路由获取到的远程流，而非穿墙
+		coturn服务器搭建：
+		    1：如果ls等命令找不到：					
+			export PATH=/bin:/usr/bin:$PATH
+			2：安装gcc:
+			yum install gcc
+			3：安装g++:
+			yum install gcc-c++
+			4：安装运行coTurn需要依赖的环境安装：
+			yum install openssl openssl-libs libevent2 libevent-devel
+			5：如果libevent2安装失败
+				下载：
+				  wget https://github.com/libevent/libevent/releases/download/release-2.1.8-stable/libevent-2.1.8-stable.tar.gz
+				解压：
+				  tar xvfz libevent-2.1.8-stable.tar.gz
+				  cd libevent-2.1.8-stable
+				生成makefile：
+				  ./configure --prefix=/usr --libdir=/usr/lib64
+				编译：make
+				安装：makeinstall
+			6：安装coTurn
+				下载：
+				  wget https://github.com/coturn/rfc5766-turn-server/archive/3.2.5.9.tar.gz
+				解压：
+				  tar xvfz 3.2.5.9.tar.gz
+				  cd rfc5766-turn-server-3.2.5.9
+				生成makefiel:
+				  ./configure --prefix=/webrtc/coturn 指定编译后coturn安装地址
+				  ls -atl Makefile 查看是否生成makefile
+				编译安装： make -j 8 
+					sudo make install
+		
+			7:配置全局命令：
+				  sudo vim /etc/profile
+				  export PATH=$PATH:/usr/lib/node_modules/forever/bin:/webrtc/coturn/bin
+				  source /etc/profile
+			8:配置coTurn服务：
+				  修改配置文件：
+				  cd /webrtc/coturn/etc
+				  vim turnserver.conf.default
+				  把带#号的选项打开：
+					listening-port=3478
+					external-ip= 外网ip 
+					user=snrifk:snrifk 用户名和密码
+					realm=stun.xxx.cn  域名一定得写
+			9:启动：
+				turnserver -c ./etc/turn 或
+				turnserver -c ./etc/turnserver.conf
+			10：查看：
+				ps -ef | grep turn查看是否启用
+			11:测试：
+				进入webrtc.github.io/samples
+				点：ice candidate gathering from sturn
+				添加自己的turn ip：turn:stun.al.learningrtc.cn:3478
+				在githup上添加自己的turn ip，点收集
+				relay表只收集中继服务器的
+		   
+		
+		13/bandwidth:  2590行
+		    设置传输速率：原理
+		    //获取所有发送器
+		    var senders = pc.getSenders()   
+		    //找到发送器     
+	        senders.forEach(sender => {
+				if(sender && sender.track.kind === 'video'){
+					vsender = sender;//找到发送器
+				}
+			});
+            //拿到发送器参数
+			var parameters = vsender.getParameters();//拿到它的参数
+            //设置速率：
+            parameters.encodings[0].maxBitrate = bw * 1000;
+            	vsender.setParameters(parameters)//添加回sender中
+					.then(()=>{
+						bandwidth.disabled = false;	//参数设置成功再打开
+					})
+					.catch(err => {
+						console.error(err)
+					});
+        13／getstatsL:  2693行
+             统计信息流量也就是码率以及每秒发送的包数
+             js自带的心跳函数：
+             window.setInterval(() => {
+                  //拿到发送者
+                  const sender = pc.getSenders()[0];
+                  //通过发送者获得状态
+                  sender.getStats().then(res => {
+                  
+        14/chat:   2774行
+              08项目也是聊天：原理通过socket.io加入房间，再通过socket.emit('join', room);
+              发消息
+              14／chat项目也是聊天：
+                  原理通过socket.io加入房间
+                  //拿到非音视频传输对象RTCPeerConnection下createDataChannel
+                  dc = pc.createDataChannel('chatchannel');
+                  //回调函数设置
+                  //对方有消息传来，回收到这事件
+				  dc.onmessage = receivemsg;
+				  //对方有消息传来或我们创建好createDataChannel调用此事件
+			      dc.onopen = dataChannelStateChange;
+			      //DataChannel关闭
+				  dc.onclose = dataChannelStateChange;
+				  //DataChannel数据出错的时候
+				  dc.onerror = dataerror
+				  回调函数：
+				  function receivemsg(e){
+					var msg = e.data;
+					if(msg){//收到对方的消息
+						console.log(msg);
+						chat.value += "->" + msg + "\r\n";
+					}else{
+						console.error('received msg is null');
+					}
+				}
+                   
+                14／sendfile 文件传输项目：
+                    通过js的FileReader从文件中读取数据
+                    //发送数据是通过RTCPeerConnection下createDataChannel发送的
+                    function sendData(){
+                        //读文件数据
+						var offset = 0;
+						var chunkSize = 16384;
+						var file = fileInput.files[0];
+						fileReader = new FileReader();
+						fileReader.onload = e => {
+						    //发数据
+							dc.send(e.target.result);
+							offset += e.target.result.byteLength;
+							sendProgress.value = offset;
+							if (offset < file.size) {
+								readSlice(offset);
+							}
+						}
+
+					}
+					//对方怎么知道文件的大小，是通过媒体协商发过去的
+					sendMessage(roomid, {
+						type: 'fileinfo',
+						name: file.name,
+						size: file.size,
+						filetype: file.type,
+						lastmodify: file.lastModified
+					});
+					                    //接收到数据
+                    function receivemsg(e){
+                        //放入缓存
+						receiveBuffer.push(event.data);
+						//记录数据的长充
+						receivedSize += event.data.byteLength;
+                        //如果长度相等则创建下载标签
+						if (receivedSize === fileSize) {
+							var received = new Blob(receiveBuffer);
+							receiveBuffer = [];
+							downloadAnchor.href = URL.createObjectURL(received);
+							downloadAnchor.download = fileName;
+						}
+				    }
 
 
+
+     
+
+
+
+sudo yum install sqlite-devel
+sudo yum install npm
 
