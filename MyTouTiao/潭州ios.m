@@ -191,11 +191,71 @@ pod search 框架名，没有找到我们上传的框架，为什么？
 pod setup 这时重新安装检索资源库
 再pod search 框架命，可以找到我们上传的框架
 pod setup慢解决办法：
+    不好使：
 	clone  https://github.com/CocoaPods/Specs.git 里面的代码Specs-master
 	执行 pod setup的时候产生~/.cocoapods/repos/master文件
 	把master文件中的.git拷贝到Specs-master中
 	再把Specs-master重命名为master替换掉之前的master
 	再pod setup试试
+	方法二：
+	rm -rf ~/.cocoapods/repos
+    pod setup
+CocoaPods运行pod install 无法生成.xcworkspace文件的解决方法：
+    第一步：查看pod COMMAND的版本  终端执行 pod COMMAND --version
+    第二步：终端执行 sudo gem uninstall cocoapods后，提示你选在卸载一个版本，你不用太担心，选择最后一个就好了，过程可能会输入，用户密码
+    第三步：sudo gem install -n /usr/local/bin cocoapods --pre然后在查看pod COMMAND --version
+    第四步：确定终端cd到项目总目录，然后输入 pod install，
+    
+CocoaPods报cdn错误此方法未解决，重装ruby,再重装cocoapods,同时遇到 MAC上更新Ruby失败解决办法：
+    rvm autolibs read-only   //关键
+    
+    rvm get head
+    rvm list known
+         显示：
+             # MRI Rubies
+			[ruby-]1.8.6[-p420]
+			[ruby-]1.8.7[-head] # security released on head
+			[ruby-]1.9.1[-p431]
+			[ruby-]1.9.2[-p330]
+			[ruby-]1.9.3[-p551]
+			[ruby-]2.0.0[-p648]
+			[ruby-]2.1[.10]
+			[ruby-]2.2[.10]
+			[ruby-]2.3[.8]
+			[ruby-]2.4[.6]
+			[ruby-]2.5[.5]
+			[ruby-]2.6[.3]
+			[ruby-]2.7[.0-preview1]
+			ruby-head
+	安装RUB：
+		rvm autolibs enable
+		rvm use --install 2.6.3
+		bundle install
+		执行上面命令报错：
+		   rvm autolibs read-only   //可解决
+    
+    查询已安装的ruby：
+		rvm list
+    卸载已安装的版本(若已经安装过ruby：
+		rvm remove [版本号]
+    设置Ruby版本
+		rvm 2.6.3 —-default
+	检查是否安装好了:
+	    rvm -v
+	    gem -v
+	    
+    bundle install报错：
+        Could not locate Gemfile这个错误会引起找不到openssl
+        解决方案：
+			sudo gem install jekyll
+			jekyll new . --force
+			再执行 bundle install
+	cdn错误解决方案二：
+		方法1：进入~/.cocoapods/repos，发现.url文件中显示https://github.com/CocoaPods/Old-Specs,替换没用，只能删除~/.cocoapods/repos/cocoapods
+		方法2：删除~/.cocoapods/repos，再pos setup
+	cdn错误产生原因：
+	    在podfile文件中如果写入：source "https://github.com/CocoaPods/Old-Specs"会产生错误
+	    改成source "https://github.com/CocoaPods/Specs"就ok
 
 
 

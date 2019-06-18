@@ -1,0 +1,66 @@
+1:安装srs服务器
+   a:
+	克隆srs https://github.com/ossrs/srs 上传到centos服务器上
+	cd srs/trunk
+	安装：./configure && make
+   b:如果你想修改端口号
+	 vim srs/trunk/conf/srs.conf
+		端口号内容修改：
+		 # conf/srs.conf
+		listen              888;
+		#默认端口为1935，由于滴滴云DC2安全组策略问题，选择已开放的端口888测试
+		max_connections     1000;
+		srs_log_file        ./objs/srs.log;
+		vhost stream.didi.com {
+		}
+	c:启动：
+	  进入到安装目标trunk
+	  ./objs/srs -c conf/rtmp.conf
+  
+2:推流测试
+    a:查看sh脚本中用ffmpeg推流的方式
+		打开https://github.com/ossrs/srs
+		在wiki选项下点击“推送RTMP到SRS”选项，里面包含了ffmpeg推流内容：
+    b:修改推流脚本ip
+		查看服务器ip:
+		curl icanhazip.com
+		47.93.230.87
+
+	把推流地址换成服务器ip：
+		RTMP流地址为：rtmp://192.168.1.170/live/livestream
+		RTMP流地址为：rtmp://47.93.230.87/live/livestream
+	    
+	查看本地的ffmpeg路径：
+		which ffmpeg
+
+	创建push.sh,修改ffmpeg路径 要推流的flv文件路径  远端rtmp推流路径 
+		for((;;)); do \
+			/usr/local/bin/ffmpeg -re -i /Users/admin/Desktop/ffmg/a.flv \
+			-vcodec copy -acodec copy \
+			-f flv -y rtmp://47.93.230.87/live/livestream; \
+			sleep 1; \
+		done
+
+	进行推流：
+	./push.sh
+
+3：推流播放
+     推流的播放下载：vlc播放器，file-open network：
+     填入RTMP流地址为：rtmp://47.93.230.87/live/livestream即可播放推流内容
+
+业余知识：
+码率=采样率 x 位深度 x 声道  码率就是比特率
+  码率= 44.1Khz x 16位 x 2声道 = 1411.2 Kbps
+文件大小 = 码率 x 时长 
+  1411.2 Kbps x (3 x 60 )s = 1411.2Kbps x 180s = 38102.4 Kb
+  
+ios端实现推流：
+   LFLiveKit可处理推流，同时封装了GPUImage，GPUImage封装的opengles，可以处理美颜
+   LFLiveKit中可处理简单的美颜，以及视频存储如下：
+            _self.session.muted = YES;//模糊
+            _self.session.beautyLevel = 3;//默认是1
+            _self.session.zoomScale =3;//摄像头缩放比例，默认是1
+            _self.session.torch = YES;//打开闪光灯
+            _self.session.mirror = YES;//打开或关闭后置摄像头
+            _self.session.muted = NO;//是否静音
+            _self.session.beautyLevel = 1;//0.0· 1.0   默认是0.5
