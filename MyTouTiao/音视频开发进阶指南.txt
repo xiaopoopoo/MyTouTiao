@@ -1,0 +1,1485 @@
+采样率：
+每秒模拟信号转为数字信号的数量就是采样率，采样频率⼀般为44.1kHz，这样就可以保证采样
+声⾳达到20kHz也能被数字化。44.1kHz就是代表1秒会采样44100次
+
+⽤16⽐特的⼆进制信号来表⽰声⾳的⼀个采样，，⽽16⽐特（⼀个short）所表⽰的范围是
+[-32768，32767]，共有65536个可能取值，最终这个音频信号有65536种可能的音色
+
+编码：
+每一次采样的数字信号如何存储？
+按照⼀定的格式记录采样和量化后的数字数据，⽐如顺序存储或压缩存储
+
+PCM：
+⾳频的裸数据格式，pcm需要的几个因素：量化格式即深度（sampleFormat，即用16比特表示一个采样）、采样率（sampleRate）、声
+道数（channel)
+例：
+CD的⾳质：量化格式（有的地⽅描述为位深度）为16⽐特（2字节），采样率为44100，声道数为2
+
+比特率：
+为了估算不同音频格式的存储大小，如一秒内存储的声音占了多大容量
+比特率 = 16⽐特（采样一次的大小） *采样率44100（1秒内采样多少次） *2 =1378.125kbps
+
+根据比特率计算1分钟内音频的大小：
+1378.125* 60 / 8 / 1024 = 10.09MB
+
+分贝：
+符号为“dB“。即声音振幅大小，会使声音变大变小，分贝是指两个相同的物理量（例如，A1和A0）之⽐取以10为底的对数并乘以10（或20），即：
+N= 10 * lg（A1 / A0）A0是基准量（或参考量），A1是被量度量
+
+麦克风如何把声音转为电信号：
+碳膜产生振动，振动会接触电极，接触时间长短和频率与声波的振幅和频率相似，之后经过放大电路处理，就对声音进行了采样。
+
+压缩编码：
+分有损和无损压缩，无损压它们百分百还原，压缩比（指压缩成多大），压缩比越小损失越多，压缩编码算法有PCM、WAV、AAC、MP3、Ogg
+原理：去掉冗余信号，人类不能感知到的信号
+
+WAV编码：
+不进行压缩操作，在pcm数据格式前加44字节，分别⽤来描述PCM的采样率、声道数、数据格式等信息。
+适合多媒体开发的中间⽂件、保存⾳乐和⾳效素材。
+
+MP3编码：
+有损压缩，使⽤LAME编码格式，不是pcm格式，音质接近wav，对音乐有要求的人群⾳质在128Kbit/s以上表现还不
+
+AAC编码：
+有损压缩，分三种，
+传统aac>80Kbit/s表现可以；
+HE-AAC = 传统aac+sbr 在aac<80Kbit/s表现可以；
+HE-AACv2 = AAC+SBR+PS；在≤48Kbit/s中，目前视频中混入音频轨常用
+
+Ogg编码：
+在中低码率音质好，比mp3还好，只是软硬件对它的支持少，用于音频语音聊天中
+
+
+图像成相说明：
+
+三原色：
+白光通过折射会产生不同的少，但是发现红，绿，蓝光无论怎么折射都不会再产生其它颜色，所以它们是三原色
+
+手机相素：
+1280*720 表示手机屏幕纵相有1280个点，横向有720个点，每个点由rgb三个光点组成，因此每个点能变成多种颜色，最后能呈像
+
+颜色的表示方式：
+浮点表⽰：取值范围为0.0～1.0，，在OpenGL ES中对每⼀个⼦像素点的表⽰使⽤
+整数表⽰：取值范围为0～255或者00～FF  32bit表示一个相素颜色如：RGBA_8888   8+8+8+8=32
+16bit表示：Android平台上RGB_565 5+6+5  
+
+对于⼀幅图像，⼀般使⽤整数表⽰⽅法来进⾏描述，⽐如计算⼀张
+1280×720的RGBA_8888图像的⼤⼩，
+1280 * 720 * 4 = 3.516MB  4表示4字节，4字节 = 32   其实这就是bitmap 位图，裸图
+
+图片压缩算法：jpeg 有损压缩，把裸图进行压缩
+
+视频为什么不能用jpeg？
+因为图片压缩可以说是帧类编码，但还得考虑视频是由多个图片组成，每个图片具体什么时候显示和时间有关系，所以这里还需要用到帧间编码
+
+yuv视频裸数据表示方法：
+yuv表示视频图像，并不表示视频图像之间的时间关系，yuv信号主要能让以前黑白电视也能接收，“Y”表⽰明亮度，⽽“U”和“V”表⽰的则是⾊度和饱和度
+即Cr和Cb，色度是rgb红色信号与rgb亮度信号值的差异，饱和度是rgb信号的蓝色与rgb亮度信号差异值。
+yuv如果没有uv，则变成黑白电视。yuv分别使用8字节表示，取值范围0-255,实际上y是16-235，uv是16-240，这个范围以外的数值是保护带，
+YUV最常⽤的采样格式是4：2：0，排列如下：
+y1   y2   y3   y4    y5   y6   y7   y8
+y9   y10  y11  y12   y13  y14  y15  y16
+y17  y18  y19  y20   y21  y22  y23  y24
+y25  y26  y27  y28   y29  y30  y31  y32
+u1   v1   u2   v2    u3   v3   u4   v4
+u5   v5   u6   v6    u7   v7   u8   v8
+
+发现上面的图片占48字节，其中u和v总是交错出现的，这就是4:2:0或4:0:2
+⼀帧为1280×720的视频帧，⽤YUV420P的大小如下：
+1280 * 720 * 1 + 1280 * 720 * 0.5 = 1.318MB
+一小时的电影，如果一帧为60秒，它的大小如下：
+1.318MB * 24fps * 90min * 60s = 166.8GB
+
+
+YUV和RGB的转化
+但凡显示在屏幕上的东西都是rgb的方式，如以需要转化
+标清电视标准bt.601和高清bt.709都可以转换，可以说是y - r  u - g  v - b的矩阵转换
+
+视频的编码方式：
+帧间冗余信息的去除：
+运行补偿：前一帧的某此信息预测后一帧的信息，减少多个重复帧
+运动表示：前一帧的某些信息和预测的后一帧的某些信息通过运动⽮量来表示
+运动估计：估计几帧的运行轨迹的一种方法
+帧内冗余信息的去除：
+jpeg可以处理单图片的压缩，随后ios推出mpeg实现视频内单帧图片的压缩
+ITU-T制定的H.261、H.262、H.263、H.264也是一样，不仅包含了帧内预测，还包含帧间预测，使用更广泛
+
+视频编码帧介绍：
+i帧：帧内编码帧（intra picture），把一组帧放一起就是一个gop，i帧通常是gop的第一帧，该帧是1:6压缩后的一帧图像，主要用于帧内预测
+p帧：前向预测编码帧（predictive-frame），在一组gop中每一帧为i帧，后面的为p帧，p帧是通过前面的i帧和p帧预测这一帧的图像
+b帧：双向预测内插编码帧。b帧是通过前面的一个i帧或p帧结合后面的一个p帧来预测中间这一帧的图像
+
+参考帧IDR帧与I帧的理解：
+h.264是多帧预测，即p帧会根据前面的i帧或更前面的i帧去预测，因为会根据多个i帧去预测的这种情况发生，这时就有了idr帧，一旦遇到idr帧，则
+它后面的帧都以idr帧作为参考，同时应在参考前清除参考帧的缓冲区
+
+pts和dts：
+dts主要用于视频解码，pts主要用于视频同步即输出，什么时候把该帧显示给用户，如果没有b帧，则pts和dts输出的顺序是一样的，b帧会打乱帧顺序
+ffmpeg中AVPacket表示视频压缩数据，即没有解码的数据，AVFrame结构体则是解压缩数据如yuv，pts影响它什么时候把该帧显示给用户，dts则针对
+AVPacket什么时候解压缩
+
+GOP的概念：
+就是一组帧的集合，里面包含了i,b,p帧，i帧最大，p帧节约空间，b帧也节约空间，b帧最小，里面有个属性，gop_size越大，说明可包含的帧越多，画面越
+清晰，一般在一个gop中多使用b帧去表示能节约很大空间
+
+                 图：
+                                         GOP
+				   i   b   b   p   b   b   p   b   b   p   b   b   p   b   p
+解码顺序：           1   3   4   2   6   7   5   9   10  8   12  13  11  15  14
+显示顺序：           1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
+dts解码顺序:         1   3   4   2   6   7   5   9   10  8   12  13  11  15  14
+pts显示顺序:         1   2   3   4   5   6   7   8   9   10  11  12  13  14  15             
+
+可以看出，解码的时候按顺序i帧优先，遇到p帧先解码p帧，再按顺序解码p与i或p与p之间的b帧
+播放的顺序则是按顺序帧播放
+
+
+
+第2章　移动端环境搭建  41页
+
+第三方库的管理：
+javaweb中使用maven，android中使用Gradle，ios中使用CocoaPods
+
+xcode参数配置：
+到Header Search Paths指定头文件路径，预定义变量$（SRCROOT）和$
+（PROJECT_DIR）都是项⽬的根⽬，结合相对路径使用。
+第三方库一般在Build phases中添加，其实相当于在other Link flags中添加了定义
+
+交叉编译：
+在本机把二进制文件编译成其它平台的可执行程序，就是交叉编译
+CC：编译器，对C文件编译成汇编文件
+AS：将汇编⽂件翻译成机器码，让电脑能阅读
+AR：打包器，把其它如三方库加入进来或删除，这些第三方库是机器码
+LD：链接器，多个机器码文件连接到一起组成一个库或者可执行文件
+GDB：调试⼯具，可以对运⾏过程中的程序进⾏代码调试⼯作
+STRIP：生成最终的库或可执行文件，去掉了源码
+NM：查看静态库⽂件中的符号表
+Objdump：查看静态库或者动态库的⽅法
+
+c++编译步骤：
+编译：gcc-c main.cpp./libmad/mad_decoder.cpp-I./libmad/include
+打包：ar cr../prebuilt/libmedia.a mad_decoder.o
+链接：g++-o main main.o-L../prebuilt-l mdedia
+这个编译器已经包含了gcc、ar、g++、gdb、strip、nm、ranlib等上面所说的工具
+
+LAME简介：
+编译生成音频mp3文件，音质好，占用空间小
+
+LAME在ios中的编译：
+去SourceForge下载最新的LAME版本
+https://sourceforge.net/projects/lame/files/lame/3.99/
+编写⼀个build_armv7.sh  
+./configure \   //说明符合gnu标准
+--disable-shared \   //关闭动态链接库，不需要动态链接这个库可单独使用
+--disable-frontend \  //不编译出LAME的可执⾏⽂件。
+--host=arm-apple-darwin \    //最终运行在什么平台
+--prefix="./thin/armv7" \   //编译好的库存放的目录
+CC="xcrun -sdk iphoneos clang -arch armv7" \   //交叉编译工具的路径
+CFLAGS="-arch armv7 -fembed-bitcode -miphoneos-version-min=7.0" \  //编译时所带参数，armv7指运行目标平台  bitcode指xcode中需设为yes 以及最小版本 
+LDFLAGS="-arch armv7 -fembed-bitcode -miphoneos-version-min=7.0"   //链接时所带参数同上
+make clean
+make -j8  //编译
+make install  //安装
+
+ios架构平台：
+真机：
+·armv6：iPhone、iPhone 2、iPhone 3G
+·armv7：iPhone 4、iPhone 4S
+·armv7s：iPhone 5、iPhone 5S
+·arm64：iPhone 5S、iPhone 6（P）、iPhone 6S（P）、iPhone 7（P）
+向下兼容：armv7s能兼容运行arm64平台的手机
+模拟器：
+i386
+
+bitcode模式：
+如果设置yes，提交上去appstore的代码是bitcode模式的中间代码，appstore会对bitcode代码进行优化
+上面代码编译后thin-lame⽬录下寻找对应的armv7目录下看到bin、lib、include、share目录
+bin目录下是可执行的程序
+lib目录下是静态库libmp3lame.a
+include是头文件，在项目中需添加
+
+编译的lame有两份，arm7和arm64，将两份.a静态库合并
+lipo -create ./arm64/lib/libmp3lame.a ./armv7/lib/libmp3lame.a -output libmp3lame.a
+
+通过file libmp3lame.a 可查看它支持哪些平台
+
+
+
+ios FDK_AAC音频acc格式的编解码库：
+FDK_AAC音频acc的编译：
+下载：https://sourceforge.net/p/opencore-amr/fdk-aac/ci/v0.1.4/tree/
+建⽴build_armv7.sh
+
+./configure \
+--enable-static \
+--disable-shared \
+--host=arm-apple-darwin \
+--prefix="$FDK_ROOT_DIR/thin/armv7"
+CC="xcrun -sdk iphoneos clang" \
+AS="gas-preprocessor.pl $CC"  //这个as参数是需要安装gas-preprocessor.pl
+CFLAGS="-arch armv7 -mios-simulator-version-min=7.0" \
+LDFLAGS="-arch armv7 -mios-simulator-version-min=7.0"
+make clean
+make -j8
+make install
+
+as参数gas-preprocessor.pl安装：
+下载：https://github.com/applexiaohao/gas-preprocessor
+复制到/usr/local/bin/
+改权限：chmod 777 /usr/local/bin/gas-preprocessor.pl
+
+
+
+ios X264的交叉编译
+X264是⼀个开源的H.264/MPEG-4 AVC视频编码函数库，是有损的，输⼊是视频帧的YUV表⽰，输出是编码之后的
+H264的数据包，并且⽀持CBR、VBR模式，可以在编码的过程中直接改变码率的设置，运用场景为在直播中根据网速自
+适应码率
+下载方式：
+http://www.videolan.org/developers/x264.html
+或
+git clone git://git.videolan.org/x264.git
+建立⽴build_armv7.sh脚本：
+#!/bin/sh
+export AS="gas-preprocessor.pl -arch arm -- xcrun -sdk iphoneos clang"
+export CC="xcrun -sdk iphoneos clang"
+./configure \
+--enable-static \
+--enable-pic \
+--disable-shared \
+--host=arm-apple-darwin \
+--extra-cflags="-arch armv7 -mios-version-min=7.0" \
+--extra-asflags="-arch armv7 -mios-version-min=7.0" \
+--extra-ldflags="-arch armv7 -mios-version-min=7.0" \
+--prefix="./thin/armv7"
+make clean
+make -j8
+make install
+
+
+
+深⼊了解Android NDK：
+Native代码：
+java中与硬件打交道只能用c，这时候在上层声明Native，把事情交给c去作，Native代码就是c代码
+
+Android NDK可⽤于Android平台上的C++开发，还是⼀个包含了API、交叉编译器、链接
+程序、调试器、构建⼯具的工具集
+
+Android NDK经常会⽤到的组件：
+·ARM、x86的交叉编译器
+·构建系统
+·Java原⽣接⼜头⽂件
+·C库
+·Math库
+·最⼩的C++库
+·ZLib压缩库
+·POSIX线程
+·Android⽇志库
+·Android原⽣应⽤API
+·OpenGL ES（包括EGL）库
+·OpenSL ES库
+
+Android所提供的NDK根⽬录下的工具：
+ndk-build：编译动态库用的
+ndk-gdb：对自己写的c代码，也就是自己的Native代码进行调试
+ndk-stack：针对Native代码崩溃更详细信息进行调试
+build：包括Native代码形成的所有模块
+platforms：根据不同版本的android来引用头文件和库文件。不同版本类似ios的arm7，arm64
+toolchains：该⽬录包含⽬前NDK所⽀持的不同平台下的交叉编译器——ARM、x86、MIPS，其中⽐较常⽤的是ARM和x86
+
+
+NDK的编译脚本语法：
+
+Android.mk：
+是android构建c++,c的makefile文件，描述了应⽤程序要针对哪些CPU架构打包动态so包、要构
+建的是release包还是debug包以及⼀些编译和链接参数等。
+分为以下⼏部分：
+·LOCAL_PATH：=$（call my-dir）返回当前文件在系统中的路径，Android.mk⽂件开始时必须定义该变量
+·include$（CLEAR_VARS） 清除上一次构建的所有全局变量，让makefile编译不受之前全局变量影响
+·LOCAL_SRC_FILES   需要编译哪些c和c++文件，构建系统会帮开发者自动依赖这些文件
+·LOCAL_STATIC_LIBRARIES，所依赖的静态库⽂件
+·LOCAL_LDLIBS：=-L$（SYSROOT）/usr/lib-llog-lOpenSLESlGLESv2-lEGL-lz，指定编译过程所依赖的NDK提供的动态与静态库SYSROOT代表
+NDK_ROOT目录，在$NDK_ROOT/platforms/android-18/arch-arm/usr/lib/下包含so动态库和.a静态库
+LOCAL_CFLAGS：添加一些flag标记发给编译器，作一些自动化测试的事情
+LOCAL_LDFLAGS：链接标志的可选列表，当对⽬标⽂件进⾏链接以⽣成输出⽂件的时候，将这些标志带给链接器。
+LOCAL_MODULE：指定该编译模块的名字
+·include$（BUILD_SHARED_LIBRARY）：创建动态库
+--BUILD_STATIC_LIBRARY）：构建静态库
+---PREBUILT_STATIC_LIBRARY：对已有的静态库进⾏包装成一个模块
+---PREBUILT_SHARED_LIBRARY：对已有的动态库进⾏包装成一个模块
+---BUILD_EXECUTABLE：构建可执⾏⽂件
+
+开发者include⼀个变量，就会在$NDK_ROOT/build/core/下生成一个Makefile，也把Makefile包含到了Android.mk中
+
+如：·include$（call all-makefiles-under，$（LOCAL_PATH）），也是构建系统提供的变量，该命令会返回该⽬录下所有⼦⽬录的Android.mk列表
+
+在输⼊命令ndk-build之后，系统会使用$NDK_ROOT/toolchains/arm-linux-androideabi-4.8/prebuilt/darwin-x86_64/bin/⽬录下
+的gcc、g++、ar、ld等⼯具strip⼯具 打包器和链接器，清除so包源码，且依赖的头文件放在
+$NDK_ROOT/platforms/android-18/arch-arm/usr/include/⽬录下
+
+经常使⽤的log或者OpenSL ES以及OpenGL ES等存放路径：
+$NDK_ROOT/platforms/android-18/archarm/usr/lib/⽬录下会存放链接过程中所依赖的库⽂件
+
+
+Application.mk：
+APP_ABI：=XXX，这⾥的XXX是指不同的平台，如x86、mips、armeabi、armeabi-v7a、al，默认构建为armeabi的.so库，写all会构建所有平台.so库
+android下要编译armv7-a，arm64-v8a，armv5这样的平台，因为还有很多手机支持
+
+arm64-v8a编译的差异：
+编译工具⽬录存在于：·$NDK_ROOT/toolchains/aarch64-linux-android-4.9/prebuilt/darwinx86_64/bin
+参数：
+APP_STL：=gnustl_static：连接c++运行时库如stlport_static、stlport_shared、gnustl_static。
+APP_CPPFLAGS：=-std=gnu++11-fexceptions： 开启exception rtti等特性
+NDK_TOOLCHAIN_VERSION=4.8，指定交叉⼯具编译链⾥⾯的版本号
+APP_PLATFORM：=android-9，指定创建的动态库的平台
+APP_OPTIM：=release 指定是否调试模式，非调试模式下的代码是高度优化的
+
+
+android中LAME的交叉编译：
+创建一个shell脚本：
+NDK_ROOT=/Users/apple/soft/android/android-ndk-r9b
+PREBUILT=$NDK_ROOT/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86_64
+PLATFORM=$NDK_ROOT/platforms/android-9/arch-arm   //平台
+export PATH=$PATH:$PREBUILT/bin:$PLATFORM/usr/include:
+export LDFLAGS="-L$PLATFORM/usr/lib -L$PREBUILT/arm-linux-androideabi/lib   //链接到正确的库
+-march=armv7-a"  //编译的目标平台
+export CFLAGS="-I$PLATFORM/usr/include -march=armv7-a -mfloat-abi=softfp -mfpu=vfp  //链接到正确的头文件
+-ffast-math -O2"
+export CPPFLAGS="$CFLAGS"
+export CFLAGS="$CFLAGS"
+export CXXFLAGS="$CFLAGS"
+export LDFLAGS="$LDFLAGS"
+export AS=$PREBUILT/bin/arm-linux-androideabi-as
+export LD=$PREBUILT/bin/arm-linux-androideabi-ld
+export CXX="$PREBUILT/bin/arm-linux-androideabi-g++ --sysroot=${PLATFORM}"
+export CC="$PREBUILT/bin/arm-linux-androideabi-gcc --sysroot=${PLATFORM}
+-march=armv7-a "
+export NM=$PREBUILT/bin/arm-linux-androideabi-nm
+export STRIP=$PREBUILT/bin/arm-linux-androideabi-strip
+export RANLIB=$PREBUILT/bin/arm-linux-androideabi-ranlib
+export AR=$PREBUILT/bin/arm-linux-androideabi-ar
+./configure --host=arm-linux \   //对所要生成的文件进行选择
+--disable-shared \
+--disable-frontend \
+--enable-static \
+--prefix=./armv7a
+make clean
+make -j8
+make install
+
+
+android中FDK_AAC的交叉编译：
+配置好环境变量之后，执⾏Configure，然后安装就可以了
+./configure --host=armv7a \
+--enable-static \
+--disable-shared \
+--prefix=./armv7a/
+make clean
+make -j8
+make install
+
+android中X264的交叉编译：
+#!/bin/bash
+./configure --prefix=$PREFIX \
+--enable-static \
+--enable-pic \
+--enable-strip \
+--disable-cli \
+--disable-asm \  //禁⽤掉asm指令才能使用NEON指令
+--extra-cflags="-march=armv7-a -O2 -mfloat-abi=softfp -mfpu=neon" \  //针对armv7-a的CPU打开了NEON的优化运⾏指令，并且打开了O2编译优化
+--host=arm-linux \
+--cross-prefix=$PREBUILT/bin/arm-linux-androideabi- \
+--sysroot=$PLATFORM
+
+
+LAME编码MP3⽂件：
+判断一个文件是否存在，是否能初始化这个文件资源
+encode⽅法把读取PCM数据编码，再把编码写入文件
+destroy⽅法销毁文件资源
+
+mp3_encoder.h
+class Mp3Encoder {
+	private:
+		FILE* pcmFile;
+		FILE* mp3File;
+		lame_t lameClient;
+	public:
+		Mp3Encoder();
+		~Mp3Encoder();
+		int Init(const char* pcmFilePath, const char *mp3FilePath, int sampleRate, int channels, int bitRate);
+		void Encode();
+		void Destory();
+};
+
+mp3_encoder.cpp
+
+int Mp3Encoder::Init(const char* pcmFilePath, const char *mp3FilePath, int sampleRate, int channels, int bitRate) {
+	int ret = -1;
+	pcmFile = fopen(pcmFilePath, "rb");//以读取二进制的方式打开pcm文件
+	if(pcmFile) {
+	mp3File = fopen(mp3FilePath, "wb");//以写入二进制的方式打开mp3文件
+		if(mp3File) {
+			lameClient = lame_init();//初始化lame库
+			lame_set_in_samplerate(lameClient, sampleRate);//输入采样率
+			lame_set_out_samplerate(lameClient, sampleRate);//输出采样率
+			lame_set_num_channels(lameClient, channels);//单声道或双声道
+			lame_set_brate(lameClient, bitRate / 1000);//比特率
+			lame_init_params(lameClient);
+			ret = 0;
+		}
+	}
+	return ret;
+}
+
+
+void Mp3Encoder::Encode() {
+	int bufferSize = 1024 * 256;
+	//pcm的buffer
+	short* buffer = new short[bufferSize / 2];
+	//左右声道buffer
+	short* leftBuffer = new short[bufferSize / 4];
+	short* rightBuffer = new short[bufferSize / 4];
+	//mp3的buffer
+	unsigned char* mp3_buffer = new unsigned char[bufferSize];
+	size_t readBufferSize = 0;
+	
+	//如果pcm读出的内容大于0，就继续读
+	while ((readBufferSize = fread(buffer, 2, bufferSize / 2, pcmFile)) > 0) {
+		for (int i = 0; i < readBufferSize; i++) {
+		   //读出左右声道的数据存入buffer中
+			if (i % 2 == 0) {
+				leftBuffer[i / 2] = buffer[i];
+			} else {
+				rightBuffer[i / 2] = buffer[i];
+			}
+		}
+		//把每次读的声道数据写入mp3buffer中，这里写入的是pcm数据，经过lame编码后的数据buffer
+		size_t wroteSize = lame_encode_buffer(lameClient, (short int *) leftBuffer, (short int *) rightBuffer,(int)(readBufferSize / 2), mp3_buffer, bufferSize);
+		//最后写到mp3文件中
+		fwrite(mp3_buffer, 1, wroteSize, mp3File);
+	}
+	delete[] buffer;
+	delete[] leftBuffer;
+	delete[] rightBuffer;
+	delete[] mp3_buffer;
+}
+
+//销毁资源
+void Mp3Encoder::Destory() {
+	if(pcmFile) {
+		fclose(pcmFile);
+	}
+	if(mp3File) {
+		fclose(mp3File);
+		lame_close(lameClient);
+	}
+}
+
+
+上面的c++代码可集成到ios,android中，具体这里不作说明
+
+
+
+第3章　FFmpeg的介绍与使⽤
+FFmpeg：⽤来录制、处理数字⾳频、视频，并转换为流的开源框架，采⽤LPL或GPL许可证
+
+FFmpeg编译选项详解：
+用户可编译自己需要的模块，configure脚本运⾏完毕之后，会⽣成config.mk和config.h这两个⽂件，分别作⽤到makefile和源代码的层次
+
+./configure -help
+·标准选项：GNU基础配置项⽬，例如安装路径、--prefix=…
+·编译、链接选项：默认配置是⽣成静态库⽽不是⽣成动态库，例如--disable-static、--enable-shared等
+·可执⾏程序控制选项：决定是否⽣成FFmpeg、ffplay、ffprobe和ffserver等。
+·模块控制选项：裁剪编译模块，包括整个库的裁剪，例如--disableavdevice；⼀组模块的筛选，例如--disable-decoders；单个模块的裁剪，例如--disable-demuxer。
+·能⼒展⽰选项：列出当前源代码⽀持的各种能⼒集，例如--listdecoders、--list-encoders。
+·其他：允许开发者深度定制，如交叉编译环境配置、⾃定义编译器参数的设定等。
+
+
+FFmpeg的模块：
+ffprobe分析工具：音频视频的参数、媒体容器的参数信息，编码格式，总时长
+ffplay：提供了音视频显示和播放相关的图像信息、音频的波形信息等。
+libavformat:音频、视频以及字幕封装和解封装
+libavcodec: 编码和解码，fdk-acc voaac_enc x264
+libavutil: 需要调用的一些方法，数学函数，字符串操作，内存管理，数据结构，错误码及错误处理，日志输出，其他辅助信息，比如密钥、哈希值、宏、库版本、常量等
+libavfilter:视图滤镜
+libswscale: 缩放视频，把yuv转成rgb颜色格式
+
+FFmpeg库的编译在android中：
+.sh文件：
+./configure -prefix=. \
+--cross-prefix=$NDK_TOOLCHAIN_PREFIX \
+--enable-cross-compile \
+--arch=arm --target-os=linux \
+--disable-static -enable-shared \
+--disable-ffmpeg --disable-ffplay -disable-ffserver -disable-ffprobe
+
+上面会生成8个静态库和4个可执行文件：
+可执行文件包括：
+转码、推流、Dump媒体⽂件的ffmpeg、⽤于播放媒体⽂件的ffplay、⽤于获取媒体⽂件信息的ffprobe，以及作为简单流媒体服务器的ffserver。
+libswresample:音视频采样率操作
+8个静态库包括：
+AVUtil：核⼼⼯具库，依赖该库做⼀些基本的⾳视频处理操作
+AVFormat：⽂件格式和协议库
+AVCodec：编解码库
+AVFilter：⾳视频滤镜库
+AVDevice：输⼊输出设备库，要播放ffplayer需打开这个
+SwrRessample：该模块可⽤于⾳频重采样，可以对数字⾳频进⾏声道数、数据格式、采样率等多种基本信息的转换
+SWScale：该模块是将图像进⾏格式转换的模块，⽐如，可以将YUV的数据转换为RGB的数据。
+PostProc：该模块可⽤于进⾏后期处理，当我们使⽤AVFilter的时候需要打开该模块的开关，因为Filter中会使⽤到该模块的⼀些基础函数
+
+
+如何为FFmpeg平台引⼊第三⽅编解码库？
+新增X264编码器：
+--enable-muxer=h264 \
+--enable-encoder=libx264 \
+--enable-libx264 \
+--extra-cflags=”-Iexternal-libs/x264/include” \
+--extra-ldflags=”-Lexternal-libs/x264/lib” \
+新增LAME编码器需要新增以下脚本：
+--enable-muxer=mp3 \
+--enable-encoder=libmp3lame \
+--enable-libmp3lame \
+--extra-cflags=”-Iexternal-libs/lame/include” \
+--extra-ldflags=”-Lexternal-libs/lame/lib” \
+新增FDK-AAC编码器需要新增以下脚本：
+--enable-encoder=libfdk_aac \
+--enable-libfdk_aac \
+--extra-cflags=”-Iexternal-libs/fdk-aac/include” \
+--extra-ldflags=”-Lexternal-libs/fdk-aac/lib” \
+
+新增aac_adtstoasc类型的bit stream filter，作用是把一种声音格式加入到其它媒体中，需要改变里面的头信息，如把音频加入到mp4,flv,mov中
+--enable-bsf=aac_adtstoasc
+
+新增H264_mp4toannexb，把h264转成裸h264,是视频的bit stream filter
+--enable-bsf=h264_mp4toannexb
+
+
+ffmpeg一般可以开启第三方：FDK_AAC和是X264
+
+Android平台的ffmpeg编译：
+ANDROID_NDK_ROOT=/Users/apple/soft/android/android-ndk-r9b
+PREBUILT=$ANDROID_NDK_ROOT/toolchains/arm-linux-androideabi-4.8/prebuilt/darwin-x86_64
+PLATFORM=$ANDROID_NDK_ROOT/platforms/android-8/arch-arm
+./configure \
+$CONFIGURE_FLAGS \
+--target-os=linux \
+--arch=arm \
+--cross-prefix=$PREBUILT/bin/arm-linux-androideabi- \
+--sysroot=$PLATFORM \
+--extra-cflags="-marm -march=armv7-a -Ifdk_aac/include -Ix264 /include" \
+--extra-ldflags="-marm -march=armv7-a -Lfdk_aac/lib -Lx264 /lib"
+
+ios平台的ffmpeg编译：
+./configure \
+$CONFIGURE_FLAGS \
+--target-os=darwin
+--cc=xcrun -sdk iphoneos clang \
+--arch=armv7 \
+--extra-cflags="-arch armv7 -mios-version-min=7.0 -Ifdk_aac/include
+-Ix264/include" \
+--extra-ldflags="-arch armv7 -mios-version-min=7.0 -Lfdk_aac/lib -Lx264 /lib"
+注意的是这⾥并没有打开bitcode，这会导致集成进⼊Xcode之后必须将项⽬的bitcode选项关闭掉。
+若要为编译的库打开bitcode选项，那么在编译参数中增加下⾯这⾏参数就可以了：
+-fembed-bitcode
+
+FFmpeg命令⾏⼯具的编译与安装，这里非用在手机平台，是用在pc平台：
+1：编译脚本config_pc.sh：
+#!/bin/bash
+./configure \
+--enable-gpl \
+--disable-shared \
+--disable-asm \
+--disable-yasm \
+--enable-filter=aresample \
+--enable-bsf=aac_adtstoasc \
+--enable-small \
+--enable-dct \
+--enable-dwt \
+--enable-lsp \
+--enable-mdct \
+--enable-rdft \
+--enable-fft \
+--enable-static \
+--enable-version3 \
+--enable-nonfree \
+--enable-encoder=libfdk_aac \
+--enable-encoder=libx264 \
+--enable-decoder=mp3 \
+--disable-decoder=h264_vda \
+--disable-d3d11va \
+--disable-dxva2 \
+--disable-vaapi \
+--disable-vda \
+--disable-vdpau \
+--disable-videotoolbox \
+--disable-securetransport \
+--enable-libx264 \
+--enable-libfdk_aac \
+--enable-libmp3lame \
+--extra-cflags="-Ipc_fdk_aac/include -Ix264_pc/include -Ipc_lame/include" \
+--extra-ldflags="-Lpc_fdk_aac/lib -Lx264_pc/lib -Lpc_lame/lib" \
+--prefix='/Users/apple/Desktop/ffmpegtmp_1'
+2：权限打开：
+chmod a+x ./config_pc.sh
+3：对ffmpeg配置：
+./config_pc.sh
+4：编译和安装
+make && make install
+
+在prefix指定目录中：
+bin：命令工具的所在地
+include：头文件目录
+lib：其中存放的是编译出来的静态库⽂件
+share：该⽬录中存放了⼀些examples
+
+
+
+编译出来为什么没有ffplay？
+因为ffplay.c需要依赖avdevice模块，⽽avdevice模块使⽤了sdl的API，需要安装sdl
+Homebrew的安装：ruby -e "$(curl -fsSL \https://raw.githubusercontent.com/Homebrew/install/master/install)"
+brew install sdl
+
+ffmpeg和ffplay同时安装的另一种安装方式：
+brew install ffmpeg --with-ffplay
+
+FFmpeg命令⾏⼯具的使⽤：
+1.ffprobe：
+查看⼀个⾳频的⽂件：
+ffprobe ~/Desktop/32037.mp3
+结果1：Duration：00:05:14.83，start：0.000000，bitrate：64kb/s  
+说明：该⾳频⽂件的时长是5分14秒零830毫秒，开始播放时间是0，整个媒体⽂件的⽐特率是64Kbit/s，
+结果2：Stream#0:0 Audio：mp3，24000Hz，stereo，s16p，64kb/s
+说明：第⼀个流是⾳频流，编码格式是MP3格式，采样率是24kHz，声道是⽴体声，采样表⽰格式是SInt16（short）的planner（平铺格式），这路流的⽐特率是64Kbit/s
+查看⼀个视频的⽂件：
+ffprobe ~/Desktop/32037.mp4
+结果1：
+Metadata:
+major_brand: isom
+minor_version: 512
+compatible_brands: isomiso2avc1mp41
+encoder: Lavf55.12.100
+说明：该⽂件的Metadata信息，⽐如encoder是Lavf55.12.100，其中Lavf代表的是FFmpeg输出的⽂件，后⾯的编号代表了FFmpeg的版本代号
+结果2：Duration：00:04:34.56 start：0.023220，bitrate：577kb/s
+说明：表⽰Duration是时长4分34秒560毫秒，开始播放的时间是从23ms开始播放的，整个⽂件的⽐特率是577Kbit/s
+结果3：Stream#0:0（un）：Video：h264（avc1/0x31637661），yuv420p，480*480，508kb/s，24fps
+说明：第⼀个stream是视频流，编码⽅式是H264的格式（封装格式是AVC1），每⼀帧的数据表⽰是YUV420P的格式，分辨率是480×480，这路流的⽐特率是508Kbit/s，帧率是每秒钟24帧（fps是24），
+结果4：Stream#0:1（und）：Audio：aac（LC）（mp4a/0x6134706D），44100Hz，stereo，fltp，63kb/s
+说明：第⼆个stream是⾳频流，编码⽅式是AAC（封装格式是MP4A），并且采⽤的Profile是LC规格，采样率是44100Hz，声道数是⽴体声，数据表⽰格式是浮点型，这路⾳频流的⽐特率是63Kbit/s。
+
+ffprobe高级用法1：
+ffprobe -show_format 32037.mp4
+可以输出格式信息format_name、时间长度duration、⽂件⼤⼩size、⽐特率bit_rate、流的数⽬nb_streams
+
+ffprobe高级用法2：
+ffprobe -print_format json -show_streams 32037.mp4
+以JSON格式的形式输出具体每⼀个流最详细的信息，视频中会有视频的宽⾼信息、是否有b帧、视频帧的总数⽬、视频的编码格式、显⽰⽐例、⽐特率等信息，⾳频中会有⾳频的编码格式、表⽰格式、
+声道数、时间长度、⽐特率、帧的总数⽬等信息。
+
+显⽰帧信息的命令如下：
+ffprobe -show_frames sample.mp4
+
+查看包信息的命令如下：
+ffprobe -show_packets sample.mp4
+
+
+国英双语的文件：
+通过ffprobe打开文件，会显示如下：
+视频Stream：h264 yuv420P
+⾳频Stream：aac 48000Hz stereo fltp（default）title：英语
+⾳频Stream：aac 48000Hz stereo fltp title：国语
+说明：这三路文件可切换语音播放
+
+
+2.ffplay
+ffplay是以FFmpeg框架为基础，外加渲染⾳视频的库libSDL来构建的媒体⽂件播放器
+播放⼀个⾳频⽂件：
+ffplay 32037.mp3
+结果：会弹出⼀个窗⼜，⼀边播放声音，一边播放波形，点击窗⼜的任意⼀个位置，会跳至到该时间点播放，右键会默认快进10s，左键默认后退10s
+10s，上键默认快进1min，下键默认后退1min；按ESC键就是退出播放，按w键则将绘制⾳频的波形图
+
+播放⼀个视频的命令：
+ffplay 32037.mp4
+结果：会直接在新弹出的窗⼜上播放该视频，播放多个视频则执行多次上面的命令，用于对比多个视频清晰度，按s键⼀次就会播放下⼀帧图像
+ijkPlayer其实就是基于ffplay进⾏改造的播放器，在内部作了很多兼容硬件的工作
+
+循环播放10次：
+ffplay 32037.mp4 -loop 10
+
+指定使⽤哪⼀路⾳频流或者视频流播放，只播声音或视频：
+ffplay ⼤话⻄游.mkv -ast 1 播放第1路音频流，如果改为1, 没有音频流会静音
+ffplay ⼤话⻄游.mkv -vst 1 播放第1路视频流，如果改为2，没有视频流会静音
+
+4.常⽤的⼏个命令之播放pcm文件：
+ffplay song.pcm -f s16le -channels 2 -ar 44100
+格式（-f）、声道数（-channels）、采样率（-ar）必须设置正确
+如果是wav格式，不需要加这几个参数，因为wav格式头部的44字节中包含了格式声道采样率
+
+5.常⽤的⼏个命令之播放yuv420p文件：
+ffplay -f rawvideo -pixel_format yuv420p -s 480*480 texture.yuv
+包括格式（-frawvideo代表原始格式）、表⽰格式（-pixel_format yuv420p）、宽⾼（-s480*480）。
+
+6.常⽤的⼏个命令之播放rgb文件：
+ffplay -f rawvideo -pixel_format rgb24 -s 480*480 texture.rgb
+参数和5一样
+
+
+
+音视频时间同步的三种方式：
+以⾳频为主时间轴同步，以视频为主时间轴同步，以外部时钟为主时间轴同步。ffplay中默认的对齐⽅式也是以⾳频为基准进⾏对齐
+
+以⾳频为主时间轴同步的实现原理：
+pts：音频帧和视频帧都有播放时间pts，如果视频的时间比音频快，则得复播放该帧等到同步，如果比音频时间慢，则丢掉该帧追赶音频
+ffplay 32037.mp4 -sync audio  以⾳频为主时间轴同步
+ffplay 32037.mp4 -sync video  以视频为主时间轴同步
+ffplay 32037.mp4 -sync ext    以外部时钟为主时间轴同步
+
+
+
+
+3.ffmpeg
+它可以转换任何格式的媒体⽂件，转换成另一种媒体格式，同时可编缉媒体文件，是离线的好工具，也可推流
+
+（1）通⽤参数
+·-f fmt：指定格式（⾳频或者视频格式）。
+·-i filename：指定输⼊⽂件名，在Linux下当然也能指定：0.0（屏幕录
+制）或摄像头。
+·-y：覆盖已有⽂件。
+·-t duration：指定时长。
+·-fs limit_size：设置⽂件⼤⼩的上限。
+·-ss time_off：从指定的时间（单位为秒）开始，也⽀持[-]hh：mm：
+ss[.xxx]的格式。
+·-re：代表按照帧率发送，尤其在作为推流⼯具的时候⼀定要加⼊该参
+数，否则ffmpeg会按照最⾼速率向流媒体服务器不停地发送数据。
+·-map 指定输出⽂件的流映射关系，例如：“-map 1：0-map 1：1” 
+说明：1：0 1：1  把第二个如视频文件的第一个流（如视频流）和第二个文件的第一个流（音频流）写入到新的媒体文件中
+如果没有-map选项，则ffmpeg采⽤默认的映射关系
+
+（2）视频参数
+·-b：指定⽐特率（bit/s）类型，ffmpeg是⾃动使⽤VBR的，若指定了该参数则使⽤平均⽐特率。
+·-vb：指定视频⽐特率（bits/s）。
+·-r rate：帧速率（fps）。
+·-s size：指定分辨率（320×240）。
+·-aspect aspect：设置视频长宽⽐（4：3，16：9或1.3333，1.7777）。
+·-croptop size：设置顶部切除尺⼨（in pixels）。
+·-cropbottom size：设置底部切除尺⼨（in pixels）。
+·-cropleft size：设置左切除尺⼨（in pixels）。
+·-cropright size：设置右切除尺⼨（in pixels）。
+·-padtop size：设置顶部补齐尺⼨（in pixels）。
+·-padbottom size：底补齐（in pixels）。
+·-padleft size：左补齐（in pixels）。
+·-padright size：右补齐（in pixels）。
+·-padcolor color：补齐带颜⾊（000000-FFFFFF）。
+·-vn：取消视频的输出。
+·-vcodec codec：强制使⽤codec编解码⽅式（'copy'代表不进⾏重新编码）。
+
+（3）⾳频参数
+·-ab：设置⽐特率（单位为bit/s，⽼版的单位可能是Kbit/s），对于
+MP3格式，若要听到较⾼品质的声⾳则建议设置为160Kbit/s（单声道则设
+置为80Kbit/s）以上。
+·-aq quality：设置⾳频质量（指定编码）。
+·-ar rate：设置⾳频采样率（单位为Hz）。
+·-ac channels：设置声道数，1就是单声道，2就是⽴体声。
+·-an：取消⾳频轨。
+·-acodec codec：指定⾳频编码（'copy'代表不做⾳频转码，直接复制）。
+·-vol volume：设置录制⾳量⼤⼩（默认为256）<百分⽐>。
+
+实例：
+1：列出ffmpeg⽀持的所有格式：
+ffmpeg -formats
+2：剪切⼀段媒体⽂件，可以是⾳频或者视频⽂件：
+ffmpeg -i input.mp4 -ss 00:00:50.0 -codec copy -t 20 output.mp4
+说明：表⽰将⽂件input.mp4从第50s开始剪切20s的时间，输出到⽂件output.mp4中，其中-ss指定偏移时间（time Offset），-t指定的时长
+3：⽤ffmpeg将该视频⽂件切割为多个⽂件：
+ffmpeg -i input.mp4 -t 00:00:50 -c copy small-1.mp4 -ss 00:00:50 -codec copy small-2.mp4
+4：提取⼀个视频⽂件中的⾳频⽂件：
+ffmpeg -i input.mp4 -vn -acodec copy output.m4a
+5：使⼀个视频中的⾳频静⾳，即只保留视频：
+ffmpeg -i input.mp4 -an -vcodec copy output.mp4
+6：从MP4⽂件中抽取视频流导出为裸H264数据
+ffmpeg -i output.mp4 -an -vcodec copy -bsf:v h264_mp4toannexb output.h264
+说明：上述指令⾥不使⽤⾳频数据（-an），视频数据使⽤mp4toannexb这个bitstream filter来转换为原始的H264数，bitstream可处理视频头内容
+7：使⽤AAC⾳频数据和H264的视频⽣成MP4⽂件：
+ffmpeg -i test.aac -i test.h264 -acodec copy -bsf:a aac_adtstoasc -vcodec copy -f mp4 output.mp4
+说明：使⽤了⼀个名为aac_adtstoasc的bitstream filter，AAC格式也有两种封装格式
+8：对⾳频⽂件的编码格式做转换
+ffmpeg -i input.wav -acodec libfdk_aac output.aac
+9：从WAV⾳频⽂件中导出PCM裸数据
+ffmpeg -i input.wav -acodec pcm_s16le -f s16le output.pcm
+说明：16个bit来表⽰⼀个采样的PCM数据了，并且每个sample的字节排列顺序都是⼩尾端表⽰的格式，声道数和采样率使⽤的都
+是原始WAV⽂件的声道数和采样率的PCM数据
+10:重新编码视频⽂件，复制⾳频流，同时封装到MP4格式的⽂件中：
+ffmpeg -i input.flv -vcodec libx264 -acodec copy output.mp4
+11:将⼀个MP4格式的视频转换成为gif格式的动图
+ffmpeg -i input.mp4 -vf scale=100:-1 -t 5 -r 10 image.gif
+说明：按照分辨⽐例不动宽度改为100（使⽤VideoFilter的 scaleFilter），帧率改为10（-r），只处理前5秒钟（-t）的视频，⽣成gif
+12：将⼀个视频的画⾯部分⽣成图⽚，⽐如要分析⼀个视频⾥⾯的每⼀帧都是什么内容的时候
+ffmpeg -i output.mp4 -r 0.25 frames_%04d.png
+说明：每4秒钟截取⼀帧视频画⾯⽣成⼀张图⽚，⽣成的图⽚从frames_0001.png开始⼀直递增下去。
+13：使⽤⼀组图⽚可以组成⼀个gif
+ffmpeg -i frames_%04d.png -r 5 output.gif
+14：使⽤⾳量效果器，可以改变⼀个⾳频媒体⽂件中的⾳量
+ffmpeg -i input.wav -af ‘volume=0.5’ output.wav
+说明：将input.wav中的声⾳减⼩⼀半，输出到output.wav⽂件中，可以直接播放来听
+15：淡⼊效果器的使⽤
+ffmpeg -i input.wav -filter_complex afade=t=in:ss=0:d=5 output.wav
+说明：将input.wav⽂件中的前5s做⼀个淡⼊效果
+16：淡出效果器的使⽤
+ffmpeg -i input.wav -filter_complex afade=t=out:st=200:d=5 output.wav
+说明：将input.wav⽂件从200s开始，做5s的淡出效果
+17：将两路声⾳进⾏合并，⽐如要给⼀段声⾳加上背景⾳乐
+ffmpeg -i vocal.wav -i accompany.wav -filter_complex amix=inputs=2:duration=shortest output.wav
+说明：是将vocal.wav和accompany.wav两个⽂件进⾏mix
+18：将声音变速不变调处理
+ffmpeg -i vocal.wav -filter_complex atempo=0.5 output.wav
+说明：将vocal.wav按照0.5倍的速度进⾏处理⽣成output.wav，音高不会变
+19：为视频增加⽔印效果
+ffmpeg -i input.mp4 -i changba_icon.png -filter_complex
+'[0:v][1:v]overlay=main_w-overlay_w-10:10:1[out]' -map '[out]' output.mp4
+说明：⼏个内置参数，main_w代表主视频宽度，overlay_w代表⽔印宽度，main_h代表主视频⾼度，overlay_h代表⽔印⾼度
+20：视频提亮效果器的使⽤：
+ffmpeg -i input.flv -c:v libx264 -b:v 800k -c:a libfdk_aac -vf eq=brightness=0.25 -f mp4 output.mp4
+提亮参数是brightness，取值范围是从-1.0到1.0，默认值是0。
+21：为视频增加对⽐度效果：
+ffmpeg -i input.flv -c:v libx264 -b:v 800k -c:a libfdk_aac -vf eq=contrast=1.5 -f mp4 output.mp4
+对⽐度参数是contrast，取值范围是从-2.0到2.0，默认值是1.0。
+22：视频旋转效果器的使⽤：
+ffmpeg -i input.mp4 -vf "transpose=1" -b:v 600k output.mp4
+23：视频裁剪效果器的使⽤：
+ffmpeg -i input.mp4 -an -vf "crop=240:480:120:0" -vcodec libx264 -b:v 600k output.mp4
+24：将⼀张RGBA格式表⽰的数据转换为JPEG格式的图⽚：
+ffmpeg -f rawvideo -pix_fmt rgba -s 480*480 -i texture.rgb -f image2 -vcodec mjpeg output.jpg
+25：将⼀个YUV格式表⽰的数据转换为JPEG格式的图⽚：
+ffmpeg -f rawvideo -pix_fmt yuv420p -s 480*480 -i texture.yuv -f image2 -vcodec mjpeg output.jpg
+26：将⼀段视频推送到流媒体服务器上：
+ffmpeg -re -i input.mp4 -acodec copy -vcodec copy -f flv rtmp://xxx
+上述代码中，rtmp：//xxx代表流媒体服务器的地址，加上-re参数代表将实际媒体⽂件的播放速度作为推流速度进⾏推送。
+27：将流媒体服务器上的流dump下载到本地：
+ffmpeg -i http://xxx/xxx.flv -acodec copy -vcodec copy -f flv output.flv
+上述代码中，http://xxx/xxx.flv 代表⼀个可以访问的视频⽹络地址，可按照复制视频流格式和⾳频流格式的⽅式，将⽂件下载到本地的output.flv媒体⽂件中。
+28：将两个⾳频⽂件以两路流的形式封装到⼀个⽂件中，⽐如在K歌的应⽤场景中，原伴唱实时切换的场景下，可以使⽤⼀个⽂件包含两路流，⼀路是伴奏流，另外⼀路是原唱流：
+ffmpeg -i 131.mp3 -i 134.mp3 -map 0:a -c:a:0 libfdk_aac -b:a:0 96k -map 1:a -c:a:1
+libfdk_aac -b:a:1 64k -vn -f mp4 output.m4a
+其实，FFmpeg的命令⼯具随意组合的话会有很多效果。
+
+
+
+FFmpeg API的介绍与使⽤
+
+术语的了解：
+·容器／⽂件（Conainer/File）：
+	即特定格式的多媒体⽂件，⽐如MP4、flv、mov等。
+·媒体流（Stream）：
+	表⽰时间轴上的⼀段连续数据，如⼀段声⾳数据、⼀段视频数据或⼀段字幕数据，可以是压缩的，也可以是⾮压缩的，
+	压缩的数据需要关联特定的编解码器。
+·数据帧／数据包（Frame/Packet）：
+	通常，⼀个媒体流是由⼤量的数据帧组成的，对于压缩数据，帧对应着编解码器的最⼩处理单元，分属于
+	不同媒体流的数据帧交错存储于容器之中。
+·编解码器：
+	编解码器是以帧为单位实现压缩数据和原始数据之间的相互转换的。
+
+AVFormatContext：对应的是容器，即mp4,flv。它里面会包含音频流，视频流，字幕流
+AVStream：表示音频流，视频流，字幕流
+AVCodecContext：编码的格式
+AVCodec：编码器
+AVPacket：压缩数据编码h.264后的数据
+AVFrame：原始数据帧pcm,yuv
+AVFilter：针对AVFrame原始数据进行滤镜处理
+
+
+实例一：把⼀个视频⽂件解码成为单独的⾳频PCM⽂件和视频YUV⽂件，用ffplay去验证播放这两个⽂件
+
+1.引⽤头⽂件
+ios下：
+	#include "libavformat/avformat.h"
+	#include "libswscale/swscale.h"
+	#include "libswresample/swresample.h"
+	#include "libavutil/pixdesc.h"
+xcode下：
+Header Search Path设置头文件
+
+android的c++下：
+	extern "C" {
+	#include "3rdparty/ffmpeg/include/libavformat/avformat.h"
+	#include "3rdparty/ffmpeg/include/libswscale/swscale.h"
+	#include "3rdparty/ffmpeg/include/libswresample/swresample.h"
+	#include "3rdparty/ffmpeg/include/libavutil/pixdesc.h"
+	}
+andriod底层开发下：
+    配置makefile⽂件中的内置变量LOCAL_C_INCLUDES来指定头⽂件的搜索路径
+
+为什么用extern？
+因为c++和c在的方法符号不同，如：void h(float i); c++符号为_h_float ；c符号为_h
+在链接的时候,android的c++会链接_h_float，但ffmpeg是用c语言开发的，所以加上extern "C" 让其链接c支持的_h
+
+
+跨平台c++（Android平台和iOS平台）的头文件引入：
+#ifdef __ANDROID__
+	extern "C" {
+		#include "3rdparty/ffmpeg/include/libavformat/avformat.h"
+		#include "3rdparty/ffmpeg/include/libswscale/swscale.h"
+		#include "3rdparty/ffmpeg/include/libswresample/swresample.h"
+		#include "3rdparty/ffmpeg/include/libavutil/pixdesc.h"
+	}
+	#elif defined(__APPLE__) // iOS或OS X
+	extern "C" {
+		#include "libavformat/avformat.h"
+		#include "libswscale/swscale.h"
+		#include "libswresample/swresample.h"
+		#include "libavutil/pixdesc.h"
+	}
+#endif
+
+
+2.注册协议，格式和编码器
+av_register_all()方法内部会调用avcodec_register_all（）以及其它方法，进行协议的注册，格式及编码器注册到ffmpeg中
+avformat_network_init()方法是如果需要用到网络操作
+
+3.打开媒体文件，并设置超时回调
+	a.打开本地媒体文件
+	b.打开网络媒体文件，如rtmp协议的视频源：
+	  网络打开媒体可能会涉及超时回调，代码如下：
+	  AVFormatContext *formatCtx = avformat_alloc_context();//创建媒体容器
+	  //读文件超时的回调
+		AVIOInterruptCB int_cb = {interrupt_callback, (__bridge void *)(self)};
+		formatCtx->interrupt_callback = int_cb;
+	  //打开文件后找到文件中的流
+		avformat_open_input(formatCtx, path, NULL, NULL);//打开一个flv,mp4的文件
+		avformat_find_stream_info(formatCtx, NULL);//网络流会有三个参数是probe size探测流大小，⼀个是max_analyze_duration流最大时长，还
+                                                  //有⼀个是fps_probe_size，流的帧大小 ，同时决定该流的大小
+	
+4.寻找各个流，并且打开对应的解码器，从流中可以找到视频流，音频流，字幕流的编码方式，从而找到编码器
+    说明：打开了媒体⽂件，相当于打开了⼀根电线，这根电线⾥⾯
+	其实还有⼀条红⾊的线和⼀条蓝⾊的线，这就和媒体⽂件中的流⾮常类似
+	了，红⾊的线代表⾳频流，蓝⾊的线代表视频流。所以这⼀步我们就要寻
+	找出各个流，然后找到流中对应的解码器，并且打开它
+
+
+	寻找⾳视频流：
+	for(int i = 0; i < formatCtx->nb_streams; i++) {
+		AVStream* stream = formatCtx->streams[i];
+		if(AVMEDIA_TYPE_VIDEO == stream->codec->codec_type) {
+			// 视频流
+			videoStreamIndex = i;
+			videoStream = streams[i];
+		} else if(AVMEDIA_TYPE_AUDIO == stream->codec->codec_type ){
+			// ⾳频流
+			audioStreamIndex = i;
+			audioStream = streams[i]；
+		}
+	}
+	
+	打开⾳频流解码器：
+	AVCodecContext * audioCodecCtx = audioStream->codec;//得到该流的解码格式
+	AVCodec *codec = avcodec_find_decoder(audioCodecCtx ->codec_id);//通过解码格式找到解码器
+	if(!codec){
+		// 找不到对应的⾳频解码器
+	} 
+	int openCodecErrCode =0;
+	if ((openCodecErrCode = avcodec_open2(codecCtx, codec, NULL)) < 0){
+		// 打开⾳频解码器失败
+	}
+	
+	打开视频流解码器：
+	AVCodecContext *videoCodecCtx = videoStream->codec;//得到该流的解码格式
+	AVCodec *codec = avcodec_find_decoder(videoCodecCtx->codec_id);//通过解码格式找到解码器
+	if(!codec) {
+		// 找不到对应的视频解码器
+	}
+	 int openCodecErrCode = 0;
+	if ((openCodecErrCode = avcodec_open2(codecCtx, codec, NULL)) < 0) {
+		// 打开视频解码器失败
+	}
+
+5.初始化转换器用于转换成原始数据和原始数据yum，pcm内存对象进行存储
+
+	a:构建⾳频的格式转换对象以及⾳频解码后数据存放的对象：
+	
+	SwrContext *swrContext = NULL;//原始数据格式转换器
+	if(audioCodecCtx->sample_fmt ！= AV_SAMPLE_FMT_S16) {//通过音频的编码格式拿到它的采样率如果不是AV_SAMPLE_FMT_S16
+		// 如果不是我们需要的数据格式，需要创建转换器进行转换成AV_SAMPLE_FMT_S16
+		swrContext = swr_alloc_set_opts(NULL,outputChannel, AV_SAMPLE_FMT_S16, outSampleRate,
+		in_ch_layout, in_sample_fmt, in_sample_rate, 0, NULL);
+		
+	if(!swrContext || swr_init(swrContext)) {//对转换器进行释放
+		if(swrContext) {
+			swr_free(&swrContext);
+		}
+	}
+		audioFrame = avcodec_alloc_frame();//创建原始数据的存储内存
+	}
+	
+	b:构建视频的格式转换对象以及视频解码后数据存放的对象：
+	AVPicture picture;
+	//分配该编码的原如图片，如果分配失败则不进行转换
+	bool pictureValid = avpicture_alloc(&picture,PIX_FMT_YUV420P,videoCodecCtx->width,videoCodecCtx->height) == 0;
+	if (!pictureValid){
+		// 分配失败
+		return false;
+	}
+	//创建视频格式转换器，参数：视频宽，高，相素，原始编码格式，转换模式
+	swsContext = sws_getCachedContext(swsContext,videoCodecCtx->width,videoCodecCtx->height,videoCodecCtx->pix_fmt,
+                 videoCodecCtx->width,videoCodecCtx->height,PIX_FMT_YUV420P,SWS_FAST_BILINEAR,NULL, NULL, NULL);
+	videoFrame = avcodec_alloc_frame();//创建原始数据的存储内存
+
+
+6.读取流内容并且解码
+    AVPacket packet;//压缩数据
+	int gotFrame = 0;
+	while(true) {
+		if(av_read_frame(formatContext, &packet)) {//从容器中读出1个压缩数据，音频一个AVPacket会包含多个frame，视频只包含一个frame
+			// End Of File
+			break;
+		}
+		int packetStreamIndex = packet.stream_index;//找到这个压缩数据的id
+		if(packetStreamIndex == videoStreamIndex) {//如果这个压缩id是视频流id
+		    //通过解码器，视频原始数据的存储变量，和整个视频的压缩数据，找到该帧原始的数据大小
+			int len = avcodec_decode_video2(videoCodecCtx, videoFrame,&gotFrame, &packet);
+			if(len < 0) {//如果读取该帧为0,说明读取视频完毕
+				break;
+			}
+			if(gotFrame) {//读取到这帧视频原始数据
+				self->handleVideoFrame();
+			}
+		 }else if(packetStreamIndex == audioStreamIndex) {
+		    //得到该音频帧原始数据大小，如果为0表示该视频读取完成
+			int len = avcodec_decode_audio4(audioCodecCtx, audioFrame,&gotFrame, &packet);
+			if(len < 0) {
+				break;
+			}
+			if(gotFrame) {//读取到这帧的音频原始数据
+				self->handleVideoFrame();
+			}
+		}
+	}
+
+
+7.解码音视频裸数据，写入文件中
+    ⾳频裸数据的处理：
+	void* audioData;//存音频数据的内存
+	int numFrames;
+	if(swrContext) {//如果格式转换器存在
+	    //传入声道，音频原始帧的采样率*通道,采样模式，拿到它的缓冲buff大小
+		int bufSize = av_samples_get_buffer_size(NULL, channels,(int)(audioFrame->nb_samples * channels),AV_SAMPLE_FMT_S16, 1);
+	if (!_swrBuffer || _swrBufferSize < bufSize) {
+		swrBufferSize = bufSize;
+		swrBuffer = realloc(_swrBuffer, _swrBufferSize);//创建缓冲buff
+	}
+		Byte *outbuf[2] = { _swrBuffer, 0 };
+		//按音频采样率，通道。转换原始数据
+		numFrames = swr_convert(_swrContext, outbuf,(int)(audioFrame->nb_samples * channels),(const uint8_t **)_audioFrame->data,
+					audioFrame->nb_samples);
+		audioData = swrBuffer;
+	} else {
+	    //如果不需要按采样率转换原始数据，则直接取出该数据
+		audioData = audioFrame->data[0];
+		numFrames = audioFrame->nb_samples;
+	}
+	接收到⾳频裸数据之后，就可以直接写⽂件了，⽐如写到⽂件audio.pcm中。
+	
+	视频裸数据的处理：
+	uint8_t* luma; //亮度  y
+	uint8_t* chromaB;//色相  u
+	uint8_t* chromaR;//饱和度  v
+	//如果本来就是yuv的数据，就不需要转换
+	if(videoCodecCtx->pix_fmt == AV_PIX_FMT_YUV420P ||videoCodecCtx->pix_fmt == AV_PIX_FMT_YUVJ420P){
+	    //从视频原始数据中拿到它的yuv
+		luma = copyFrameData(videoFrame->data[0],videoFrame->linesize[0],videoCodecCtx->width,videoCodecCtx->height);
+		chromaB = copyFrameData(videoFrame->data[1],videoFrame->linesize[1],videoCodecCtx->width / 2,videoCodecCtx->height / 2);
+		chromaR = copyFrameData(videoFrame->data[2],videoFrame->linesize[2],videoCodecCtx->width / 2,videoCodecCtx->height / 2);
+	} else{
+	    //通过转换器转换成yuv数据
+		sws_scale(_swsContext,(const uint8_t **)videoFrame->data,videoFrame->linesize,0,videoCodecCtx->height,picture.data,picture.linesize);
+		luma = copyFrameData(picture.data[0],picture.linesize[0],videoCodecCtx->width,videoCodecCtx->height);
+		chromaB = copyFrameData(picture.data[1],picture.linesize[1],videoCodecCtx->width / 2,videoCodecCtx->height / 2);
+		chromaR = copyFrameData(picture.data[2],picture.linesize[2],videoCodecCtx->width / 2,videoCodecCtx->height / 2);
+	}
+	接收到YUV数据之后也可以直接写⼊⽂件了，⽐如写到⽂件video.yuv中。
+
+
+8.关闭所有资源
+	解码完毕之后，或者在解码过程中不想继续解码了，可以退出程序，
+	当然，退出的时候，要将⽤到的FFmpeg框架中的资源，包括FFmpeg框架
+	对外的连接资源等全都释放掉。
+	关闭⾳频资源：
+	if (swrBuffer) {
+	free(swrBuffer);
+	swrBuffer = NULL;
+	swrBufferSize = 0;
+	} if (
+	swrContext) {
+	swr_free(&swrContext);
+	swrContext = NULL;
+	} if (
+	audioFrame) {
+	av_free(audioFrame);
+	audioFrame = NULL;
+	} if (
+	audioCodecCtx) {
+	avcodec_close(audioCodecCtx);
+	audioCodecCtx = NULL;
+	}
+	关闭视频资源：
+	if (swsContext) {
+	sws_freeContext(swsContext);
+	swsContext = NULL;
+	} if (
+	pictureValid) {
+	avpicture_free(&picture);
+	pictureValid = false;
+	} if (
+	videoFrame) {
+	av_free(videoFrame);
+	videoFrame = NULL;
+	} if (
+	videoCodecCtx) {
+	avcodec_close(videoCodecCtx);
+	videoCodecCtx = NULL;
+	}
+	关闭连接资源：
+	if (formatCtx) {
+	avformat_close_input(&formatCtx);
+	formatCtx = NULL;
+	}
+	
+	
+	
+FFmpeg源码结构解析：具体看119页
+
+
+
+
+
+
+第4章　移动平台下的⾳视频渲染
+主要在ios和android平台，把收到的原始数据渲染到屏幕和扬声器上
+声音渲染：
+ios使用AudioUnit（AUGraph）之类的API接
+android使用⽤OpenSL ES或者AudioTrack这两类接⼜
+画面渲染：
+统一使用OpenGL ES
+
+
+ios的AudioUnit渲染：
+⾳频框架底层都是基于AudioUnit实现的，较⾼层次的⾳频框架包括：Media Player、AV Foundation、
+OpenAL和Audio Toolbox，这些框架都封装了AudioUnit
+
+什么时候使用底层的AudioUnit？
+1.低延迟的⾳频输入输出，voip音频会议
+2.多路声⾳的合成并且回，如游戏或音乐多个声音合成
+3.回声消除、Mix两轨⾳频，以及均衡器、压缩器、混响器等效果器
+4.图形上显示音频模块
+
+
+1.iOS的AudioUnit下AudioSession：
+以单例存在，管理音频的硬件，使用api前都应创建这个session
+AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+设置如何使用硬件：
+1）根据我们需要硬件设备提供的能⼒来设置类别：
+[audioSession setCategory:AVAudioSessionCategoryPlayAndRecord error:&error];
+2）设置I/O的Buffer，Buffer越⼩则说明延迟越低：
+NSTimeInterval bufferDuration = 0.002;
+[audioSession setPreferredIOBufferDuration:bufferDuration error:&error];
+3）设置采样频率，让硬件设备按照设置的采样频率来采集或者播放⾳频：
+double hwSampleRate = 44100.0;
+[audioSession setPreferredSampleRate:hwSampleRate error:&error];
+4）当设置完毕所有的参数之后就可以激活AudioSession了，代码如下：
+[audioSession setActive:YES error:&error];
+
+2.创建AudioSession之后构建AudioUnit
+AudioUnit构建需要指定如下：
+类型（Type）：将在下⼀⼩节提到的四⼤类型的AudioUnit的Type
+⼦类型（subtype）： 该⼤类型下⾯的⼦类型，比如Effect该⼤类型下⾯有EQ、Compressor、limiter等⼦类型
+⼚商（Manufacture）： 固定写kAudioUnitManufacturer_Apple
+
+构建描述参数：
+AudioComponentDescription ioUnitDescription;
+ioUnitDescription.componentType = kAudioUnitType_Output;
+ioUnitDescription.componentSubType = kAudioUnitSubType_RemoteIO;
+ioUnitDescription.componentManufacturer=kAudioUnitManufacturer_Apple;
+ioUnitDescription.componentFlags = 0;
+ioUnitDescription.componentFlagsMask = 0;
+
+裸创建AudioUnit：
+AudioComponent ioUnitRef = AudioComponentFindNext(NULL, &ioUnitDescription);//⾸先根据AudioUnit的描述，找出实际的AudioUnit类型
+AudioUnit ioUnitInstance;
+AudioComponentInstanceNew(ioUnitRef, &ioUnitInstance);//最后根据类型创建出这个AudioUnit实例
+
+AUGraph创建⽅式:(此方案的扩展性更高)
+AUGraph processingGraph;
+NewAUGraph (&processingGraph);//实例化⼀个AUGraph
+AUNode ioNode;
+AUGraphAddNode (processingGraph, &ioUnitDescription, &ioNode);//按照AudioUnit的描述在AUGraph中增加⼀个AUNode
+AUGraphOpen (processingGraph);//打开AUGraph,间接实例化AUGraph中所有的AUNode,必须放在获取AudioUnit前
+AudioUnit ioUnit;
+AUGraphNodeInfo (processingGraph, ioNode, NULL, &ioUnit);//在AUGraph中的某个Node⾥获得AudioUnit的引⽤
+
+
+RemoteIO与AudioUnit：
+RemoteIO相当于一种输入输出模式，它下面的AudioUnit处理声音输入输出。输入指麦克风，输出指扬声器。RemoteIO Unit分为Element0和Element1。
+Element0控制扬声器耳机输出，Element1控制麦克风输入，无论是扬声器和麦克风，都有Input Scope和OutputScope。即Element0，Element1分别都有
+Input Scope和OutputScope。
+如果开发者想要使⽤扬声器的声⾳播放功能，那么必须将这个Unit的Element0的OutputScope和Speaker进⾏连接。⽽如果开发者想要使⽤麦克
+风的录⾳功能，那么必须将这个Unit的Element1的InputScope和麦克风进⾏连接。使⽤扬声器的代码如下：
+
+1.把RemoteIOUnit的Element0的OutputScope绑定到麦克风
+OSStatus status = noErr;
+UInt32 oneFlag = 1;
+UInt32 busZero = 0;// Element 0
+//把RemoteIOUnit的Element0的OutputScope绑定到麦克风
+status = AudioUnitSetProperty(remoteIOUnit,kAudioOutputUnitProperty_EnableIO,//输出输入设备
+							kAudioUnitScope_Output,//输出源
+							busZero,
+							&oneFlag,//1代表输入麦克风
+							sizeof(oneFlag)); 
+CheckStatus(status, @"Could not Connect To Speaker", YES);//判断连接是否成功
+
+2.判断设备之间是否连接上
+static void CheckStatus(OSStatus status, NSString *message, BOOL fatal)
+{
+	if(status != noErr)
+	{
+		char fourCC[16];
+		*(UInt32 *)fourCC = CFSwapInt32HostToBig(status);
+		fourCC[4] = '\0';
+		if(isprint(fourCC[0]) && isprint(fourCC[1]) && isprint(fourCC[2]) && isprint(fourCC[3]))
+			NSLog(@"%@: %s", message, fourCC);
+		else
+			NSLog(@"%@: %d", message, (int)status);
+		if(fatal)
+			exit(-1);
+}
+
+3.把RemoteIOUnit的Element1的InputScope与麦克风绑定
+UInt32 busOne = 1; // Element 1
+//把RemoteIOUnit的Element1的InputScope与麦克风绑定
+AudioUnitSetProperty(remoteIOUnit,kAudioOutputUnitProperty_EnableIO,
+					kAudioUnitScope_Input,//输入
+					busOne,
+					&oneFlag,/1代表输入麦克风
+					sizeof(oneFlag);
+					
+4.给AudioUnit设置数据格式:
+给AudioUnit设置数据格式了，AudioUnit的数据格式分为输⼊和输出两个部分,先来看⼀个Audio Stream Format的描述：
+UInt32 bytesPerSample = sizeof(Float32);
+
+AudioStreamBasicDescription asbd;
+
+bzero(&asbd, sizeof(asbd));
+
+asbd.mFormatID = kAudioFormatLinearPCM;//mFormatID指定音频编码pcm
+
+asbd.mSampleRate = _sampleRate;//采样率
+
+asbd.mChannelsPerFrame = channels;//声道数
+
+asbd.mFramesPerPacket = 1;//每个packet有几帧
+
+//mFormatFlags第一参数kAudioFormatFlagsNativeFloatPacked 指定每个sample的表⽰格式是Float格式
+//mFormatFlags第二参数kAudioFormatFlagIsNonInterleaved表示左声道就会在mBuffers[0]⾥⾯，右声道就会在mBuffers[1]⾥⾯
+//第二参数如果是kAudioFormatFlagIsInterleaved表示左右声道都存在mBuffers[0]，交错存放
+asbd.mFormatFlags = kAudioFormatFlagsNativeFloatPacked |kAudioFormatFlagIsNonInterleaved;
+
+//一个左声道或右声道用多少位表示，这里是8*每次采样音频存的内存来表示
+asbd.mBitsPerChannel = 8 * bytesPerSample;
+
+asbd.mBytesPerFrame = bytesPerSample;//表示一个帧里有多少byte，如果是交错的则为bytesPerSample，如果非交错，则是声道*bytesPerSample，因为两个声道存入了不同的buffers中
+
+asbd.mBytesPerPacket = bytesPerSample;//表示一个包里有多少byte，如果是交错的则为bytesPerSample，如果非交错，则是声道*bytesPerSample，因为两个声道存入了不同的buffers中
+
+上面这段代码主要是对AudioStreamBasicDescription进行结构体传值填充，无论音视频，都通过它来描述格式
+
+
+AudioUnit的分类：
+（1）Effect Unit
+    类型是kAudioUnitType_Effect，主要提供声⾳特效处理的功能
+    ·均衡效果器：⼦类型是kAudioUnitSubType_NBandEQ，改变声音能量的分布
+    ·压缩效果器：⼦类型是kAudioUnitSubType_DynamicsProcessor，提高音量，降低音量
+    ·混响效果器：⼦类型是kAudioUnitSubType_Reverb2，反射声与原声混合的效果
+     其它效果器：像⾼通（High Pass）、低通（Low Pass）、带通（BandPass）、延迟（Delay）、压限（Limiter）
+     
+（2）Mixer Units
+    类型是kAudioUnitType_Mixer，主要提供Mix多路声⾳的功能，子类功能如下
+    ·3D Mixer：该效果器在移动设备上是⽆法使⽤的，仅仅在OS X上
+    ·MultiChannelMixer：⼦类型是kAudioUnitSubType_MultiChannelMixer 可以接收多路⾳频的输⼊，合成多路，调节每路
+（3）I/O Units
+    类型是kAudioUnitType_Output，提供音频设备的输入输出
+    ·RemoteIO：⼦类型是kAudioUnitSubType_RemoteIO，用来采集和播放音频
+    ·Generic Output：⼦类型是kAudioUnitSubType_GenericOutput，当开发者希望把一个输出不是给扬声器，而是存到电脑内存中时使用
+（4）Format Converter Units
+    类型是kAudioUnitType_FormatConverter，主要⽤于提供格式转换的功能，⽐如：采样格式由Float到SInt16的转换、交错和平铺的格式转换、单
+	双声道的转换等，其⼦类型及⽤途说明如下。
+	·AUConverter：⼦类型是kAudioUnitSubType_AUConverter由FFmpeg解码出来的PCM数据是SInt16格式的，因此不能直接输送给RemoteIO Unit进⾏播
+				放，所以需要构建⼀个ConvertNode将SInt16格式表⽰的数据转换为Float32格式表⽰的数据，然后再输送给RemoteIO Unit，最终才能正常播放出来。
+    ·Time Pitch：⼦类型是kAudioUnitSubType_NewTimePitch，即变速变调效果器，这是⼀个很有意思的效果器，可以对声⾳的⾳⾼、速度进⾏调
+			     整，像“会说话的Tom猫”类似的应⽤场景就可以使⽤这个效果器来实现。
+（5）Generator Units	
+    类型是kAudioUnitType_Generator，在开发中我们经常使⽤它来提供播放器的功能。其⼦类型及⽤途说明如下:
+    ·AudioFilePlayer：⼦类型是kAudioUnitSubType_AudioFilePlayer,播放音频文件或话筒等声音
+    
+5.构造⼀个AUGraph：
+AUGraph将声⾳采集、声⾳处理以及声⾳输出的整个过程管理起来
+音箱向前一级AUNode要数据，AUNode向RemoteIOUnit的Element1（即麦克风）中要到数据再返回给音箱
+这个过程是由多个AUNode连接成通道进行传递的。AUNode的连接有两种方式。
+AUNode直连方式：
+AUGraphConnectNodeInput(mPlayerGraph, mPlayerNode, 0, mPlayerIONode, 0);
+将Audio File PlayerUnit和RemoteIO Unit直接连接起来，Audio File PlayerUnit相当于音箱，要播放时向RemoteIO Unit要数据，RemoteIO Unit内
+部有AUNode
+AUNode回调的⽅式：
+AURenderCallbackStruct renderProc;//构造⼀个AURenderCallback的结构体
+renderProc.inputProc = &inputAvailableCallback;//设置回调函数
+renderProc.inputProcRefCon = (__bridge void *)self;//RemoteIO Unit的输入端与回调函数绑定
+AUGraphSetNodeInputCallback(mGraph, ioNode, 0, &finalRenderProc);//RemoteIO Unit需要数据时就会回调这个函数
+
+static OSStatus renderCallback(void *inRefCon, AudioUnitRenderActionFlags*ioActionFlags, const AudioTimeStamp *inTimeStamp, UInt32
+inBusNumber, UInt32 inNumberFrames, AudioBufferList *ioData)
+{
+	OSStatus result = noErr;
+	__unsafe_unretained AUGraphRecorder *THIS = (__bridge AUGraphRecorder *)inRefCon;
+	//调⽤AudioUnitRender的⽅式来驱动Mixer Unit获取数据,把数据写入oData
+	AudioUnitRender(THIS->mixerUnit, ioActionFlags, inTimeStamp, 0,inNumberFrames, ioData);
+	//利⽤ExtAudioFile将这段声⾳编码并写⼊本地磁盘的⼀个⽂件中
+	result = ExtAudioFileWriteAsync(THIS->finalAudioFile, inNumberFrames,ioData);
+	return result;
+}
+
+
+4.2　Android平台的⾳频渲染
+Android的SDK是指java调用的api其实是调用了Native层提供的API，即C或者C++层可以调⽤的API）
+这里三套音频api
+MediaPlayer：适用后台长时间播放和流媒体播放，高度封装
+SoundPool：适合播放⽐较短的⾳频⽚段，可以同时播放多个声音
+AudioTrack：适合低延迟的播放，是更加底层的API，提供了⾮常强⼤的控制能⼒，适合流媒体的播放等场景，需结合解码器使用
+OpenSL ES:C语⾔的接⼜，可以提供⾮常强⼤的⾳效处理、低延时播放等功能，⽐如在Android⼿机上可实现实时⽿返的功能
+本项目更主要讲底层api，AudioTrack和OpenSL ES
+
+
+AudioTrack的使用：
+AudioTrack只支持裸数据，对于编码mp3等需要类似于ffmpeg实现，用于播放pcm用
+代码流程：
+1）根据⾳频参数信息，配置出⼀个AudioTrack的实例
+2）调⽤play⽅法，将AudioTrack切换到播放状态。
+3）启动播放线程，循环向AudioTrack的缓冲区中写⼊⾳频数据。
+4）当数据写完或者停⽌播放的时候，停⽌播放线程，并且释放所有资源。
+
+1。初始化AudioTrack
+public AudioTrack(int streamType, int sampleRateInHz, int channelConfig,
+int audioFormat, int bufferSizeInBytes, int mode);
+streamType：声音策略
+	STREAM_VOCIE_CALL：电话声⾳
+	STREAM_SYSTEM：系统声⾳
+	STREAM_RING：铃声
+	STREAM_MUSCI：⾳乐声
+	STREAM_ALARM：警告声
+	STREAM_NOTIFICATION：通知声
+sampleRateInHz：采样率
+    8000、16000、22050、24000、32000、44100、48000
+channelConfig：声道数
+    CHANNEL_IN_MONO（单声道）、CHANNEL_IN_STEREO（双声道）
+audioFormat：“数据位宽”，即采样格式
+    ENCODING_PCM_16BIT（16bit）、ENCODING_PCM_8BIT（8bit） 前者是可以兼容所有Android⼿机
+bufferSizeInBytes：
+    配置的是AudioTrack内部的⾳频缓冲区的⼤⼩
+    下面函数计算出缓冲区大小
+     int getMinBufferSize(int sampleRateInHz, int channelConfig, int audioFormat);
+mode，AudioTrack提供了两种播放模式：
+    MODE_STATIC，需要⼀次性将所有的数据都写⼊播放缓冲区
+    MODE_STREAM，需要按照⼀定的时间间隔不间断地写⼊⾳频数据
+2.将AudioTrack切换到播放状态
+    判断AudioTrack实例是否初始化成功，成功的状态，那么就调⽤它的play⽅法，并切换到播放状态
+	if (null != audioTrack && audioTrack.getState() != AudioTrack.STATE_UNINITIALIZED)
+	{
+		audioTrack.play();
+	}
+3.开启播放线程
+    //创建播放线程
+	playerThread = new Thread(new PlayerThread(), "playerThread");
+	playerThread.start();
+
+	class PlayerThread implements Runnable {
+	private short[] samples;
+	public void run() {
+		samples = new short[minBufferSize];//里面是缓冲区大小，即采样了多少
+				while(!isStop) {
+					int actualSize = decoder.readSamples(samples);//解码器读数据
+					audioTrack.write(samples, actualSize);//把解码器中数据读出写到audioTrack中
+				}
+		}
+	}    	     
+4.销毁资源，停止线程
+    ⾸先停⽌AudioTrack，代码如下：
+	if (null != audioTrack && audioTrack.getState() != AudioTrack.STATE_UNINITIALIZED)
+	{
+		audioTrack.stop();
+	}
+	然后停⽌线程：
+	isStop = true;
+	if (null != playerThread) {
+		playerThread.join();
+		playerThread = null;
+	}
+	最后释放AudioTrack：
+	audioTrack.release();
+	
+	
+OpenSL ES的使⽤：
+    OpenSL ES同样是android音频加速播放的api，也是跨平台的，，High Level Audio Libs是对它的封装，它是c语言
+    api，较底层
+    引⼊OpenSL ES的头⽂件：
+		#include <SLES/OpenSLES.h>
+		#include <SLES/OpenSLES_Android.h>
+	在Makefile⽂件Android.mk中增加链接选项。链接动态库OpenSL ES
+		LOCAL_LDLIBS += -lOpenSLES
+		
+    OpenSL ES提供的是基于C语⾔的API,它有基于对象和接口的⽅式提
+    
+    1）创建一个引擎接口，这是api的唯一入口，调⽤全局函数slCreateEngine来获取SLObjectItf类型的引擎对象接口
+		SLObjectItf engineObject;
+		SLEngineOption engineOptions[] = { { (SLuint32) SL_ENGINEOPTION_THREADSAFE,(SLuint32) SL_BOOLEAN_TRUE } };
+		slCreateEngine(&engineObject, ARRAY_LEN(engineOptions), engineOptions, 0, 0, 0);
+	2）实例化引擎对象
+		RealizeObject(engineObject);
+		SLresult RealizeObject(SLObjectItf object) {
+			return (*object)->Realize(object, SL_BOOLEAN_FALSE);
+		};
+	3）通过GetInterface⽅法，使用实例化引擎，获取SLEngineItf类型引擎的对象接口
+		SLEngineItf engineEngine;
+		(*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
+	4）创建需要的其它对象接口，通过调⽤SLEngineItf类型的对象接口的方法创建，如CreateXXX⽅法返回新的对象的接口，⽤CreateOutputMix⽅法来
+		获取⼀个outputMixObject接口，或者调⽤CreateAudioPlayer⽅法来获取⼀个audioPlayerObject接口
+		SLObjectItf outputMixObject;
+		(*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, 0, 0);
+	5）实例化新的对象，任何对象接⼜获取出来之后，都必须要实例化
+	    realizeObject(outputMixObject);
+		realizeObject(audioPlayerObject);
+	6）新接口对对象的访问状态和控制，会有一些回调方式，⽐如在播放器AudioPlayer或录⾳器AudioRecorder中注册⼀些回调⽅法等
+	    SLPlayItf audioPlayerPlay;
+		(*audioPlayerObject)->GetInterface(audioPlayerObject, SL_IID_PLAY,&audioPlayerPlay);
+		// 设置播放状态
+		(*audioPlayerPlay)->SetPlayState(audioPlayerPlay, SL_PLAYSTATE_PLAYING);
+		// 设置暂停状态
+		(*audioPlayerPlay)->SetPlayState(audioPlayerPlay, SL_PLAYSTATE_PAUSED);
+	7）待使⽤完该对象之后，要记得调⽤Destroy⽅法来销毁对象以及相关的资源：
+		destroyObject(audioPlayerObject);
+		destroyObject(outputMixObject);
+		void AudioOutput::destroyObject(SLObjectItf& object) {
+			if (0 != object)
+			(*object)->Destroy(object);
+			object = 0;
+		}
+		
+		
+		
+视频渲染OpenGL ES介绍
+     OpenGL（Open Graphics Library）跨平台跨语言，处理2d,3d，本书只讨论2d,OpenGL ES是手机嵌入版本，每个平台要提供
+     提供OpenGL ES的上下⽂环境以及窗⼜的管理，有一个libSDL库，ffmpeg的ffplay就是基于此库开发，该库统一提供OpenGL ES
+     的上下⽂环境以及窗⼜的管理，这里不讲解，只针对不同的平台讲解提供OpenGL ES的上下⽂环境以及窗⼜的管理，更灵活。
+
+    OpenGL ES的GLSL，GLSL（OpenGL ShadingLanguage）是OpenGL的着⾊器语⾔，写的代码运行在gpu中，GLSL代码分
+    Vertex Shader（顶点着⾊器）与Fragment Shader（⽚元着⾊器），对于OpenGL ES，业界有⼀个著名的开源库GPUImage
+    尤其是在iOS平台上实现得⾮常完备，不仅有摄像头采集实时渲染、视频播放器、离线保存等功能，更有强⼤的滤镜实现
+    亮度、对⽐度、饱和度、⾊调曲线、⽩平衡、灰度等调整颜⾊的处理，以及锐化、⾼斯模糊等图像像素处理的实现等，还有素描、卡通效
+	果、浮雕效果等视觉效果的实现，最后还有各种混合模式的实现等
+	
+OpenGL ES的实践：155页
+
+
+

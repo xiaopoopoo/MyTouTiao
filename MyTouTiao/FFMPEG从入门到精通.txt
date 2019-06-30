@@ -1,0 +1,2303 @@
+1：ffmpeg的模块
+	FFmpeg 的封装模块AVFormat：
+		封装和解封装，如图1-1 FFmpeg 基本组成模块
+		MP4 、FLY 、KV 、TS 等文件封装格式， RTMP, RTSP 、MMS, HLS 等网络协议封装格式。
+	FFmpeg 的编解码模块AVCodec：
+		AVCodec 中实现了常用的编解码格式，既支持编码，也支持
+		解码。AVCodec 除了支持MPEG4, AAC 、MJPEG 等自带的媒体编解码格式之外，还支
+		持第三方的编解码器，如H.264 ( AVC ）编码，需要使用x264 编码器； H.265 ( HEVC ）编
+		码，需要使用x2 65 编码器； MP3 ( mp3 lame ）编码，需要使用libmp3lame 编码器
+	FFmpeg 的滤镜模块AVFilter：27页有案例
+		AVFilter 库提供了一个通用的音频、视频、字幕等滤镜处理框架。在AVFi lter 中，滤
+		镜框架可以有多个输入和多个输出
+	FFmpeg 的视频图像转换计算模块swscale：
+		sws cale 模块提供了高级别的图像转换A PI ，例如它允许进行图像缩放和像素格
+		式转换，常见于将图像从1080p 转换成720p 或者480p 等的缩放，或者将图像数据从
+		YUV420P 转换成YUYV ，或者YUV 转RGB 等图像格式转换。
+	FFmpeg 的音频转换计算模块swresample：
+		swresample 模块提供了高级别的音频重采样API 。例如它允许操作音频采样、音频通
+		道布局转换与布局调整。
+2：FFmpeg 的编解码工具ffmpeg
+    编解码工具ffmpeg是一个可执行的程序，由ffmpeg源码编译生成
+        例：./ffmpeg -i input.mp4 output.avi  -i表示输入源
+        例：./ffmpeg - i input.mp4 -f avi output.dat  －f进行约束输出为avi格式，虽然输出是output.dat，但只能avi打开
+        ffmpeg 的主要工作流程相对比较简单，具体如下。
+		1 ）解封装（ Demuxing ） 。调用li bavfo rmat 中的接口即可实现
+		2 ）解码（ Decoding ） 。Decoder 解包成为YVU 或者PCM libavcodec 中的接口即可实现
+		3 ）编码（ Encoding ） 。
+		4 ）封装（ Muxing ） 。
+		其中需要经过6 个步骤，具体如下。
+		1 ）读取输入源。
+		2 ）进行音视频的解封装。
+		3 ）解码每一帧音视频数据。
+		4 ）编码每一帧音视频数据。
+		5 ）进行音视频的重新封装。
+		6 ）输出到目标。
+3：FFmpeg 的播放器ffplay
+        FFmpeg 的avformat 与avcodec ，可以播放各种媒体文件或者流。
+        ffplay 是FFmpeg 源代码编译后生成的另一个可执行程序，提供了音视频显示和播放相
+		关的图像信息、音频的波形信息
+		注意：
+		有时通过源代码编译生成句lay 不一定能够成功，因为ffplay 在旧版本时依赖于
+		SDL-1.2 ，而饰lay 在新版本时依赖于SDL-2.0 ，需要安装对应的SDL 才能生成ffplay
+4：FFmpeg 的多媒体分析器ff probe
+        ffprobe 也是FFmpeg 源码编译后生成的一个可执行程序。ffprobe 是一个非常强大的
+		多媒体分析工具，可以从媒体文件或者媒体流中获得你想要了解的媒体信息，比如音频的
+		参数、视频的参数、媒体容器的参数信息等
+		分析某个媒体容器中的音频是什么编码格式、视频是什么编码格式，
+		同时还可以得到媒体文件中媒体的总时长、复合码率等信息。
+		使用ffprobe 可以分析媒体文件中每个包的长度、包的类型、帧的信息等
+		例：./ffprobe -show_streams output.mp4  查看mp4中流的信息
+		使用ffprobe 能够查看MP4 文件容器中的流的信息，其包含
+		了一个视频流，由于该文件中只有视频流，流相关的信息是通过［STREAM][/ST阻AM]
+		的方式展现出来的，在［STREAM］与［／ STREAM］之间的信息即为该MP4 文件的视频
+		流信息。当视频文件容器中包含音频流与视频流或者更多路流时，会通过［STREAM］与
+		[/S TREAM］进行多个流的分隔，分隔后采用index 来进行流的索引信息的区分。
+5：FFmpeg 编译
+        FFmpeg 在官方网站中提供了已经编译好的可执行文件。
+        FFmpeg 官方建议用户自行编译使用FFmpeg 的最新版本，，因为对使用apt-get install
+		ffmpeg 或者yum install ffmpeg 安装ffmp，那么默认支持的版本都很老，，有些新的功能
+		并不支持， 如一些新的封装格式或者通信协议。
+6：FFmpeg 之Windows 平台编译
+		FFmpeg 在Windows 平台中的编译需要使用MinGW-w64,MinGW 是Minimalist
+		GNU for Windows 的缩写，它提供了一系列的工具链来辅助编译Windows 的本地化程序，如果不希望使用MinGW 而使
+		用Visual Studio 的话，则需要消耗很多时间来支持Visual Studio 平台
+		编译：进入FFmpeg 源码目录，执行“.／configure ＂
+			 configure 成功后执行make
+			 执行make install
+			 验证编译结果。执行“厅fmpeg.exe -h”:
+		注意：以上编译配直方式编译出来的ffmpeg 仅仅只是最简易的ffmpeg ，并没有H.264 、
+			 H.265 、加字幕等编码支持
+7：FFmpeg 之Lim』X 平台编译
+        默认编译FFmpeg 的时候，需要用到yasm 汇编器对FFmpeg 中的汇
+		编部分进行编译。如果不需要用到汇编部分的代码，则可以不安装yasm 汇编器
+		安装yasm 汇编器：
+		    wget http://www.tortall.net/projects/yasm/releases/yasm-l.3.0.tar.gz
+		    进入下载目录，先进行configure 操作，然后通过make 编译，再执行make
+			install 安装即可
+		再安装ffmpeg
+8：FFmpeg 之OS X 平台编译
+		在OS X 平台上使用的编译工具链为LLVM，还需要安装yasm 汇编编译工具，否则在生成Makefile 时会报错提示未安装
+		yasm 工具。
+		ffmpeg安装：
+			FFmpeg 可从git://source.ffmpeg.org/ffmpeg.git 将源代码克隆到本地
+			只需要执行make 进行编译与执行make install 进行安装即可。
+9：FFmpeg 编码支持与定制
+		FFmpeg 本身支持一些音视频编码格式、文件封装格式与流媒体传输协议，但是支持
+		的数量依然有限，可以通过FFmpeg 源码的configure 命令查看FFmpeg 所支
+		持的音视频编码格式、文件封装格式与流媒体传输协议
+		对于FFmpeg 不支持的格式， 可以通过configure 一help 查看所需要的第三方外部库，然后通过增加对应的编译参数选项进
+        行支持
+        例：
+			如需要自己配置FFmpeg 支持哪些格式，比如仅支持H.264 视频与AAC 音频编码，
+			可以调整配置项将其简化如下：
+			.. /configure --enable-libx264 - - enable-libfdk-aac --enable-gpl --enable-nonfree
+		    如果需要支持H.265 编码，则只需要增加→nable-libx265 即可
+		可以通过configure 斗ielp 查看一些有用的裁剪操作：
+			可以通过这些选项关闭不需要用到的编码、封装与协议等模块
+			./configure --disable-encoders --disable-decoders --disable-hwaccels --disablemuxers
+			--disable-demuxers --disable-parsers --disable-bsfs --disable-protocols
+			--disable-indevs --disable-devices --disable-filters
+			可以支持某些模块，不支持某些模块
+			./configure --disable-filters --disable-encoders --disable-decoders --disablehwaccels
+			--disable-muxers --disable-demuxers --disable-parsers --disable-bsfs
+			- - d i sable-protocols --disable-indevs --disable-devices --enable-libx264 --enablel
+			ibfdk-aac --enable-gpl --enable-nonfree --enable-muxer=mp4
+10：FFmpeg 的编码器支持
+         .／ configure 一list-encoders 参数来查看支持的编码
+         FFmpeg 支持的编码器比较全面，比如AAC 、AC3,H.264 、H.265 、M PEG4 , MPEG2VIDEO 、PCM 、FLVl 的编码器支持。
+11：FFmpeg 的解码器支持
+		 .／configure 一listdecoders命令来进行查看支持的解码
+		 FFmpeg 所支持的解码器模块decoders 支持了MPEG4 ,H.264 、H.265 (HEVC ） 、MP3 等格式
+12：FFmpeg 的封装支持
+         命令.／ configure 一list-muxers 来查看：
+         从封装（又称复用）格式所支持的信息中可以看到， FFmpeg 支持生成裸流文件，如h.264 、AAC 、PCM ，
+         也支持一些常见的格式，如MP3 、MP4 、FLV 、M3U8, WEBM
+13：FFmpeg 的解封装支持
+		命令.／ configure 一list-demuxers 来查看
+		从解封装（ Demuxer ，又称解复用）格式支持信息中可以看到， FFmpeg 源代码中已经
+		支持的demuxer 非常多，包含图片（ image ） 、MP3 、FLV 、MP4 、MOV 、AVI 等。
+14：FFmpeg 的通信协议支持
+		支持的网络流媒体协议相对来说也很全面，可以通过命令.／configure 一list-protocols 查看：
+		，包括MMS,HTTP 、HTTPS 、HLS ( M3U8 ）、RTMP , RTP ，甚至支持TCP 、UDP ，其也支持使用file
+		协议的本地文件操作和使用concat 协议支持的多个文件串流操作
+15：ffmpeg工具常用命令
+		ffmpeg 在做音视频编解码时非常方便，，通过ffmpeg --help 可以看到ffmpeg 常见的命令大概分为6 个部分
+
+		• ffmpeg 信息查询部分
+		· 公共操作参数部分
+		． 文件主要操作参数部分
+		． 视频操作参数部分
+		· 音频操作参数部分
+		． 字幕操作参数部分
+				ffmpeg --help 查看到的help 信息是ffmpeg 命令的基础信息，如果想获得高级
+				参数部分， 那么可以通过使用ffmpeg --help long 参数来查看，如果希望获得全部的帮助
+				信息， 那么可以通过使用ffmpeg --help full 参数来
+		
+				通过－ L 参数， 可以看到ffmpeg 目前所支持的license 协议；通过－version 可以查
+				看ffmpeg 的版本，包括子模块的详细版本信息，如libavformat 、libavcodec , libavutil 、
+				libav filter 、libswscale 、libswresample 的版本：
+				
+				查看当前使用的ffmpeg 是否支持对
+				应的视频文件格式，需要使用ffmpeg -formats 参数来查看：
+				
+				查看ffmpeg 是否支持H . 264 编码或者解码，可以通过ffmpeg -codecs 查看全部信息，也可以
+				通过ffmpeg -encoders 查看ffmpeg 是否支持H.264 编码器，或者通过ffmpeg -decoders
+				查看ffmpeg 是否支持H.264 解码器。
+				
+				通过ffmpeg -filter s 查看ffmpeg 支持哪些滤镜
+				
+				ffmpeg --help full 命令，可以查看ffmpeg 支持的所有封装（ demux、muxer )
+				格式，编解码器（ encoders 、decoders ） 和滤镜处理器（ filters ）
+				
+				通过ffmpeg -h 查看该类型的详细参数，包括encoder 、decoder 所支持的操作参数， filter 所支持的参数：
+				查看FLV 封装器的参数支持（ ffmpeg -h muxer=flv ):
+				查看flv 解封装器的参数支持（ ffmpeg -h demuxer=flv ) :
+				查看H .264 ( AVC ） 的编码参数支持（ ffmpeg -h encoder=h264 ) :
+				查看colorkey 滤镜的参数支持（ ffmpeg -h filter=colorkey）
+16：ffmpeg 的封装转换
+		ffmpeg 的封装转换（转封装）功能包含在AVFormat 模块，通过libavformat 库进
+		行Mux 和Demux 操作。查看ffmpeg --help full 信息，找到AVF ormatContext 参数部份，
+		这些都是通用的封装、解封装操作时使用的参数
+17：ffmpeg 的转码参数
+		ffmpeg 编解码部分的功能主要是通过模块AVCodec 来完成的，通过libavcodec 库进
+		行Enc ode 与Decode 操作，通过命令ffmpeg --help full 可以看到AVCodecContext 参数列表信息
+18：ffmpeg 的基本转码原理
+		可以设置转码的相关参数，如果转码操作涉及封装的改变，
+		则可以通过设置AVCodec 与AVFormat 的操作参数进行封装与编码的改变
+		./ffmpeg -i -/Movies/inputl.rmvb -vcodec mpeg4 -b:v 200k -r 15 -an output.mp4
+		解析：
+			·转封装格式从RMVB 格式转换为MP4 格式
+			·视频编码从RV40 转换为MPEG4 格式
+			·视频码率从原来的377kbit /s 转换为200kbit/s
+			．视频帧率从原来的2 3.98年s 转换为15fps
+			·转码后的文件中不包括音频（ － an 参数）
+			首先解封装， 需要解的封装为RMVB ；然后解码，其中视频编码为RV40 ，音频编码为COOK ；然后解码后的视频编码
+			为MPEG4 ； 最后封装为一个没有音频的MP4 文件
+19：ffprobe 常用命令
+		ffprobe 多媒体信息查看工具， ffprobe 主要用来查看多媒体文件的信息
+		ffprobe 一help来查看详细的帮助信息：
+		查看每一个音频数据包信息或者视频数据包信息，查看流信息，
+		查看每一个流有多少帧以及每一个流有多少个音视频包，查看视频像素点的格式
+		ffprobe -show packets i 叩ut.flv 查看多媒体数据包信息
+		ffprobe -show_data -show_packets input.flv组合参数来查看包中的具体数据
+		通过ffprobe 读取packets 来进行对应的数据分析，使用show_packets 与show _data 配合可以进行更加精确的分析。
+		通过ffprobe-show_format output.mp4 命令可以查看多媒体的封装格式
+		通过ffprobe -show_frames input.flv 命令可以查看视频文件中的帧信息
+		通过－ show frames 参数可以查看每一帧的信息
+			media_type 帧的类型（视频、音频、字幕等） video
+			stream index 帧所在的索引区域。
+			key ＿frame 是否为关键帧
+			pkt_pts Frame 包的pts 。
+		通过－ show streams 参数可以查看到多媒体文件中的流信息
+			index 流所在的索引区域。
+			codec name 编码名h264
+			codec一long_name 编码全名MPEG-4 part I 0
+			profile 编码的profile High
+			level 编码的level 31
+			has b frames 包含B 帧信息2
+			codec_type 编码类型video
+			codec time base 编码的时间戳计算基础单位1150
+			pix_fmt 图像显示的色彩格式yuv420p
+			coded width 图像的宽度1280
+			coded_ height 图像的高度714
+			codec一tag_stnng 编码的标签数据[O][O][O][O]
+		ffprobe -print_format 或者ffprobe -of 参数来进行相应的格式输出,多种格式输出，包括XML , INI , JSON 、csv 、FLAT 等
+		    通过ffprobe -of xml -show_ streams input. flv 得到的XML 输出格式
+		    通过ffprobe -of ini -show_ streams input.flv 得到的INI 格式的输出
+		    通过ffprobe -of flat -show _streams input.flv 输出FLAT 格式
+		    通过ffprobe -of json -show packets input.flv 输出JSON 格式
+		    通过ffprobe -of csv -show _packets input.flv 输出csv 格式
+		select_streams 可以只查看音频（ a ）、视频（ v ）、字幕（ s ）的信息，例如配合show_ frames 查看视频的frames 信息
+			ffprobe -show_frames -select_streams v -of xml input.mp4
+20:ffplay 常用命令
+		使用ffplay 进行流媒体播放测试， 则需要安装SDL-1.2 。而在新版本的FFmpeg 源代码中，需要SDL-2.0 之后的版本才能有效生成ffplay
+		FFmpeg 中通常使用ffplay 作为播放器，其实ffplay 同样也可以作为很多音视频数据的图形化分析工具，
+		通过ffplay 可以看到视频图像的运动估计方向、音频数据的波形等
+		ffplay 常用参数:
+			ffplay 不仅仅是播放器，同时也是测试ffmpeg 的codec 引擎、format 引擎，以及filter
+			引擎的工具，并且还可以进行可视化的媒体参数分析， 其可以通过ffplay --help 进行查看
+			x 强制设置视频显示窗口的宽度
+			y 强制设置视频显示窗口的高度
+			s 设置视频显示的宽高
+			fs 强和j全屏显示
+			an 屏蔽音频
+			vn 屏蔽视频
+			sn 屏蔽字幕
+			SS 根据设置的秒进行定位拖动
+			设置播放视频／音频的长度
+			bytes 设置定位拖动的策略，。为不可拖动， I 为可拖动，－ I 为自动
+			nodisp 关闭图形化显示窗口
+			f 强制使用设置的格式进行解析
+			window title 设置显示窗口的标题
+			af 设置音频的滤镜
+			codec 强制使用设置
+		从视频的第30 秒开始播放，播放10 秒钟的文件:
+			ffplay -ss 30 -t 10 input.mp4
+		视频播放时播放器的窗口显示标题为自定义标题
+			ffplay -window title "Hello World, This is a s缸nple ” output.mp4
+		使用ffplay 打开网络直播流
+			ffplay -window_title ” 播放测试” rtmp://up.v.test.com/live/stream
+
+		ffplay 高级参数:
+			ast 设置将要播放的音频流
+			vst 设置将要播放的视频流
+			sst 设置将要播放的字幕流
+			stats 输出多媒体播放状态
+			fast 非标准化规范的多媒体兼容优化
+			sync 音视频同步设置可根据音频时间、视频时间或者外部扩展时间进行参考
+			autoexit 多媒体播放完毕之后自动退出ffplay ，仔play 默认播放完毕之后不退出播放器
+			exitonkeydown 当有按键按下事件产生时退出ffplay
+			exitonmousedown 当有鼠标按键事件产生时退出ffplay
+			loop 设置多媒体文件循环播放的次数
+			台amedrop 当C PU 资源占用过高时，自动丢帧
+			infbuf 设置无极限的播放器buffer 这个选项常见于实时流媒体播放场景
+			vf 视频滤镜设置
+			acodec 强制使用设置的音频解码器
+			vcodec 强制使用设置的视频解码器
+			scodec 强制使用设置的字幕解码器
+      从20 秒播放一个视频，播放时长为10 秒钟，播放完成后自动退出ffplay ，播放器的窗口标题为“ Hello World 
+            ffplay -window title ” Hello World ”-ss 20 -t 10 -autoexit output.mp4
+      time 查看播放时长
+            time ffplay -window title ” Hello World ”-ss 20 -t 10 -autoexit output.mp4
+      播放Program 与常规的播放方式有所不同，需要指定对应的流，可以通过vst 、ast 、sst 参数来指定，
+      例如希望播放Program 13 中的音视频流，视频流编号为4 ，音频流编号为5 ，则可以通过如下命令行进行指定：
+            ffplay -vst 4 -ast 5 -/Movies/movie/ChinaTV-11.ts
+      使用ffplay 播放视频时希望加载字幕文件，则可以通过加载ASS 或者SRT 字幕
+      文件来解决，下面列举一个加载SRT 字幕的例子，首先编辑SRT 字幕文件，内容如下：
+			1
+			00:00:01.000 --> 00:00:30.000
+			Test Subtitle by Steven Liu
+			2
+			00:00:30.001 --> 00:00:60.000
+			Hello Test Subtitle
+			3
+			00:01:01.000 --> 00:01:10.000
+			Test Subtitle by Steven Liu
+			4
+			00:01:11.000 --> 00:01:30.000
+			Test Subtitle by Steven Liu
+	 通过filter 将字幕文件加载到播放数据中，使用命令如下：
+			ffplay -window_title ” Test Movie" -vf ” subtitles=input.srt " output.mp4
+	 ffplay 的数据可视化分析应用：
+	        播放音频文件时，播放的时候其将会把解码后的音频数据以音频波形的形式显示出来
+				ffplay -showmode 1 output.mp3
+	        播放视频时想要体验解码器是如何解码每个宏块的，可以使用如下命令：
+			   ffplay -debug vis_mb_type -window_title ” show vis_mb_type ”-SS 20 -t 10 -autoexit output.mp4
+	 ffplay 查看B 帧预测与P 帧预测信息
+			 使用-vismv查看：ffplay -vismv pf output.mp4
+			 使用codecview查看：ffplay -flags2 +export mvs -ss 40 output.mp4 -vf codecview=mv=pf+bf+bb
+	 • ffmpeg 主要用于音视频编解码
+	 • ffprobe 主要用于音视频内容分析
+	 • ffplay 主要用于音视频播放、可视化分析
+	 
+85页介绍各种容器的结构：
+21：音视频文件转MP4 格式
+     跨平台最好的应该是MP4 文件
+     MP4 格式标准介绍：
+     MP4 格式标准为IS0-14496 Part 12 、I S0-14496 Part 14
+                • MP4 文件由许多个Box 与FullBox 组成
+				· 每个Box 由Header 和Data 两部分组成
+				• FullBox 是Box 的扩展，其在Box 结构的基础上，在Header 中增加8 位version 标
+				志和24 位的flags 标志
+				• Header 包含了整个Box 的长度的大小（ size ）和类型（ type ），当size 等于0 时，代
+				表这个Box 是文件的最后一个Box 。当size 等于1 时，说明Box 长度需要更多的
+				位来描述，在后面会定义一个64 位的large size 用来描述Box 的长度。当Type 为
+				uuid 时，说明这个Box 中的数据是用户自定义扩展类型
+				• Data 为Box 的实际数据，可以是纯数据，也可以是更多的子Box
+				· 当一个Box 中Data 是一系列的子Box 时，这个Box 又可以称为Container （容器）Box
+	在互联网的视频点播中，如果希望MP4 文件被快速打开， 则需要将moov 存放在mdat 的前面；如果放在后面， 则需要将MP4 文件下载完成后才可以进行播放
+    MP4 分析工具：
+				1. Elecard StreamEye
+				2. mp4box
+				3. mp4info
+22：FLV 格式标准介绍  106页
+    网络的直播与点播场景中FLV 也是一种常见的格式FLV 是Adobe 发布的一种可
+	以作为直播也可以作为点播的封装格式，其封装格式非常简单，均以FLVTAG 的形式存
+	在，并且每一个TAG 都是独立存在的
+	FLV 文件格式分为两部分：一部分为FLV 文件头，另一部分为FLV 文件内容
+	首先是flv文件分文件头和文件内容。
+	FLV 文件头格式解析：
+	    字段    占用位数           说明
+		签名字段（ S ignature ) 8 字符“ F ” （ Ox46)
+		签名字段（ S ignature ) 8 字符“ L ”（ Ox4C)
+		签名字段（ S ignatur e) 8 字符“ V ”（ Ox56)
+		版本（ Version ) 8 文件版本（例如OxOI 为FLY 版本1 )
+		保留标记类型（ TypeFlagsReserved) 5 固定为0
+		音频标记类型（ TypeFlagsAudio ) 1；为显示音频标签1
+		保留标记类型（ TypeFlagsReserved) 固定为0
+		视频标记类型（ TypeFlagsVideo)1 为显示视频标签
+		数据偏移（ DataOffset) 32 这个头的字节
+	    464c 5601 0500 0000 0900 0000 0012 0001 FLV •.
+        464c 56：16进制三个字节表示flv
+        01：一个字节表示版本号
+        05：00000101转16进制为Ox05，表示标记类型
+        00000009：32表4字节数据偏移
+    FLV 文件内容格式解析：
+        上一个TAG 的大小   4 字节（ 32 位）  一直是0
+        TAG1     FLVTAG (FLVTAG 是一个类型） 第一个TAG
+        上一个TAG 的大小   4 字节（ 32 位）   即TAG1的大小，包括TAG1 的Header+Body TAG 的Header 大小11字节
+    
+    FLV 文件内容中TAG1是FLVTAG类型，FLVTAG包含头和数据两部份
+        保留（ Reserved ) 2 位为FMS  保留，应该是0
+        滤镜（ Filter )   1 位      主要用来做文件内容加密处理 0： 不预处理  1 ： 预处理
+        TAG 类型（ TagType)  5 位   8 ( Ox08 ）：音频TAG    9 ( Ox09 ）：视频TAG    18(0x12 ）：脚本数据（ Script Data ，例如Metadata )
+        数据的大小（ DataSize) 24 位  TAG 的DATA 部分的大小
+        时间戳（ Timestamp) 24 位  以毫秒为单位的展示时间OxOOOOOO
+        扩展时间戳（ TimestampExtended) 8 位  针对时间戳增加的补充时间戳
+        流ID (S 位eamlD) 24 位一直是0
+        TAG 的Data (Data)  音频数据／视频数据／脚本数据    音视频媒体数据，包含startcode
+        
+        解析：
+            ．保留位占用2 位，最大为l lb
+			·滤镜位占用l 位，最大为lb
+			•TAG 类型占用5 位；最大为lllllb ，与保留位、滤镜位共用一个字节，常见的为
+			Ox08 、Ox09 、Ox12 ；在处理时， 一般默认将保留位与滤镜位设置为0
+			·数据大小占用24 位（ 3 字节），最大为OxFFFFFF ( 16 777 215 ）宇节
+			·时间戳大小占用24 位（ 3 字节） ，最大为OxFFFFFF ( 16 777 215 ）毫秒，转换为秒
+			等于16 777 秒，转换为分钟为279 分钟，转换为小时为4 .66 小时，所以如果使用
+			FLY 的格式，采用这个时间戳最大可以存储至4.66 小时
+			·扩展时间戳大小占用8 位（ 1 字节），最大为OxFF ( 255 ），扩展时间戳使得FLY 原
+			有的时间戳得到了扩展，不仅仅局限于4.66 个小时，还可以存储得更久， 1193 个
+			小时，以天为单位转换过来大约为49.7 天
+			·流ID 占用24 位（ 3 字节），最大为OxFFFFFF ；不过FLY 中一直将其存储为0
+			紧接着在FLVTAG 的header 之后存储的数据为TAG 的data ，大小为FLVTAG 的
+			Header 中DataSize 中存储的大小，存储的数据分为视频数据、音频数据及脚本数据
+			
+	FLVTAG类型中数据TAG 的Data解析
+	    VideoTag 数据解析：
+	        如果从FLVTAG 的Header 中读取到TagType 为Ox09 ，则该TAG 为视频数据TAG,
+	    VideoTag 结构如下：
+	        帧类型（ FrameType)  4 位      1 ： 为关键帧（ H.264 使用，可以seek 的帧） 
+	                                     2 ：为P 或B 帧（ H.264 使用，不可以seek 的帧）
+										 3 ：仅应用于H.263
+										 4 ：生成关键帧（服务器端使用）
+										 5 ：视频信息／命令帧
+		   编码标识（ CodecID )  4 位         2 : Sorenson H.263 （用得少）
+											3 : Screen Video （用得少）
+											4 : On2 VP6 （偶尔用）
+											5 ： 带Alpha 通道的On2 VP6 （偶尔用）
+											6 : Screen Video 2 （用得少）
+											7 : H.264 （使用非常频繁）
+		  H.264 的包类型（ AVCPacketType)     当Codec 为H.264 的数据： 编码时则占用这个8位（1字节）
+		                 		                  当H.264 编码封装在FLY 中时，需要三类H .264 的数据：
+												   0 : H .26 4 的Sequence Header
+												   1: NALU ( H . 264 做字节流时需要用的）
+												   2 : H.264 的Sequence 的end
+		  CTS ( CompositionTime )        当Codec 为H . 264编码时占用这个2 4位（ 3 字节）
+										  当编码使用B 帧时， DTS 和PTS 不相等， C TS 用于表示PTS 和DTS 之间的差值
+          视频数据                        压缩过的视频的数据
+                     
+                     
+                     
+                     
+        AudioTag 数据格式解析：
+             FLVTAG 的Header 中解析到Tag Type 为Ox08 之后，这个TAG 为音频
+         VideoTag 结构如下：
+             声音格式（ SoundFormat)     4 位    不同的值代表着不同的格式，具体如下
+												• 0 ：限行PCM ，大小端取决于平台
+												• 1: ADP CM 音频格式
+												• 2: MP3
+												• 3 ：线性PCM ，小端
+												• 4: Nellymoser 16kHz Mono
+												• 5: Nellymoser 8kHz Mono
+												• 6: Nellymoser
+												• 7: G.71 1 A-law
+												• 8: G.71 1 mu-law
+												• 9 ：保留
+												• 10: AAC
+												• 11: Spe ex
+												• 14: MP3 8kHz
+												• 15 ：设备支持的声音
+												格式7 、8 、14、15 均为保留；使用频率非常高的为AAC 、
+												MP3 、Speex
+			音频采样率（ SoundRate )    2 位     下面各值代表不同的采样率，具体如下。
+												• 0: 5.5 kHz
+												• 1: 11 kHz
+												• 2: 22 kHz
+												• 3: 44 kHz
+												有些音频为48 kHz 的AAC 也可以被包含进来，不过也是
+												采用44kHz 的方式存储，因为音频采样率在标准中只用2 位
+												来表示不同的采样率，所以一般为4 种
+			采样大小（ SoundSize)      1位       下面的值分别表示不同的采样大小，具体如下。
+												• 0: 8 位采样
+												• 1 ：16 位采样
+            音频类型（ SoundType)       1 位      单声道  立体声
+												• 0: Mono sound
+												• 1: Stereo sound
+		    音频包类型（ A ACPacketType )  当音频为AAC时占用这个字节，8 位（ 1 字节）
+																				• 0: AAC Sequence Header
+																				• 1: AAC raw 数据
+			音频数据                             具体编码的音频数据
+			
+	ScriptData 格式解析：
+	     FLVTAG 读取的Tag Type 类型值为Ox12 时， 这个数据为ScriptData 类型， ScriptData
+         常见的展现方式是FLV 的Metadata ，里面存储的数据格式一般为AMF 数据
+    ScriptData 结构如下：
+            类型（ Type )     8 位（ 一字节）      不同的值代表着AMF 格式的不同类型
+												• 0: Number
+												• 1: Boolean
+												• 2: String
+												• 3: Object
+												• 5: Null
+												• 6: Undefined
+												• 7 : Reference
+												• 8: ECMA Array
+												• 9: Object end marker
+												• l 0 : Strict Array
+												• 11: Date
+												• 12: Long String
+			数据（ ScriptData Value )           按照Type 的类型进行对应的AMF 解析
+	
+	
+	
+	FFmpeg 转FLV 参数
+	      FFmpeg 的FLV 封装格式参数：
+	      参数                              类型                               说明
+	      
+	      flvflags                    flag                                设置生成FLY 时使用的flag
+									  aac _seq_ header_ detect            添加AAC 音频的Sequence Header
+									  no_ sequence_ end                   生成FLY 结束时不写入Sequence End
+									  no metadata                         生成FLY 时不写人metadata
+									  no duration filesize                用于直播时不在metadata 中写入duratio日与filesize
+									  add_ keyframe _index                 生成FLY 时自动写入关键帧索引信息到metadata 头
+	                
+	      
+	      
+	      注意：Sequence Header：      
+	          在生成FLV 文件时，写人视频、音频数据时均需要写入Sequence Header 数据
+              如果FLV 的视频流中没有Sequence Header ，那么视频很有可能不会显示出来；
+              如果FLV 的音频流中没有Sequence Header ，那么音频很有可能不会被播放出来
+              所以需要将ffmpeg 中的参数flvflags 的值设置为aac_seq_ header_ detect ，其将会写入音频AAC 的Sequence Header 
+    FFmpeg 文件转FLV 举例：
+          FLV 封装中可以封装的视频编码：
+                • Sorenson H.263
+				• Screen Video
+				• On2 VP6
+				·带Alpha 通道的On2 VP6
+				• Screen Video 2
+				• H.264 (AVC)
+		  FLV 封装中可以封装的音频编码
+		        ．限行PCM ，大小端取决于平台
+				• ADPCM 音频格式
+				• MP3
+				·线性PCM ，小端
+				• Nellymoser 16kHz Mono
+				• Nellymoser 8kHz Mono
+				• N ellymoser
+				• G.711 A-law
+				• G.711 mu-law
+				．保留
+				• AAC
+				• Speex
+				• MP3 8kHz
+        如果封装FLV 时，内部的音频或者视频不符合标准时，那么它们是肯定封装不进FLV 的，而且还会报错
+                ffmpeg -i input ac3.mp4 -c copy -f flv output.flv
+        F LV 容器中并没有支持AC3 音频编码，所以出现报错
+              为了解决这类问题，可以进行转码，将音频从AC3 转换为AAC 或者MP3 这类FLV标准支持的音频即可：
+               ./ffmpeg -i input ac3.mp4 -vcodec copy -acodec aac -f flv output.flv
+    FFmpeg 生成带关键索引的FLV：
+        在网络视频点播文件为FLV 格式文件时，人们常用yam di 工具先对F LV 文件进行一
+        次转换，主要是将FLV 文件中的关键帧建立一个索引，并将索引写入Metadata 头中，这
+        个步骤用FF mpeg 同样也可以实现，使用参数add keyframe_index 即可：
+              ffmpeg -i input.mp4 -c copy -f flv -flvflags add keyframe index output.flv
+    FLV 文件格式分析工具：
+        除了使用flvparse 工具分析FLV 文件之外，还可以使用FlvAnalyzer ，打开FLV 之后分析的FLV 看到的信息会比flvparse 更全面一些
+        除了以上两款FLV 解析工具之外，同样还可以使用ffprobe 解析FLV 文件，并且其还能够将关键帧索引的相关信息打印出来：
+              ffprobe -v trace -i output.flv
+              
+              
+   视频文件转M3U8： 115页
+        M3U8 是一种常见的流媒体格式，主要以文件列表的形式存在，既支持直播又支持点播，尤其在An droid 、iOS 等平台最为常用
+        M3U8 格式的最简单的例子：
+        #EXTM3U        所有的M3U8 文件必须包含的标签，并且必须在文件的第一行
+		#EXT-X-VERSION:3    M3U8 文件的版本，常见的是3 ，其实版本已经发展了很多了，直至截稿时，已经发布到了版本7
+		#EXT-X-TARGETDURATION:4   这个标签是最大的那个分片的浮点数四舍五入后的整数值
+		#EXT-X-MEDIA-SEQUENCE:O    M3U8 直播时的直播切片序列，播放对应的序列号的切片
+		#EX TINF:3.760000,
+		outO.ts
+		#EXTINF: 1.880000,
+		outl.ts
+		#EXTINF:l.760000,
+		out2.ts
+		#EXTINF:l.040000,
+		out3.ts
+		#EXTINF: 1.560000,
+		out4.ts
+	
+  FFmpeg 转HLS 参数  118页
+        FFmpeg 中自带HLS 的封装参数，使用HLS 格式即可进行HLS 的封装，但是生成HLS 的时候有各种参数可以进行参考
+        FFmpeg 封装HLS 参数：
+			start number 整数设置M3U8 列表中的第一片的序列数
+			his time 浮点数设置每一片时长
+			his list size 整数设置M3U8 中分片的个数
+			hls_ts一options 字符串设置TS 切片的参数
+			his_ wrap 整数设置切片索引回滚的边界值
+			his allow cache 整数设置M3U8 中EXT-X-ALLOW-CACHE 的标签
+			his base url 字符串设置M3U8 中每一片的前宣路径
+			hls _segment_ filename 字符串设置切片名模板
+			hls _key mfo_file 字符串设置M3U8 加密的key 文件路径
+			his• subtitle_path 字符串设置M3U8 字幕路径
+			设置M3U8 文件列表的操作，具体如下。
+			single_file ：生成一个媒体文件索引与字节范围
+			hls_flags 标签（整数）
+			delete_seg ments ：删除M3U8 文件中不包含的过期的TS 切片文件
+			round durations ： 生成的M3U8 切片信息的duration 为整数
+			discont_ start ：生成M3U8 的时候在列表前边加上discontinuity 标签
+			omit endlist ：在M3U8 末尾不追加end list 标签
+			use localtime 布尔设置M3U8 文件序号为本地时间戳
+			use localtirne mkdir 布尔根据本地时间戳生成目录
+			hls_playlist_type 整数设置M3U8 列表为事件或者点播列表
+			method 字符串设置HTTP 属性
+		FFmpeg 转HLS 举例：
+		    常规的从文件转换HLS 直播时，使用的参数如下：
+		    ./ffmpeg -re -i input.mp4 明C copy -f hls -bsf:v h264_mp4toannexb output.m3u8
+		    因为默认是HLS 直播，所以生成的M3U8 文件内容会随着切片的产生而更新，如果
+			仔细观察，会发现命令行中多了一个参数“－bsf:v h264_mp4toannexb ”，这个参数的作用
+			是将MP4 中的H.264 数据转换为H .264 AnnexB 标准的编码， AnnexB 标准的编码常见于
+			实时传输流中。如果源文件为FLV 、TS 等可作为直播传输流的视频，则不需要这个参数。
+		1. start number 参数
+			start number 参数用于设置M3U8 列表中的第一片的序列数，使用start number 参数
+			设置M3U8 中第一片的序列数为300
+			./ffmpeg -re -i input.mp4 -c copy -f hls -bsf:v h264_mp4toannexb -start_number 300 output.m3u8
+		2. his time 参数
+		    hls time 参数用于设置M3U8 列表中切片的duration ；例如使用如下命令行控制转码切片长度为10 秒钟左右一片，
+		    该切片规则采用的方式是从关键帧处开始切片，所以时间并不是很均匀，如果先转码再进行切片
+		    ./ffmpeg -re -i input.mp4 -c copy -f hls -bsf:v h264 mp4toannexb -hls time 10 output.m3u8
+		3. his list size 参数
+		    hls list size 参数用于设置M3U8 列表中TS 切片的个数，通过his list size 可以控制M3U8 列表中TS 分片的个数，命令行如下：
+			./ffmpeg -re -i input.mp4 -c copy -f hls -bsf:v h264_mp4toannexb -hls_list_size 3 output.m3u8
+        4. hls_wrap 参数
+            hls_wrap 参数用于为M3U8 列表中TS 设置刷新回滚参数，当TS 分片序号等于his_wrap 参数设置的数值时回滚，命令行如下：
+			./ffmpeg -re -i input.mp4 -c copy -f hls -bsf:v h264_mp4toannexb -hls_wrap 3 output.m3u8
+	    5. hls_base_url 参数
+	        his_ base url 参数用于为M3U8 列表中的文件路径设置前置基本路径参数，因为在FFmpeg 中生成M3U8 时写人的TS 切片路径默认为与M3U8 
+	        生成的路径相同，但是实际上TS 所存储的路径既可以为本地绝对路径，也可以为当前相对路径，还可以为网络路径，因此使用his base url 参数
+	        可以达到该效果，命令行如下：
+			./ffmpeg -re -i input.mp4 -c copy -f hls -hls_base_url http://192.168.0.1/live/
+			- bsf:v h264_mp4toannexb output.m3u8
+        6. hls_segment_filename 参数
+            his_ segment_ filename 参数用于为M3U8 列表设置切片文件名的规则模板参数，如果
+            不设置his_segment_ filename 参数，那么生成的TS 切片文件名模板将与M3U8 的文件名
+            模板相同，设置his_segment_ filename 规则命令行如下：
+            ./ffmpeg -re -i input.mp4 -c copy -f hls -hls_segment_filename test output －%d.ts -bsf:v h264_mp4toannexb output.m3u8
+        7. hls_flags 参数
+            hls_flags 参数包含了一些子参数， 子参数包含了正常文件索引、删除过期切片、整数
+            显示duration 、列表开始插入discontinuity 标签、M3 U 8 结束不追加end list 标签等。
+			• delete_segments 子参数
+			使用delete_segments 参数用于删除已经不在M3U8 列表中的旧文件，这里需要注意
+			的是， FFmpeg 删除切片时会将hls_list_size 大小的2 倍作为删除的依据，命令行如下：
+			./ffmpeg -re -i input.mp4 -c copy -f hls -hls_flags delete_ segments - hls_list_
+			size 4 -bsf:v h264_mp4toannexb output .m3u8
+			• round durations 子参数
+			使用round durations 子参数实现切片信息的duration 为整型，命令行如下：
+			./ffmpeg -re -i input.mp4 -c copy -f hls -hls_flags round durations -bsf:vh264_mp4toannexb output.m3u8
+			• discont start 子参数
+			discont_ start 子参数在生成M3U8 的时候在切片信息的前边插入discontinuity 标签，
+			命令行如下：
+			./ffmpeg -re -i input.mp4 -c copy -f hls -hls_flags discont_start -bsf:v h264_mp4toannexb output.m3u8
+			• omit endlist 子参数
+			omit endlist 子参数在生成M3U 8 结束的时候若不在文件末尾则不追加endli st 标签，
+			因为在常规的生成M3U8 文件结束时， FFmpeg 会默认写入endlist 标签，使用这个参数可
+			以控制在M3U8 结束时不写入endlist 标签，命令行如下：
+			./ffmpeg -re -i input.mp4 -c copy -f hls -hls flags omit endlist -bsf:v h264mp4toannexb output.m3u8
+			• split_by_time 子参数
+			split_by_time 子参数生成M3U8 时是根据his time 参数设定的数值作为秒数参考对
+			TS 进行切片的，并不一定要遇到关键帧，从之前的例子中可以看到his time 参数设定了
+			值之后，切片生成的TS 的duration 有时候远大于设定的值，使用split_by_time 即可解决
+			这个问题，命令行如下：
+			./ffmpeg -re -i input.ts -c copy -f hls -hls _time 2 -hls_flags split_by_time output.m3u8
+			8. use_localtime 参数
+			使用use_ local time 参数可以以本地系统时间为切片文件名，命令行如下：
+			./ffmpeg -re -i input.mp4 -c copy -f hls -use localtime 1 -bsf:v h264mp4toannexb output.m3u8
+			9. method 参数
+			method 参数用于设置HLS 将M3U8 及TS 文件上传至HTT P 服务器，使用该功能
+			的前提是需要有一台HTTP 服务器，支持上传相关的方法，例如PUT 、POST 等，可以
+			尝试使用Nginx 的webdav 模块来完成这个功能， method 方法的PUT 方法可用于实现通
+			过H TTP 推流HLS 的功能， 首先需要配置一个支持上传文件的HTTP 服务器，本例使用
+			Nginx 来作为HLS 直播的推流服务器，并且需要支持We bDAV 功能， Nginx 配置如下：
+			location I {
+			client max body size lOM;
+			dav access group:rw all:rw;
+			dav methods PUT DELETE MKCOL COPY MOVE;
+			root html/;
+			}
+			配置完成后启动Nginx 即可。通过ffmpeg 执行HLS 推流命令行如下：
+			./ffmpeg -i input.mp4 -c copy -f hls -hls time 3 -hls list size 0 -method PUT-t 30 http://127.0.0.l/test/output_test.m3u8
+											  
+      视频文件的切片：
+           视频文件切片与HLS 基本类似，但是HLS 切片在标准中只支持TS 格式的切片
+      FFmpeg 切片segment 参数	：查看127页 可以把一个视频按规则切成多片，不同的片可分布式存储，也可加密
+      FFmpeg 切片segment 举例：
+           1. segment_format 指定切片文件的格式
+               segment_format 来指定切片文件的格式，其既可以为MPEGTS 切片，也可以为MP4 切片，还也可以为FLV 切片
+               将一个MP4 文件切割为MP4 切片，切出来的切片文件的时间戳与上一个MP4 的结束时间戳是连续的。
+               ./ffmpeg -re -i input.mp4 -c copy -f segment -segment format mp4 test output-%d.mp4
+               查看切片文件：
+               ls -1 test_output-*.mp4  这里能看到五片
+				-rw-r--r-- 1 liuqi staff 1332928 7 18 20:01 test_output-O.mp4
+				-rw-r--r-- 1 liuqi staff 435067 7 18 20:01 test output-1.mp4
+				-rw-r--r-- 1 liuqi staff 376366 7 18 20:01 test output-2.mp4
+				-rw-r--r-- 1 liuqi staff 242743 7 18 20:01 test output-3.mp4
+				-rw-r--r-- 1 liuqi staff 507397 7 18 20:01 test_output-4.mp4
+				然后查看第一片分片MP4 的最后的时间戳：
+				ffprobe -v quiet -show_packets -select_streams v test_ output-0.mp4 2> x|greppts_time | tail -n 3
+				接下来再查看第二片分片MP4 的最开始的时间戳：
+				ffprobe -v quiet -show_packets -select_streams v test_ output-1.mp4 2> x|greppts_time | tail -n 3
+				test_ output-O . mp4 的最后的视频时间戳为pts_time=3.80  test_output-1.mp4 的起始时间戳为pts_time=3.84
+				刚好为一个正常的duration ，也就是0.040 秒。
+			2.segment_list 与segment_Iist_type 指定切片索引列表
+			    生成的切片文件索引列表名称也可以指定名称，
+				生成ffconcat 格式索引文件：
+				./ffmpeg -re -i input.mp4 -c copy -f segment -segment_format mp4 -segment_list_type ffconcat -segment_ list output.1st test_output －%d.mp4
+				上面这条命令将生成ffcon cat 格式的索引文件名output.1st ，这个文件将会生成一个MP 4 切片的文件列表：
+				liuqideMBP:n3.3.2 liuqi$ ls -1 test_output-*.mp4
+				- r w-r--r-- 1 liuqi staff 1332928 7 18 20:09 test output-0.mp4
+				-rw-r--r-- 1 liuqi staff 435067 7 18 20:09 test output-l.mp4
+				-rw-r--r-- 1 liuqi staff 376366 7 18 20:09 test output-2.mp4
+				-rw-r--r-- 1 liuqi staff 242743 7 18 20:09 test output-3.mp4
+				-rw-r--r-- 1 liuqi staff 507397 7 18 20:09 test output-4.mp4
+				cat filelist.txt  查看索引文件
+					test_output-0.mp4
+					test_output-l.mp4
+					test output-2.mp4
+					test_output-3.mp4
+					test output-4.mp4
+				生成FLAT 格式索引文件：131页其它格式的索引，只是生成的索引文件内容不同
+				./ffmpeg -re -i input.mp4 -c copy -f segment -segment_format mp4 -segment_list_type flat -segment list filelist.txt test output －%d.mp4
+				生成csv 格式索引文件
+			3. reset_timestamps 使切片时间戳归0
+			    使每一片切片的开始时间戳归0。可使用reset_timestamps 进行设置，命令行如下：
+				. /ffmpeg -re -i input .mp4 -c copy -f segment -segment_format mp4 -reset_timestamps 1 test _outpu t －%d.mp4
+            4. segment_times 按照时间点剪切
+                对文件进行切片时,有时候需要按照指定的时间长度进行切片， segment 可以根据指定的时间点进行切片  
+                ./ffmpeg -re -i input.mp4 -c copy -f segment -segment format mp4 -segment times
+                3,9 ,12 test output －%d.mp4 
+                上面切片的时间点为3,9,12
+            
+				
+				./ffmpeg -re -i input.mp4 -c copy -f segment -segment_format mp4 -segment list type csv -segment_list filelist.csv test_output －%d.mp4
+                生成M3U8 格式索引文件
+                ./ffmpeg -re -i input.mp4 -c copy -f segment -segment_format mp4 -segment_list_type m3u8 -segment list output.m3u8 test output －毡d.mp4
+           	                                      
+	FFmpeg 使用ss与t 参数切片  132页
+	    ss表示开始截取的长度
+	    t指要截取多长
+	    使用output_ts_offset 指定输出start_time：  
+	        ./ffmpeg -i i nput.mp4 -c copy -t 10 -output ts offset 120 output.mp4  
+	        输出的output.mp4 文件的start_ time 即将被指定为120      
+	        
+    音视频文件音视频流抽取：                              
+	FFmpeg 支持从音视频封装中直接抽取音视频数据。流即数据部份
+	FFmpeg 抽取音视频文件中的AAC 音频流 ：
+		FFmpeg 提取MP4 文件中的AAC 音频流的方法：
+		./ffmpeg -i i nput.mp4 -vn -acodec copy output.aac
+		FFmpeg 抽取音视频文件中的H.264 视频流：
+		./ffrnpeg -i input.rnp4 呻vcodec copy -an output.h264
+		FFmpeg 抽取音视频文件中的H.265 视频流：
+		. /ffmpeg - i input.mp4 -vcodec copy -an -bsf hevc_mp4toannexb -f hevc output.hevc
+	系统资源使用情况：
+	仅仅转换封装格式而并非转换编码，那么其使用的CPU 资源并不多，下面来看一下转换封装时的CPU 使用率：     
+	/ffmpeg -re -i input.mp4 -c copy -f mpegts output.ts
+	使用FFmpeg 进行编码转换， 则需要进行大量的计算，从而将会占用大量的CPU
+	./ffmpeg -re -i input.mp4 -vcodec libx264 -acodec copy -f mpegts output.ts  
+	
+23.FFmpeg 转码:
+    FFmpeg 软编码H . 264 与H.265
+        支持H.264 的封装格式有很多，如FLY 、MP4 、HLS (M3U8 ） 、MKV 、TS 等格式；
+        由FFmpeg 的第三方模块对其进行支持，例如x264 和OpenH264 ， 二者各有各的优势。由于OpenH264 开源比较晚，
+        所以x264 还是当前最常用的编码器
+        使用x264 进行H.264 编码时，所支持的像素格式主要包含yuv420p 、yuvj420p 、yuv422p 、yuvj422p 、yuv444p 、yuvj444p 、nv12 、nv16 、nv21 。
+        通过ffmpeg -h encoder=libx264 可以查看到：   
+    x264 编码参数简介
+        preset      字符串        编码器预设参数
+		tune        字符串          调优编码参数
+		profile     字符串       编码profile 档级设置
+		leve l      字符串        编码lev e l 层级设置
+		wpre dp     字符串       P 帧预测设置
+		x264opts    字符串      设置x26 4 专有参数
+		crf         浮点数           选择质量恒定质量模式
+		crf_max     浮点数       选择质量恒定质量模式最大值
+		qp          整数              恒定量化参数控制
+		psy         浮点数            只用psychovisual 优化
+		re-lookahead    整数    设置预读帧设置
+		weightb      浮点数        B 帧预测设置
+		weightp      整数          设置预测分析方法： none 、s imple 、s mart 三种模式
+		ss1m         布尔             计算打印SSIM 状态
+		intra-refresh 布尔    定时刷I 帧以替代IDR 帧
+		bluray-compat 布尔    蓝光兼容参数
+		b町bias       整数     B 帧使用频率设置
+		mixed-refs    布尔       每个partition 一个参考，而不是每个宏块一个参考
+		8x8dct       布尔     8 × 8 矩阵变换，用在high profile
+		aud          布尔     带AU D 分隔标识
+		mbtree       布尔     宏块树频率控制
+		deblock     字符串   环路滤波参数
+		cplxblur    浮点数   减少波动QP 参数                          
+        partitions  字符串   逗号分隔的partition ＇.列表，可以包含的值有p8 × 8 、p4 × 4 、b8 × 8 、i8 × 8 、i4 × 4 、none 、all
+        direct-pred 整数     运动向盘预测模式
+        slice-max-size 整数   Slice 的最大值
+        nal-hrd        整数   HRD 信号信息设置： None 、VBR 、CBR 设置
+		motion-est     整数      运动估计方法
+		forced-idr     布尔   强行设置关键帧为IDR 帧
+		coder          整数    编码器类型包括default 、cavlc 、cabac 、vie 、ac
+		b_strategy     整数    I/P/ B 帧选择策略
+		chromaoffset   整数    QP 色度和亮度之间的差异参数
+		sc threshold   整数    场景切换阀值参数
+		noise reduction 整数   降噪处理参数
+		x264-params    字符串    与x264o pts 操作相同
+	设置参数后编码生成的文件可以通过一些外部协助工具进行查看，如Elecard 、B itrate Viewer 、ffprobe 等。
+	
+	H.264 编码举例
+	    1. 编码器预设参数设置preset
+	    使用x264 --full help 查看preset 设置的详细说明，找到x264 帮助信息中的preset 参数项之后，可以看到其包含了以下几种预设
+        参数，预设参数的详细设置具体如下:
+			ultrafast ：最快的编码方式
+				除了默认设置之外，还增加了如下参数设置：
+				--no-8x8dct --aq-mode 0 --b-adapt 0 --bframes 0 --no-cabac --no-deblock --nombtree
+				--me dia --no-mixed-refs --partitions none --re-lookahead 0 --ref 1 --scenecut
+				0 --subme 0 --trellis 0 --no-weight b --weightp 0
+			superfast ：超级快速的编码方式
+			    除了默认设置之外，还增加了如下参数设置：
+			    --no-mbtree --me dia --no-mixed-refs --partitions i8x8, i4x4 --re-lookahead 0
+				--ref 1 --subme 1 --trellis 0 --weightp 1
+			veryfast ：非常快速的编码方式
+			    除了默认设置之外，还增加了如下参数设置：
+				--no-mixed-refs --re-lookahead 10 --ref 1 --subme 2 --trellis 0 --weightp 1
+			faster ：稍微快速的编码方式
+				除了默认设置之外，还增加了如下参数设置：
+				--no-mixed-refs --re-lookahead 20 --ref 2 --subme 4 --weightp 1
+			fast ：快速的编码方式
+			    除了默认设置之外，还增加了如下参数设置：
+				--re-lookahead 30 『－ ref 2 --subme 6 --weightp 1
+			medium ：折中的编码方式
+			    参数全部为默认设置。
+			slow ：慢的编码方式
+				除了默认设置之外，还增加了如下参数设置：
+				--b-adapt 2 --direct auto --me umh --re-lookahead 50 --ref 5 --subme 8
+			slower ：更慢的编码方式
+				除了默认设置之外，还增加了如下参数设置：
+				--b-adapt 2 --direct auto --me umh --partitions all --re-lookahead 60 --ref 8
+				--subme 9 -…trellis 2
+			veryslow ：非常慢的编码方式
+				除了默认设置之外，还增加了如下参数设置：
+				--b-adapt 2 --bframes 8 --direct auto --me umh --merange 24 --partitions all
+				--ref 16 --subme 10 --trellis 2 --re-lookahead 60
+			placebo ： 最慢的编码方式
+				除了默认设置之外，还增加了如下参数设置：
+				--bframes 16 --b-adapt 2 --direct auto --slow-firstpass --no-fast-pskip --me tesa
+				--merange 24 --partitions all --re-lookahead 60 --ref 16 --subme 11 --trellis 2
+	设置参数的不同，所编码出来的清晰度也会有所不同
+	，通过preset 进行设置即可，下面就来看一下相同的机器中，设置ultrafast 与设置medium 预设参数之后转码效率的对比：
+	./ffmpeg -i input.mp4 -vcodec libx264 -preset ultrafast -b:v 2000k output.mp4
+	      frame= 252 fps=175 q=-1.0 Lsize= 2630kB time=OO:OO:l0.04 bitrate=2146.lkbits/s
+          dup=2 drop=O speed=4.26x
+    设置medium 模式后，转码速度为0.833 倍速，速度虽然降低了，但画质却有了明显的提升
+    
+    2. H.264 编码优化参数tune
+    使用tune 参数调优H.264 编码时，可以包含如下几个场景： film 、animation 、grain 、still image 、psnr 、ssim 、fastdecode 、zero latency
+    • film
+	除默认参数配置之外，还需要设置如下参数：
+	--deblock -1:-1 --psy-rd <unset>:0.15
+	• ammatlon
+	除默认参数配置之外，还需要设置如下参数：
+	--bframes {+2} --deblock 1: 1 --psy-rd 0. 4: <unset> --aq-strength 0. 6 --ref
+	{Double if >1 else 1}
+	• grain
+	除默认参数配置之外，还需要设置如下参数：
+	--aq-strength 0. 5 --no-dct-decimate --deadzone-inter 6 --deadzone-intra 6
+	--deblock -2:-2 --ipratio 1.1 --pbratio 1.1 --psy-rd <unset>:0.25 --qcomp 0.8
+	• stillimage
+	除默认参数配置之外，还需要设置如下参数：
+	--aq-strength 1.2 --deblock -3:-3 --psy-rd 2.0:0.7
+	• psnr
+	除默认参数配置之外，还需要设置如下参数：
+	--aq-mode 0 --no-psy
+	• SS ！口1
+	除默认参数配置之外，还需要设置如下参数：
+	--aq-mode 2 --no-psy
+	• fastdecode
+	除默认参数配置之外，还需要设置如下参数：
+	--no-cabac --no-deblock --no-weightb --weightp 0
+	• zerolatency
+	除默认参数配置之外，还需要设置如下参数：
+	--bf rames 0 --fo r ce-cfr --no-mbtree --sync-lookahead 0 --sliced-threads --relookahead0
+	在使用FFmpeg 与x2 64 进行H . 264 直播编码并进行推流时，只用tune 参数的
+	zero latency 将会提升效率，因为其降低了因编码导致的延迟
+    
+    3. H.264 的profile 与level 设置  147页
+	这里的profile （档次）与level （等级）的设置与H. 264 标准文档IS0-14496-PartlO
+	中描述的pro file 、level 的信息基本相同， x264 编码器支持Baseline 、Extented 、Main 、
+	High 、HighlO 、High422 、High444 共7 种profile 参数设置，根据profile 的不同，编码出
+	来的视频的很多参数也有所不同
+	
+	4. 控制场景切换关键帧插入参数sc threshold   
+	GOP即Group of picture（图像组），指两个I帧之间的距离，Reference（参考周期）指两个P帧之间的距离。
+	从一个画面突然变成另外一个画面时，会强行插入一个关键帧，这时GOP的间隔将会重新开始
+	为了避免这种情况的产生，可以通过使用sc threshold 参数进行设定以决定是否在场景切换时插入关键帧。
+	./ffmpeg -i input.mp4 -c:v libx264 -g 50 -t 60 output.mp4
+	每50 帧被设置为一个GOP 间隔生成60 秒的MP4 视频
+	其中有一段GOP 的间距比较短，这是因为强行插入了GOP 而
+	导致的，这个情形插入的GOP 是由于场景切换导致的GOP 插入。为了使得GOP 的插入
+	更加均匀，使用参数sc_threshold 即可
+	./ffmpeg -i input.mp4 -c:v libx264 -g 50 -sc_threshold 0 -t 60 -y output.mp4
+    执行完这条命令行之后， GOP 间隔被设置为50 帧，并且场景切换时不插入关键帧，
+    
+    5. 设置x264 内部参数x264 opts
+    FFmpeg 开放了x264opts ，可以通过这个参数设置x264 内部私有参数，如设置I 帧、P 帧、B 帧的顺序及规律等，通过
+    x2 64opts 可以设置x 264 内部的很多参数
+    如果视频GOP 设置为50 帧，那么如果在这50 帧中不希望出现B 帧，则客户只需要将x264 参数bframes 设置为0 即可：
+    ./ffmpeg -i input.mp4 -c:v libx264 -x264opts ” bf rames ＝。”－ g 50 -sc threshold 0 output.mp4
+    
+    如果希望控制I 帧、P 帧、B 帧的频率与规律，可以通过控制GOP 中B 帧的帧数来实
+    现， P 帧的频率可以通过x264 的参数b-adapt 进行设置。
+    例如设置GOP 中，每2 个P 帧之间存放3 个B 帧：
+    ./ffmpeg -i input.mp4 -c:v libx264 -x264opts "bframes=3:b-adapt ＝。”－ g 50 -sc_threshold 0 output.mp4
+    视频中的B 帧越多，同等码率时的清晰度将会越高，但是B 帧越多，编码与解码所带来的复杂度也就越高，
+    所以合理地使用B 帧非常重要，尤其是在进行清晰度与码率衡量
+    
+    6.CBR 恒定码率设置参数nal-hrd
+    编码能够设置VBR 、CBR 的编码模式， VBR
+	为可变码率， CBR 为恒定码率。尽管现在互联网上所看到的视频中VBR 居多，但CBR 依
+	然存在；下面就来介绍一下CBR 码率视频的制作。FFmpeg 是通过参数－b:v 来指定视频的
+	编码码率的，但是设定的码率是平均码率，并不能够很好地控制最大码率及最小码率的波
+	动，如果需要控制最大码率和最小码率以控制码率的波动，则需要使用FFmpeg 的三个参
+	数－ b:v 、maxrate 、minrate 。同时为了更好地控制编码时的波动，还可以设置编码时buffer
+	的大小， buffer 的大小使用参数－bufsize 设置即可， buffer 的设置不是越小越好，而是要设
+	置得恰到好处，例如下面例子中设置lM bit/s 码率的视频， bufsize 设置为5 0KB ， 可以很
+	好地控制码率波动：
+	./ffmpeg -i input.mp4 -c:v libx264 -x264opts "bframes=lO:b-adapt＝。” － b:v
+	lOOOk -maxrate lOOOk -minrate lOOOk -bufsize 50k -nal-hrd cbr -g 50 -sc threshold 0
+	output.ts
+	下面就来分析一下这条命令行，具体如下。
+	·设置B 帧的个数，并且是每两个P 帧之间包含10 个B 帧
+	．设置视频码率为lOOOkbit /s
+	·设置最大码率为lOOOkbit /s
+	· 设置最小码率为1 OOOkbit/s
+	· 设置编码的buffer 大小为5 0KB
+	· 设置H .264 的编码HRD 信号形式为CBR
+	． 设置每5 0 帧一个GOP
+	· 设置场景切换不强行插入关键帧
+	
+	FFmpeg 硬编解码：
+	当使用FFmpeg 进行软编码时，常见的基于CPU 进行H.264 或H .265 编码其相对成本会比较高， CPU 编码时的性能也很低，
+	的硬编码包含Nvidia GPU 与Intel QSV 两种，还有常见的嵌入式平台，如树莓派、瑞芯微等
+	
+	Nvidia GPU 硬编解码：
+	最常见的就是Nvidia 了， Nvidia 在图像处理技术方面非
+	常强悍， FFmpeg 集成Nvi dia 显卡视频处理模块后，使用FFmpeg 能够将Nvidia 的视频编
+	解码功能快速使用起来
+	1. Nvidia 硬编码参数：
+	   可以通过面npeg -h encoder=h264 nvenc 进行查看GPU 编码均支持哪些参数  152页查看参数列表
+	   关键参数，例如preset 参数、profile 参数、level 参数、场景切换参数
+	2. Nvidia 硬编解码参数使用举例
+		在使用Nvidia 进行编解码时，可以使用ffmpeg -h encoder=h264_nvenc 查看FFmpeg
+		中Nvidia 做H.264 编码时的参数支持， 使用ffmpeg -h decoder=h264_cuvid 查看FFmpeg
+		中Nv idia 做H.264 解码时的参数支持。在做H.264 编码时，首先需要确认nvenc 支持的像
+		素格式
+		使用nvenc 进行H.264 编码时所支持的像素格式为
+		yuv420p 、nvl2 、pOlOle 、yuv444p 、严1v444pl6le 、rgbO 、cuda 。
+		而在做H.264 解码时，需要查看cuvid 所支持的解码像素格式：
+		使用cuvid 解码H.264 时所支持的像素格式为cuda 、nvl2 。了解清楚了所支持的像素格式之后，接下来列举一个硬编码与硬解码的例子：
+		./ffmpeg -hwaccel cuvid -vcodec h264_cuvid -i input.mp4 -vf scale_npp=l920:1080
+		-vcodec h264 nvenc -acodec copy -f mp4 -y output.mp4
+		
+		命令行执行完毕之后，会将input.mp4 的视频像素改变为1920 × 1080 ，将码率改变为2 000kbit/s ，输出为output.mp4
+		使用的是cuvid 硬解码与nvenc 硬编码，将视频从4K 视频
+        降低为1 080p ，同时将码率从3 5Mbit/ s 降低至2Mbit/s
+	   
+	Intel QSV 硬编码：
+	除了可以使用Nvidia 的GPU 之外， Intel 的QSV 也是一种不错的方案，FFmpeg 对于Intel 的QSV 支持相对也比较灵活，
+	如果希望使用FFmpeg 的Intel QSV 编码，则需要在编译FFmpeg 时开启QSV 支持：
+	./ffmpeg -hide_banner -codecsigrep h264
+	
+	1. Intel QSV H.264 参数说明
+	执行命令行ffmpeg -h e ncoder=h264 _qsv 可以得到QSV 参数信息  156页参数列表
+	硬件编码所支持的参数虽然比libx264 软编码的参数设置稍微少一些，但是基本上也可以实现常见的功能
+	
+	2. Intel QSV H.264 使用举例
+	使用硬件的编码，同样需要硬解码，ffmpeg -h encoder=h264 与ffmpeg -h decoder=h264查看到h264_ qsv 硬件参数信息
+	h264_qsv 只支持nvl2 与qsv 的像素格式，，所以在使用yuv420p 时需要将其转换成nvl2 才可以，FFmpeg 已经可以自动进行该操作的转换
+	./ffmpeg -i 10M1080P.mp4 -pix_fmt nv12 -vcodec h264_qsv -an -y output.mp4
+	FFmpeg 将会使用h264_qsv 进行解码与编码
+	FFmpeg 采用的是Intel QSV 进行H.264 转码，将1080p/7.8 M的H.264 的视频转换为l080p/lM 的视频输出，转码速度近8 倍速，如果只使用libx264
+    做软编码时速度并不会有这么快。h264_qsv 编码采用的是Intel 的GPU 编
+	
+	3. Intel QSV H.265 参数说明
+	FF mpeg中的Intel QSV H.2 65 ( HEVC ）的参数与Intel QSV H.264 的参数类似，但是
+    FFmpeg 另外还支持指定使用软编码还是硬编码的参
+    加载编码插件的情况具体如下。
+		load_plugin 整数
+				•none ： 不加载任何插件
+				• hevc sw: H .26 5 软编码插件
+				• hevc hw: H .26 5 硬编码插件
+		load_plugins 字符串    加载硬件编码插件的时候使用十六进制串
+		
+	4. Intel QSV H.265 使用举例
+	在使用Inte l 进行高清编码时，使用AVC 编码之后观察码率会比较高，但是使用
+	H.265 ( HEVC ）则能更好地降低同样清晰度的码率，下面举例说明：
+	./ffmpeg -hide_banner -y -hwaccel qsv -i 10Ml080P.mp4 -an -c:v hevc_qsv -load_
+	plugin hevc_hw -b:v SM -maxrate SM out.mp4
+	命令行执行之后， FFm peg 会将l080p 的高清视频转换为H.265 视频，使用CPU 进行
+	l080p 的H .265 编码时速度相对会比较慢，而使用Intel QSV 进行编码时，效率则会稍微高一些
+	
+    树莓派硬编码：161页
+    树莓派（ Raspberry Pi ）在全球应用机位广泛，常应用于智能控制等方面，但是
+	智能控制部分，也少不了多媒体的处理， FFmpeg 能够支持在树莓派中进行硬编解码，本节将重点介绍树莓派的H . 264 编码
+	在FFmpeg 下面支持树莓派的H.264 编码采用的是OpenMAX 框架，在编译FFmpeg
+    工程之前配置编译时， 需要使用－－ enable-omx-pi 支持
+    
+    OS X 系统硬编解码
+    在苹果电脑的OS X 系统下， 通常硬编码采用h264 videotoolbox 、硬解码采用h264
+	vda 为最快捷、最节省CPU 资源的方式，但是h264_videotoolbox 的码率控制情况并不完
+	美， 因为h264 v ideotoolbox 做硬编码时目前仅支持VBR/ABR 模式，而不支持CBR 模
+	式，下面就来详细介绍h264 v i deotoolbox 硬编码的参数
+	1. OS X 硬编解码参数
+	在苹果系统下的编解码主要以使用videotoolbox 为主， h264 videotoolbox 则为苹果系
+	统中硬件编码的主要编码器，使用ffmpeg -h encoder=h264 v ideotoolbox 可以查看h264_
+	video toolbox 包含了哪些参数
+		profile 整数视频编码profile 设置： baseline 、main 、high
+		level 整数视频编码level 设置： 1.3 、3.0 、3.1 、3.2 、4.0 、4.1 、4.2 、5.0 、5.1 、5.2
+		allow sw 布尔使用软编码模式，默认关闭
+		coder 整数煽编码模式： CAVLC 、VLC 、CABAC 、AC
+		real time 布尔如果编码不够快则会开启实时编码模式，默认关闭
+	2. OS X 硬编解码使用示例
+	在OS X 下使用h264_vda 解码时，可以通过ffmp吨，h decoder= h264 vda 查看解码支
+	持像素的色彩格式，通过ffmpeg -h encoder=h264 videotoolbox 查看编码支持像素的色彩
+	格式。下面来看一下硬转码的效率：
+	. /ffmpeg -vcodec h264_vda -i input.mp4 -vcodec h264_videotoolbox -b:v 2000k
+	output.mp4
+	执行完这条命令行之后将会使用h264_vda 对input.mp4 的视频解码，然后使用h264_
+	videotoolbox 进行编码，输出视频码率为2Mbit/s 的文件output.mp4
+	
+	FFmpeg 输出MP3：
+	听音乐时大多数为MP3 音乐，使用FFmpeg 可以解码M凹，同样FFmpeg也可以支持MP3 编码， FFmpeg 使用第三方库libmp3lame 即可编码MP3 格式
+	不但如此，MP3 编码还是低延迟的编码，可以支持的采样率比较多，包含44 100 、48 000 、32 000 、
+	22 050 、24 000 、16 000 、1 1 025 、12 000 、8000 多种采样率，采样格式也比较多，包含
+	s32p (s igned 32 bits, planar ）、fltp (float, planar ）、s l 6p (signed 16 bits, planar ）多种格式，
+	声道布局方式支持包含mono （单声道模式）、stereo （环绕立体声模式），
+	
+	MP3 编码参数介绍 通过ffmpeg -h encoder=libmp3lame 得到参数
+		b 布尔      设置MP3 编码的码率
+		JOmt_stereo 布尔      设置环绕立体声模式
+		abr 布尔     设置编码为ABR 状态，自动调整码率
+		compression level 整数   设置压缩算法质量， 参数设置为0 ～ 9 区间的值即可， 数值越大质量越差，但是编码速度越快
+		q     整数    设置恒质量的VBR 。调用lame 接口的话，设置global _quality变量具有同样效果
+	FFmpeg 对MP3 编码操作相关的参数包含了主要的控制参数，更高级的参数控制，尚未全部从lame 中移植到FFmpeg 中
+	
+	MP3 的编码质量设置  165页
+	在FFmpeg 中进行MP3 编码采用的是第三方库libmp3lame ，所以进行MP3 编码时，需要设置编码参数acodec 为libmp3lame 
+	./ffmpeg -i INPUT -acodec libmp3lame OUTPUT.mp3
+	根据上面的命令行可以得到音频编码为MP3 封装文件
+	MP3 编码的码率得到控制之后，控制质量时需要通过－ qscale:a 进行控制
+	
+	
+	平均码率编码参数ABR
+	ABR 是VBR 与CBR 的混合产物，表示平均码率编码，使用ABR 参数之后，编码速
+	度将会比VBR 高，但是质量会比VBR 的编码稍逊一些，比CBR 编码好一些，在FFmpeg
+	中可使用参数－abr 来控制MP3 编码为ABR 编码方式：
+	./ffmpeg -i input.mp3 -acodec libmp3lame -b:a 64k -abr 1 output.mp3
+	原本为64kbit/s 码率的CBR 编码方式的MP3 音频，因为设置abr 参数之后，成为ABR 编码方式的MP3 音频，可以观察编码过程中的输出内容
+	size= 2270kB time=00:04:45.98 bitrate= 65.0kbits/s speed= 42.Bx
+    看似VBR ， 其实为ABR
+    
+    FFmpeg 输出AAC
+    在音视频流中，无论直播与点播， AAC 都是目前最常用的一种音频编码格式，例如RTMP 直播、HL S 直播、RTSP 直播、
+    FLY 直播、FLY 点播、MP4 点播等文件中都是常见的AAC 音视频。
+    与MP3 相比， AAC 是一种编码效率更高、编码音质更好的音频编码格式，常见的使
+	用AAC 编码后的文件存储格式为m缸，如在iPhone 或者iPad 中即为m4a 。FFmpeg 可以
+	支持AAC 的三种编码器具体如下。
+	• aac: FFmpeg 本身的AAC 编码实现
+	• libfaac ：第二方的AAC 编码器
+	• libfdk aac ：第三方的AAC 编码器
+	后两种编码器为非GPL 协议，所以使用起来需要注意，在预编译时需要注意采用
+	non free 的支持，这点在前面章节中已有相关介绍。下面就来详细介绍三种编码器的使用
+	方法。
+	
+	FFmpeg 中的AAC 编码器使用
+	使用AAC 编码器之前，首先要确定自己的FFmpeg 是什么时候发布的版本，如果是2015 年12 月5 日之前发布的版本，那么在编码
+    时需要使用－strict exp巳rimental 或者－ strict -2 参数来声明AAC 为实验版本
+	使用FFmpeg 中的AAC 编码器编码的例子：
+		./ffmpeg - i input.mp4 -c:a aac -b:a 160k output.aac
+		编码为AAC 音频，码率为160kbit/s ，编码生成的输出文件为output.aac 文件：
+		./ffmpeg -i input.wav -c:a aac -q:a 2 output.m4a 
+		在编码AAC 时，同样也用到了qscale 参数，这个q 在这里设置的有效范围为0 . 1 ～ 2 之间，其用于设置AAC 音频的VBR 质量，效果并不可控
+	从以上代码可以看到一共有三个Input 文件， 具体如下。
+	• Input #0 为原始文件，码率为141 lkbit/s
+	• Input #1 为设置q:a 为0.1 的文件，码率为24kbit/s
+	• Input #2 为设置q:a 为2.0 的文件，码率为186kbit/s
+	可以使用－q:a 设置AAC 的输出质量，关于AAC 的输出控制很简单，
+	
+	FOK AAC 第三方的AAC 编解码Codec 库
+	FDK-AAC 库是FFmpeg 支持的第三方编码库中质量最高的AAC 编码库，关于编码
+	音质的好坏与使用方式同样有着一定的关系，下面就来介绍一下libfdk aac 的几种编码
+	模式。
+	1. 恒定码率（ CBR ）模式
+		如果使用libfdk aac 设定一个恒定的码率，改变编码后的大小，并且可以兼容HEAAC
+		Profile ，则可以根据音频设置的经验设置码率，例如如果一个声道使用64kbit/s ，那
+		么双声道为128kbit/s ，环绕立体声为38 4kbit/s ，这种通常为5.1 环绕立体声。可以通过
+			ffmpeg -i input.wav -c:a libfdk_aac -b:a 128k output.m4a
+			根据这条命令行可以看出， FFmpeg 使用libfdk_aac 将input.wav 转为恒定码率为
+			128 kbit/s 、编码为AAC 的output.m4a 音频文件
+			
+			./ffmpeg -i input.mp4 -c:v copy -c:a libfdk_aac -b:a 384k output.mp4
+			根据这条命令行可以看出， FFmpeg 将input.mp4 的视频文件按照原有的编码方式进行
+			输出封装，将音频以libfdk aac 进行编码，音频通道为环绕立体声，码率为384kbit/s ，封
+			装格式为output.mp4
+	2. 动态码率（ VBR ）模式 169页
+	    使用VBR 可以有更好的音频质量，使用libfdk aac 进行VBR 模式的AAC 编码时，可以设置5 个级别
+	    • LC: Low Complexity AAC ，这种编码相对来说体积比较大，质量稍差
+		• HE: High-Efficiency AAC ，这种编码相对来说体积稍小，质量较好
+		• HEv2: High-Efficiency AAC version 2
+			/ffmpeg -i input.wav -c:a libfdk_aac -vbr 3 output.m4a
+			FFmpeg 会将input.wav 的音频转为音频编码为libfdk_aac 的output.m4a 音频文件。
+	高质量AAC 设置：
+	    AAC 音频分为三种LC 、HE-AAC 、HEv2-AAC ，下面举例介绍HE-AAC 与HEv2-AAC 的设置。
+	    1. HE-AAC 音频编码设置
+		./ffmpeg -i input.wav -c:a libfdk aac -profile:a aac_he -b:a 64k output.m4a
+		2. HEv2-AAC 音频编码设置
+		./ffmpeg -i input.wav -c:a libfdk_aac -profile:a aac_he_v2 -b:a 32k output.m4a
+		
+	AAC 音频质量对比
+	AAC-LC 的音频编码可以采用libfaac、libfdk_aac、FFmpeg 内置AAC 三种
+	libfdk aac 音频编码质量最优
+	FFmpeg 内置AAC 编码次于libfdk_aac 但优于libfaac
+    libfaac 在FFmpeg 内置AAC 编码为实验品时是除了libfdk_aac 之外的唯一选择
+    
+    系统资源、使用情况
+    音视频转码与音视频转封装的不同之处在于音视频转码会占用大量的计算资源，而转
+	封装则主要是将音频数据或者视频数据取出，然后转而封装（ Mux ）成另外一种封装格式，
+	转封装主要占用IO 资源，而转码主要占用CPU 资源，同时转码也会使用更多的内存资
+	源， 下面观察一下转码视频时的CPU 资源使用情况。
+	首先使用FFmpeg 进行转码：
+	./ffmpeg -re -i input.mp4 -vcodec libx264 -an output.mp4
+
+
+	
+24.FFmpeg 流媒体
+   随着互联网、移动互联网的发展，人们获取信息的方式开始从纸质媒体转向互联网文
+	字媒体，又从文字媒体转向音视频流媒体。音视频流媒体又称为“流媒体”，而用于处理
+	流媒体的压缩、录制、编辑操作，开源并强大的工具屈指可数， FFmpeg 就是常见的流媒
+	体处理工具。
+	本章重点介绍的内容概览如下。
+	• 5.1 节、5.2 节与5.3 节重点介绍常见的直播方式，包括RTMP, HTTP, RTSP 等
+	协议的基本分析，主要以使用FFmpeg 支持三大协议的操作为主，并且配合使用
+	Wire shark 抓包分析，以加深对FFmpeg 支持的直播协议的理解。
+	• 5.4 节重点介绍FFmpeg 在使用中是如何支持TCP 、UDP 的流媒体的，在TCP 和
+	UDP 两种协议的使用中， FFmpeg 既可以作为客户端也可以作为服务器端， 5.4 节
+	将会通过举例进行说明。
+	• 5.5 节重点介绍FFmpeg 支持一次编码、多路输出的操作方式，例如采集编码一次
+	视频推多路直播平台，或者一次转码同时推流与录制的操作均可以在本节获得相关
+	知识点。
+	• 5.6 节与5.7 节重点介绍HDS 与DASH 切片方式的直播支持，以及FFmpeg 支持两
+	种格式的使用举例。
+	
+	FFmpeg 发布与录制RTMP流
+    在流媒体中，直播是一种常见的技术中，而RTMP 直播则是最为常见的一种实时直播，由于RTMP 是实时直播，
+    因此精彩的画面错过了就永远不会再出现了，为了解决这个问题，可以考虑将RTMP 实时直播的流录制下来。
+    
+    FFmpeg 拉取RTMP 直播流,FFmpeg 操作RTMP 的参数:
+		rtmp_app 字符串   RTMP 流发布点，又称为APP
+		rtmp buffer 整数  客户端buffer 大小（单位： 毫秒），默认为3 秒
+		rtrnp _c onn 字符串  在RTMP 的Connect 命令中增加自定义AMF 数据
+		rtmp_ flashver 字符串  设置模拟的flashplugin 的版本号
+		rtmp_ live 整数  指定RTMP流媒体播放类型，具体如下：
+								• any ：直播或点播随意
+								•live ： 直播
+								• recorded ： 点播
+		rtmp __pageurl  字符串  RTMP 在C onnect 命令中设置的Pa ge URL 字段，其为播放时所在的Web页面URL
+		此mp__playpath   字符串   RTMP 流播放的Sti:eam 地址，或者称为秘钥，或者称为发布流
+		rtmp _subscribe 字符串   直播流名称，默认设置为rtmp__playpath 的值
+		rtmp _ swfba sh 二进制   数据解压swf 文件后的SHA256 的h ash 值
+		rtmp _swfsize   整数      swf 文件解压后的大小，用于s wf 认证
+		rtmp _swfurl 字符串      RTMP 的Connect 命令中设置的swfURL 播放器的URL
+		rtrnp _ swfverify 字符串  设置swf 认证时swf 文件的URL 地址
+		rtmp_tcurl 字符串   RTMP 的Connect 命令中设置的tcURL 目标发布点地址， 一般形如
+		                   rtmp://xxx .xxx .xxx/app
+		r位np_ h sten 整数    开启RTM P 服务时所监听的端口
+		listen 整数         与rtmp_listen 相同
+		timeout 整数       监听rtmp 端口时设置的超时时间，以秒为单位
+	
+	上述参数分析：
+	    1. rtmp_app 参数
+		通过使用rtmp_app 参数可以设置RTMP 的推流发布点，录制命令行如下：
+		ffmpeg -rtmp_app live -i rtmp://publish.chinaffmpeg.com -c copy -f flv output.flv
+		或者发布流命令行如下：
+		ffmpeg -re -i input.mp4 -c copy -f flv -rtmp_app live rtmp: //publi sh.chinaffmpeg.com
+		
+		2. rtmp_playpath 参数
+		设置rtmp_app 时可以看到提示了identify stream failed 错误，可以通过使用rtmp_playpath 参数来解决该错误， 下面先列举一个推流的例子：
+		ffmpeg -re -i input .mp4 -c copy -f flv -rtmp app live -rtmp playpath class rtmp://publish.chinaffmpeg.com
+		执行完这条命令行之后，推流将会成功，因为其设置了rtmp _app 与rtmp _playpath 两个参数，分别发布点live 与流名称class
+		推流（发布流）成功。
+		
+		可以用同样的方式测试播放RTMP 流：
+		./ffmpeg - rtmp_app live -rtmp_playpath class -i rtmp://publish.chinaffmpeg.com -c copy -f flv output.flv
+       执行完这条命令之后，将会成功地从RTMP 服务器中拉取直播流， 保存为output.flv，因为设置了rtm p_app 与rtmp _playpath 参数，
+       之所以能够成功地推流与拉流， 是因为设置rtmp_app 与rtmp_playpath 起到了作用
+       如果认为设置r tmp_ app 与rtmp_playpath 太麻烦，那么可以省略这两个参数， 直接将参数设置在RTMP 的连接中即可：
+		. /ffmpeg - i i nput.mp4 - c copy -f flv rtmp://publish.chinaffmpeg.com/live/class
+		发布流可以通过这种方式直接进行发布， 其中live 为发布点， class 为流名称
+		
+		推流成功之后，可以拉流录制：
+		./ffmpeg -i rtmp://publish.chinaffmpeg.com/live/class -c copy -f flv output. flv
+		
+		3. rtmp_pageurl 、rtmp_swfurl 、rtmp_tcurl 参数
+		在RTMP 的Connect 命令中包含了很多Object ，这些Object 中有一个page Uri ，例如
+        通过页面的Flashplayer 进行播放， RTMP 的Connect 命令中包含的pageUrl
+        
+        rtmp _pageurl 防盗链
+        在使用FFmpeg 发起播放时，不会在Connect 命令中携带pageUrl 字段
+		FFmpeg 可以使用rtmp _pageurl 来设置这个字段，以做标识，这个标识与HTTP 请求
+		中的referer 防盗链基本可以认为是起相同作用的，在RTMP 服务器中可以根据这个信息
+		进行referer 防盗链操作。使用FFmpeg 的rtmp_pageurl 参数可以设置pageUrl ，例如设置
+		一个http://www.chinaffmpeg.com:
+		./ffmpeg -rtmp_pageurl "http://www.chinaffmpeg.com”- i rtmp://publish.
+		chinaffmpeg.com/live/class
+		执行完这条命令行之后，使用抓包工具抓包可以看到Connect 命令中包含了pageUrl
+		一项，值为http://www.chinaffmpeg.com ，这个值可通过ffmpeg -rtmp pageurl 设置生效，
+		
+		swfUrl和tcUrl
+		按照这个方式还可以设置swfUrl 参数以及tcUrl 的值，常规的推流与播放直播流时这
+		些参数均可以设为默认，只有服务器要求必须使用swf 播放器和指定必须使用指定页时，这些参数的用处才会很大。
+		
+		FFmpeg 录制RTSP 流  181页
+			提到直播流媒体， RTSP 曾经是最常见的直播方式。如今在安防领域中其依然常见，
+			互联网中虽然已经大多数转向RTMP , HTTP+FLV 、HLS , DASH 等方式， 但依然还是有很多场景在使用RTSP
+			，如果直播过后再想回溯之前发生的实时情况时，则需要录制与存储的技术来做支撑，FFmpeg 可以满足这个技术
+			执行 ./ffmpeg- h dem uxer=RTSP 命令行将会输出RTSP 相关的协议读取操作参数
+			RTSP 传输协议可以有多种方式，不仅可以通过U DP ，还可以通过TC P , HTTP 隧道等，
+        
+        RTSP 参数使用举例  183 184页
+            使用RTSP 拉流时，时常会遇到因为采用UDP 方式而导致拉流丢包出现异常。在实时性与可靠性适中时可以考虑采用TCP 的方式进行拉流
+        1. TCP 方式录制RTSP 直播流
+        FFmpeg 默认使用的RTSP 拉流的方式为UDP 传输方式，为了避免丢包导致的花屏、绿屏、灰屏、马赛克等问题，还可以考虑将UDP 传输方式改为TCP 
+        传输方式：
+        ./ffmpeg -rtsp_transport tcp -i rtsp://47.90.47.25/test.ts -c copy -f mp4 output.mp4
+        FFmpeg 已经从RTSP 服务器中读取了test. ts 数据，并且将其录制到本地存储为output.mp4
+        RTSP 支持： DESCRIBE, SETUP 、TEA RDOWN 、PLAY 、PAUSE 、OPT IONS 、GET PARAMETER 、SET PARAMETER
+        
+        2. User-Agent 设置参数
+		为了在访问的时候区分是不是自己访问的流，可以通过设置User-Agent 进行区别， 设
+		置一个比较有特点的User-Agent 做标识即可，下面就来举例说明如何设置Use r-Agent 进
+		行访问。
+		./ffmpeg -user-agent ” ChinaFFmpeg-Player”-i rtsp://input:554/live/1/stream. sdp
+		-c copy -f mp4 -y output.mp4
+		执行这条命令行之后，即设置了User-Agent ，进行抓包后分析过程时可以看到包中的
+		User-Agent 已经设置生效。
+		
+		
+		FFmpeg 录制HTTP 流
+		在流媒体服务当中， HTTP 服务最为常见，尤其是点播。当然，直播也支持HTTP 服
+		务，例如使用HTTP 传输FLY 直播流、使用HTTP 传输TS 直播流，或者使用HTTP 传输
+		M3U8 以及TS 文件等。
+		
+		HTTP 参数说明
+		在FFmpeg 中支持HTTP 进行流媒体的传输，无论是直播还是点播，均可以采用
+		HTTP ，而FFmpeg 既可以作为播放器，也可以作为服务器进行使用，使用时针对HTTP ,
+		FFmpeg 有很多参数都可以使用
+		
+		FFmpeg 操作HTTP 的参数
+			seekable 布尔设置HTTP 链接为可以seek 操作
+			chunked_post 布尔使用Chunked 模式post 数据
+			bttp_proxy 字符串设置HTTP 代理传输数据
+			headers 字符串自定义HTTP Header 数据
+			content_ type 字符串设置POST 的内容类型
+			user_agent 字符串设置HTTP 请求客户端信息
+			multiple一requests 布尔HTTP 长连接开启
+			post_ data 二进制数据设置将要POST 的数据
+			cookies 字符串设置HTTP 请求时写代码的Cookies
+			icy 布尔请求ICY 元数据： 默认打开
+			auth_type 整数HTTP 验证类型设置
+			offset 整数初始化HTTP 请求时的偏移位置
+			method 字符串发起HTTP 请求时使用的HTTP 的方法
+			reconnect 布尔在EOF 之前断开发起重连
+			reconnect at eof 布尔在得到EOF 日才发起重连
+			reply_code 整数作为HTTP 服务时向客户端反馈状态码
+			
+		HTTP 参数使用举例
+		1. seekable 参数举例
+		seek 操作进行播放进度移动、定位等操作
+		./ffmpeg -ss 300 -seekable 0 -i http://bbs.chinaffmpeg.com/test .ts -c copyoutput.mp4
+		若seekable 设置为0 ，则FFmpeg 的参数SS 指定seek 的时间位置。因为seekable 参数是0 ，所以会一直处于阻塞状态。
+		./ffmpeg -ss 30 -seekable 1 - i http://bbs.chinaffmpeg.com/test.ts -c copy -y output.mp4
+		seekable 设置为1，， 因此FFmpeg 可以对HTTP 服务进行seek 操作，自然不会再有任何异常。
+		2. headers 参数举例
+		在使用FFmpeg 拉取HTTP 数据时，很多时候会遇到需要自己设置HTTP 的header 的情况，例如使用HTTP 传输时在header 
+		中设置referer 字段等操作
+		. /ffmpeg -headers "referer: http: //bbs. chinaffmpeg. com/index .html" -i http: //play. chi naffrnpeg.corn/live/class.flv
+		 -c copy -f flv -y output.flv
+		 执行完这条命令行之后，即可以在HTTP 传输时在header 中增加referer 字段，使用Wireshark 抓包可以看到详细信息
+		3. user_agent 参数设置
+		在使用FFmpeg 进行HTTP 连接时，在HTTP 服务器端会对连接的客户端进行记录与
+		区分， 例如使用的是不是IE 浏览器，或者是不是Firefox 浏览器，又或者是Chrome 浏览
+		器， 均可以记录， 而在流媒体中，常见的User-Agent 还包括Android 的StageFright 、iOS
+		的Q uickTime 等， 而FFmpeg 在进行HTTP 连接时，所使用的User-Agent 也有自己的特殊
+		标识，
+		. /ffrnpeg -user_agent ” LiuQi ’ S Player" -i http://bbs.chinaffrnpeg.com/l.flv
+		
+		HTTP 拉流录制
+		可对HTTP 服务器中的流媒体流进行录制，其不仅可以录制，还可以进行转封装，例如从HTTP 传输的FLY 直播流录制为HL S
+		( M3U8 ）、MP4 、FLY 等，只要录制的封装格式支持流媒体中包含的音视频编码
+		
+		拉取HTTP 中的流录制FLV
+		1 ）拉取FLY 直播流录制为FLY:
+		./ffrnpeg -i http://bbs.chinaffrnpeg.com/live.flv -c copy -f flv output.flv
+		2 ）拉取TS 直播流录制为FLY:
+		./ffrnpeg -i http://bbs.chinaffrnpeg.com/live.ts -c copy -f flv output.flv
+		3 ）拉取HLS 直播流录制为FLY:
+		./ffrnpeg -i http://bbs.chinaffrnpeg.com/live.rn3u8 -c copy -f flv output.flv
+		
+		FFmpeg 录制和发布UDP/TCP 流
+		FFmpeg 支持流媒体时不仅仅支持RTMP, HTTP 这类高层协议，同样也支持UDP ,
+		TCP 这类底层协议，而且还可以支持UDP, TCP 流媒体的录制与发布
+		
+		TCP 参数说明
+		listen  整数  作为Server 时监听TCP 的端口
+		timeout 整数获得数据超时时间（微秒）
+		listen timeout 整数作为Se凹er 时监昕TCP 端口的超时时间（毫秒）
+		send buffer size 整数通过socket 发送的buffer 大小
+		recv buffer size 整数通过socket 读取的buffer 大小
+		
+		UDP 参数说明
+		buffer size 整数系统数据buffer 大小
+		bitrate 整数每秒钟发送的码率
+		local port 整数本地端口
+		localaddr 整数本地地址
+		pkt_ size 整数最大UDP 数据包大小
+		reuse 布尔型UDP socket 复用
+		broadcast 布尔型广播模式开启与关闭
+		ttl 整数多播时配合使用的存活时间
+		fifo size 整数管道大小
+		timeout 整数设置数据传输的超时时间
+		
+    TCP 参数使用举例:
+		使用FFmpeg 既可以进行TCP 的监听，也可以使用FFmpeg 进行TCP 的链接请求，
+		使用TCP 监昕与请求可以是对称方式，下面举几个例子。
+		1. TCP 监昕接收流
+		./ffmpeg -listen 1 -f flv -i tcp://127.0.0.1:1234/live/stream -c copy -f flv output.flv
+		执行完命令行之后， FFmpeg 会进入端口监昕模式，等待客户端连接到本地的1234端口。
+		2. TCP 请求发布流
+		./ffmpeg -re -i input.mp4 -c copy -f flv tcp://127.0.0.1:1234/live/stream
+		推流成功，推流格式为FLV ，推流地址为tcp://127.0.0.1:1234/live/stream 。
+		3. 监昕端口超时listen timeout
+		监听端口时，默认处于持续监昕状态，通过使用listen timeout 可以设置指定时间长
+		度监昕超时，例如设置5 秒钟超时时间，到达超时时间则退出监听：
+		time ./ffmpeg -listen_timeout 5000 -listen 1 -f flv -i tcp://127.0.0.1:1234/
+		live/stream -c copy -f flv output.flv
+		4.TCP 拉流超时参数timeout
+		使用TCP 拉取直播流时，常常会遇到TCP 服务器端没有数据却不主动断开连接的情
+		况， 导致客户端持续处于连接状态不断开，通过设置timeout 参数可以解决这个问题。例
+		如拉取一个TCP 服务器中的流数据，若超过20 秒没有数据则退出，实现方式如下：
+		time ./ffmpeg -timeout 20000000 -i tcp://192.168.100.179:1935/live/stream -c
+		c opy -f flv output.flv
+		这条命令行设置超时时间为2 0 秒，连接TCP 拉取端口1935 的数据，如果超过20 秒,没有收到数据则自动退
+		5. TCP 传输buffer 大小设置send buffer size/recv buffer size
+		在TCP 参数列表中可以看到send buffer size 与recv buffer size 参数，这两个参数的作用是设置TCP 传输时buffer 的大小， 
+		buffer 设置得越小，传输就会越频繁， 网络开销就会越大：
+		./ffmpeg -re -i input.mp4 -c copy -send buffer si z e 265 - f flv tcp://192.168.100.179:1234/live/stream
+		执行完这条命令行之后输出速度将会变慢， 因为数据发送的buffer 大小变成了265,数据发送的频率变大， 并且次数变多，网络的开销也变大， 
+		所以输出速度会变慢
+		Data 的大小为265 字节，参数send buffer size 设置成功。在接收TCP 数据时同样可以使用recv buffer size 设置读取的大小
+		6. 绑定本地UDP 端口localport
+		使用FFmpeg 的UDP 传输数据时，默认会由系统分配本地端口，使用localport 参数时可以设置监昕本地端口：
+		./ffmpeg -re -i input.mp4 -c copy -localport 23456 -f flv udp://1 92.168.100.179:1234/live/stream
+		UDP 的Source Port 已经成功设置为23456
+		FFmpeg 的TCP 与UDP 传输常见于TCP 或者UDP 的网络裸传输场景，例如很多编
+		码器常见的传输方式为UDP 传输MPEGTS 流，可以通过FFmpeg 进行相关的功能支持，
+		TCP 同理，不过使用FFmpeg 进行TCP 与UDP 传输的参数还在不断更新中
+		
+	FFmpeg 推多路流:
+	    早期FFmpeg 在转码后输出直播流时并不支持编码一次之后同时输出多路直播流，需
+		要使用管道方式进行输出，而在新版本的FFmpeg 中已经支持tee 文件封装及协议输出，
+		可以使用tee 进行多路流输出
+		管道方式输出多路流:
+		一次转码多次输出RTMP 流等操作，而是通过使用系统管道的方式进行操作， 方式如下：
+		./ffmpeg -i input -acodec aac -vcodec libx264 -f flv - I ffmpeg -f mpegts -i -
+		- c copy outputl -c copy output2 -c copy output3
+		从命令行格式中可以看到，音频编码为AAC ，视频编码为libx264 ，输出格式为FLY,
+		然后输出之后通过管道传给另一条ffmpeg 命令，另一条ffmpeg 命令直接执行对codec 的
+		copy 即可实现一次编码多路输出
+		./ffmpeg -i input.mp4 -vcodec libx264 -acodec aac -f flv - I ffmpeg -f flv -i
+		- -c copy -f flv rtmp://publish.chinaffmpeg.com/live/streaml -c copy -f flv rtmp://
+		publish.chinaffmpeg.com/live/stream2
+		将会在RTMP 服务器192.168.100.179 中包含两路直播流， 一路为streaml ，另外一路为stream2 ，两路直播流的信息相同
+		用FFmpeg 验证一下：
+		. /ffmpeg -i rtmp: //publish.chinaffmpeg.com/live/streaml -i rtmp: //publish.
+		c hinaffmpeg.com/live/stream2
+		
+	    tee 封装格式输出多路流：
+	    使用，f tee 方式制定输出格式即可，下面就来看一下tee 封装格式一次编码多路输出的方式：
+		./ffmpeg -re -i input.mp4 -vcodec libx264 -acodec aac -map 0 -f t ee "[f= flv]
+		rtmp://publish.chinaffrr归g .com/live/strearnl I ( f=flv]rtmp: // publish.chinaffmpeg.
+		com/live/strearn2 ”
+		执行完命令行之后， ffmpeg 编码一次，输出tee 封装格式，格式中包含两个FLY 格式的RTMP 流， 一路为stream I ， 另一路为stream2
+		验证服务器端是否存在两路相同的直播RTMP 流：
+		. /ffmpeg -i rtmp: I /publish. chinaffmpeg. com/live/streaml -i rtmp: I /publish.
+		chinaffmpeg.com/live/stream2
+		
+		tee 协议输出多路流
+		比前文介绍的FFmpeg配合管道与tee 封装格式更简单
+		./ffmpeg -re -i input .mp4 -vcodec libx264 -acodec aac -f flv ” tee:rtmp://publish.chinaffmpeg.com/live/stream
+		 |rtmp://publish.chinaffmpeg.com/live/stream2 ”
+	     FFmpeg 执行了一次编码，然后输出为tee 协议格式， tee 中包含了两个子链接，协议全部为RTMP ，
+	     输出两路RTMP 流， 一路为streaml ，另一路为stream2:
+	     
+	     
+   FFmpeg 生成HOS 流：
+       FFmpeg 支持文件列表方式的切片直播、点播流，除了HLS 之外，还支持HDS 流切片格式，使用F Fmpeg 可以生成HDS 切片
+       HOS 参数说明使用ffmpeg -h muxer=hds 可以得到HDS 的参数列表
+		    window size 整数设置H DS 文件列表的最大文件数
+			extra window size 整数设置H DS 文件列表之外的文件保留数
+			min _frag _ duratio 口整数设置切片文件时长（单位· 微秒）
+			remove at exit 布尔生成H DS 文件退出时删除所有列表及文件
+		FFmpeg 中做HDS 格式封装主要包含四个参数，分别为HDS 切片信
+		息窗口大小、HDS 切片信息窗口之外保留的切片文件个数、最小切片时间、在HDS 封装
+		结束时删除所有文件。
+		
+		HOS 使用举例
+		由于FFmpeg 生成HDS 文件与HLS 类似，既可以生成点播文件列表，也可以生成直
+		播文件列表；既可以保留历史文件，也可以刷新历史文件窗口大小，以上这些操作均可以
+		通过参数进行控制
+		
+		window_size 参数控制文件列表大小
+		设置H DS 为直播模式时，需要实时更新列表，可以通过window size 参数控制文件
+		列表窗口大小，例如H DS 文件列表中只保存4 个文件，通过设置window_size 即可实现
+			./ffmpeg -i input -c copy -f hds -window_size 4 output
+		会生成output 目录，目录下面包含三种文件，具体如下。
+		• index.f4m ：索引文件，主要为F4M 参考标准中mainfest 相关、Metadata 信息等
+		• streamO.abst ：文件流相关描述信息
+		• strea mOSegl-Frag ：相似规则文件切片，文件切片中均为mdat 信息
+		生
+       
+       如果不设置window size 限制窗口大小，则使用如下命令行：
+		./ffmpeg -i input -c copy -f hds output
+		
+		
+		extra window size 参数控制文件个数 201页
+		在控制window size 之后， HLS 切片的情况与之类似，列表之外的文件会有一些残留，
+		通过使用extra window size 可以控制残留文件个数：
+		将extra window size 设置为1 ，则会在window_ size 之外多留一个历史文件，下面就
+		来执行命令行测试一下：
+		./ffmpeg -re -i input.mp4 -c copy -f hds -window_size 4 -extra_window_size 1
+		output
+		命令行执行之后，将会在output 目录生成HDS 文件，这要比window_size 规定的窗
+		口大小之外多出来1个文件
+		
+		其他参数
+		remove_a t_exit 参数在F Fmpeg 退出时会删除所有生成的文件，如果min_frag_
+		duration 参数的值设置得比较小并且设置在使用codec copy 时不会有效果，则需要在重新
+		编码时将GOP 间隔设置得比min_ frag _ duration 时间短即可。
+		
+  FFmpeg 生成DASH 流  202页
+		列表类型直播除了HLS 与HDS 之外，还有一种比较流行的列表方式是DASH 方式
+		直播，本节将重点介绍如何使用FFmpeg 生成DASH 流，使用ffmpeg -h muxer=dash 可以得到DASH 的参数列表
+				window size 整数索引文件中文件的条目数
+				extra window size 整数索引文件之外的切片文件保留数
+				min _s eg_ duration 整数最小切片时长（微秒）
+				remove at exit 布尔当FFmpeg 退出时删除所有切片
+				use_template 布尔按照模板切片
+				use timeline 布尔设置切片模板为时间模板
+				single_file 布尔设置切片为单文件模式
+				single_file _name 字符串设置切片文件命名模板
+				init_seg_ name 字符串设置切片初始命名模板
+				med1a_seg_name 字符串设置切片文件名模板
+		对于DASH 的封装操作FFmpeg 所支持的参数稍微多一些，例
+		如除了与HDS 相似的参数之外，还可以支持单文件模式，是否使用time line 模式，设置
+		切片名等操作，下面就来举例说明对DASH 封装操作的常见参数
+		
+    FFmpeg 对流媒体的支持非常广泛，本章重点介绍RTMP , RTSP 、TCP , UDP , HLS 、
+	HDS , DASH 相关的支持情况， 主要以推流、生成为主，以及对FFmpeg 支持的HTTP 传
+	输参数做简略的分析
+       
+    
+    
+25 ffmpeg滤镜使用
+    ffmpeg滤镜Filter的参数排列方式：
+    输入两个文件，一个视频input.mp4 ， 一个图片logo.pug ，将logo 进行缩放，然后放在视频的左上角：
+	./ffmpeg -i input.mp4 -i logo.png -filter_complex "[l:v]scale=176:144[logo ];[O:v][logo]overlay=x=O:y＝。” output.mp4
+	从上述命令可以看出，将logo.pug 的图像流缩放为176 × 144 的分辨率，然后定义一
+	个临时标记名logo ，最后将缩放后的图像［ logo ］铺在输入的视频input.mp4 的视频流［ O:v]
+	的左上角。  
+    FFmpeg 滤镜Filte 「时间内置变量：
+    使用Filter 时， 经常会用到根据时间轴进行操作的需求，在使用FFmpeg 的Filter
+	时可以使用Filter 的时间相关的内置变量
+		t    时间戳以秒表示，如果输入的时间戳是未知的，则是NAN	
+		n    输入帧的顺序编号，从0 开始
+		pos  输入帧的位置，如果未知则是NAN
+		w    输入视频帧的宽度
+		h    输入视频帧的高度
+	FFmpeg 为视频加水印
+	    FFmpeg 可以为视频添加水印，水印可以是文字，也可以是图片，主要用来标记视频
+        所属标记
+    文字水印：
+        在视频中增加文字水印需要准备的条件比较多，需要有文字字库处理的相关文件，在
+		编译FFmpeg 时需要支持FreeType 、FontConfig 、iconv ，系统中需要有相关的字库，在
+		FFmpeg 中增加纯字母水印可以使用drawtext 滤镜进行支持
+		drawtext 的滤镜参数：
+			fontfile 字符串| 字体文件
+			text 字符串文字
+			textfile 字符串文字文件
+			fontcolor 色彩字体颜色
+			box 布尔文字区域背最框
+			boxcolor 色彩展示字体的区域块的颜色
+			fontsize 整数显示字体的大小
+			font 字符串字体名称（默认为S a n s 字体）
+			x 整数文字显示的x 坐标
+			y 整数文字、显示的y 坐标
+		使用drawtext 可以根据前面介绍过的参数进行加水印设置，例如将文字的水印加在视频的左上角，命令行如下：
+       . /ffmpeg -i input.mp4 -vf ” drawtext=fontsize=lOO:fontfile=FreeSerif.ttf:text='hello world ’ 
+       : x=20:y=20 ” output.mp4
+       执行完这条命令行之后，即可在output.mp4 视频的左上角增加“ hello world 文字水印
+       
+       drawtext 滤镜的fontcolor 参数调节颜色， 例如将字体的颜色设置为绿色：
+       . / ffmp e g - i i nput .mp4 -vf "drawtext=fontsize=lOO: fontfile=FreeSerif.
+       ttf:text='hello world ’: fon t color=green ” output.mp4
+       
+       文字水印还可以增加一个框，然后给框加上背景颜色：
+       . / ffmpeg -i input.mp4 -v f ” drawtext=fontsize=lOO:fontfile=FreeSerif.
+		ttf : text='hello world' :fontcolor=green:box=l:boxcolor=yellow” output.mp4
+		
+		
+	   有些时候文字水印希望以本地时间作为水印内容，可以在drawtext 滤镜中配合一些特殊用法来完成
+	   . / ffmpeg -re - i i nput.mp4 -vf " drawtext=fontsize=60: fontfile=FreeSerif.
+		ttf:text ＝’ %｛ localtime＼：%Y＼－%m＼－%d %H－%M-% S}':fontcolor=green:box=l:boxcolor=yellow ”output.mp4
+       在text 中显示本地当前时间， 格式为年月日时分秒的方式
+       
+       需要定时显示水印，定时不显示水印，这种方式同样可以配合drawtext 滤镜进行处理，使用drawtext 与enable 配合即可，
+       例如每3 秒钟显示一次文字水印
+       ./ffrnpeg -re -i input.rnp4 -vf "drawtext=fontsize=60:fontfile=FreeSerif.ttf:text
+		=’ test':fontcolor=green:box=l:boxcolor=yellow:enable=lt(mod(t\,3)\,1 ) ” output.mp4
+		
+		大多数时候文字水印会有中文字符，此时系统需要包含中文字库与中文编码支
+        持，这样才能够将中文水印加入到视频中并正常显示。
+		. /ffrnpeg -re -i input.rnp4 -vf ” drawtext=fontsize=SO:fontfile=/Library/Fonts/
+		Songti .ttc:text＝＇ 文字水印测试＇： fontcolor=green:box=l:boxcolor=yellow" output.mp4
+		
+	图片水印:
+	   还可以向视频添加图片水印、视频跑马灯等.为视频添加图片水印可以使用movie滤镜
+	   FFmpeg movie 滤镜的参数:
+		   filename 字符串输入的文件名，可以是文件、协议、设备
+			format _name, f 字符串输入的封装格式
+			st ream index, si 整数输入的流索寻｜编号
+			se ek __point, sp 浮点数Seek 输入流的时间位置
+			strea m, s 字符串输入的多个流的流信息
+			loo p 整数循环次数
+			discontinuity 时间差值支持跳动的时间戳差值
+		在FFmpeg 中加入图片水印有两种方式， 一种是通过movie 指定水印文件路径，另外一种方式是通过filter 读取输入文件的流并指定为水印，
+		这里重点介绍如何读取movie 图片文件作为水印
+		. /ffmpeg -i input.mp4 -vf "movie=logo.png[wm]; [in] (wm]overlay=30: lO(out ]“output.mp4
+		执行完命令行之后logo.pug 水印将会打入到input.mp4 视频中，显示在x 坐标30 、y坐标1 0 的位置
+		
+		将透明水印加人到视频中的效果更好一些。当只有纯色背景的logo 图片时，可以考虑使用movie 与colorkey 滤镜配合做成半透明效果
+		./ffmpeg -i input.mp4 -vf "movie=logo.png,colorkey=black:l.0:1.0 (wm]; [in] [wm]
+		over lay=30:10 [out]" output.mp4
+		将会根据colorkey 设置的颜色值、相似度、混合度与原片混合为半透明水印
+		
+	FFmpeg 生成画中画：
+	    在使用FF mpeg 处理流媒体文件时，有时需要使用画中丽的效果。在FFmpeg 中，可以通过overlay 将多个视频流、多个多媒体采集设备、
+	    多个视频文件合并到一个界面中，生成画中画的效果。以后的滤镜使用中，与视频操作相关的处理， 大多数都会与overlay 滤镜配合使用，
+	    尤其是用在图层处理与合并场景中。
+	    FFmpeg 滤镜overlay 基本参数：
+		x       字符串            x坐标
+		y       字符串            y坐标
+		eof action 整数    遇到eof 标志时的处理方式，默认为重复。
+							• repeat （值为0 ）：重复前一帧
+							• endall （值为1 ） ： 停止所有的流
+							• pass （值为2 ）：保留主图层
+		shortest 布尔     终止最短的视频时全部终止（默认关闭）
+
+		format   整数   •设置output 的像索格式，默认为yuv420 。
+						·yuv420 （值为0)
+						 yuv422 （值为I )
+						• yuv444 （值为2)
+						• rgb （值为3)
+						
+		./ffmpeg -re -i input.mp4 -vf ” movie=sub.mp4,scale=480x320[test); [in) (test )
+		overlay [out ]”-vcodec libx264 output.flv
+		执行完命令行之后会将sub.mp4 视频文件缩放成宽480 、高320 的视频，然后显示在
+		视频input.mp4 的x 坐标为0 、y 坐标为0 的位
+		
+		如果希望子视频显示在指定位置，例如显示在画面的右下角，则需要用到overlay 中x 坐标与y 坐标的内部变量：
+		./ffmpeg -re -i input.mp4 -vf ” movie= sub. mp4, scale=4 8 Ox3 2 0 [test] ; [in] [test]
+		overlay=x=main_w-480:y=main_h-320 (out l ”-vcodec libx264 output.flv
+		根据命令行可以分析出，除了显示在overlay 画面中，子视频将会定位在主画面的最右边减去子视频的宽度，最下边减去子视频的高度的位置
+		
+		以上两种视频画中画的处理均为静态位置处理， 使用overlay 还可以配合正则表达式进行跑马灯式回中画处理，
+		动态改变子画面的x 坐标与y 坐标即可：
+		./ffmpeg -re -i input.mp4 -vf ” movie=sub .mp4, scale=480x320 [test]; [in] [test]
+		overlay=x='if(gte(t,2), -w+(t-2)*20, NAN )’:y=O [out ]”-vcodec libx264 output.flv
+		命令行执行之后，子视频将会从主视频的左侧开始渐入视频从左向右游动
+		
+	FFmpeg 视频多宫格处理： 215页
+	
+	FFmpeg 音频流滤镜操作：
+	    拆分声道、合并多声道为单声道、调整声道布局、调整音频采样率等
+	    音频的拆分与合井，可以通过amix 、amerge 、pan 、channelsplit 、v olume 、volumedetect 等滤镜进行常用的音频操作
+	    双声道合并单声道：通过ffmpeg 一layouts 参数可以查看音频的声道布局支持情况，例如将input 0双声道合并为单声道操作，
+	    则是将由reo 转变为mono	模式
+	    . /ffrnpeg -i input. aac -ac 1 output. aac
+	    input.aac 的音频原为双声道，现被转为单声道
+	    input.aac 的音频是stereo 布局方式，即FL 与FR 两个声道，
+		通过ac 将双声道转为单声道mono 布局，输出为output.aac 。原本双声道的音频，左耳右
+		耳都可以听到声音，调整后依然可以左右耳都听到声音，只是布局发生了改变，为中央布
+		局；接下来可以将双声道拆分成左耳与右耳两个音频， 每个耳朵只能听到一个声道的声音
+		
+	双声道提取：
+	    将音频为stereo 的布局提取为两个mono 流，左声道一个流，右声道一个流，命令格式如下。
+        可以使用FFmpeg 的map_channel 参数实现：
+	    ./ffmpeg -i i nput.aac -map_channel 0.0.0 left.aac -map_channel 0.0.1 right.aac
+	    这里也可以使用pan 滤镜实现：
+	    ./ffmpeg -i input.aac -filter_complex "[O:O]pan=lclcO=cO[left];[O:O]
+		pan=lc|cO=cl[right ]”-map ”[ left ]” left.aac -map ”[ right ]” right.aac
+		命令行执行后，会将布局格式为stereo 的input.aac 转换为两个mono 布局的left.aac与right .aac
+	
+   双声道转双音频流：
+        FFmpeg 不但可以将双声道音频提取出来生成两个音频文件，还可以将双声道音频提取出来转为一个音频文件两个音频流，每个音频流为一个声道
+        . /ffmpeg - i input. aac -fil ter_complex channelspli t=channel_layout=stereo output.mka
+        命令行通过channelsplit 滤镜将stereo 布局方式的音频切分开，分成两个音频流
+        文件output.mka 中的音频为两个stream ；大多数播放器在默认情况下会播放第一个音频Stream 但不会播放第二个，指定播放对应的Stream 除外
+        
+   单声道转双声道：
+        使用FFmpeg 可以将单声道转换为双声道，即当只有中央声道或者只有mono 布局时，才可以通过FFmpeg 转换为stereo 布局
+		根据前面章节提到的stereo 布局转出来的mono 布局的音频文件left.aac 进行生成， 命令行如下：
+		./ffmpeg -i left.aac -ac 2 output.m4a
+		执行完命令行之后，将会从left.aac 中，将布局为mono 的音频转换为stereo 布局的音频文件output.m4a
+		
+	   从以上的输出信息中可以看到，输入的left.aac 中音频为mono 布局，而输出的文件output.m4a 中的音频布局则为stereo 。
+	   除了使用ac 参数，还可以使用amerge 滤镜进行处理，命令行如下：
+		./ffmpeg -i left.aac -filter complex ”[ O:a][O:a]amerge=inputs=2[aout ]”-map
+		”[ aout ]” output.m4a
+		命令行执行后的效果与使用ac 的效果相同。
+		
+	两个音频源合并双声道：
+	    前面讲过将单mono 处理为双声道，如果将输入的单mono 转换为stereo 双声道为伪双声道，则可以考虑将两个音频源合并为双声道，
+	    相对来说这样操作更容易理解一些，下面就来看一下如何将两个音频源输入为双声道
+	    输入两个布局为mono 的音频源，合并为一个布局为stereo 双声道的音频流，输出到output 文件，下面用命令行执行来举例说明：
+		./ffmpeg -i left.aac -i right.aac -filter comple x ”[ 0: a] [ 1: a] amerge=inputs=2[aout ]”-map "[aout ]” output.mka
+		命令行执行之后，会将left.aac 与right.aac 两个音频为mono 布局的AAC 合并为一个布局为stereo 的音频流，输出至output.mka 文件
+		，输入的两路mono 转换为stereo 了，输出音频为AC3,这个可以通过acodec aac 指定为输出AAC 编码的音频
+	
+	多个音频合并为多声道：
+	除了双声道音频， FFmpeg 还可以支持多声道，通过ffmpeg -layouts 即可看到声道布局有很多种
+	将6 个mono 布局的音频流合并为一个多声道（ 5.1 声道）的音频流。如果希望实现这样的效果，则可以使用如下命令行：
+	./ffmpeg -i front left.wav -i front right.wav -i front center.wav -i lfe.wav
+	-i back_ left. wav -i back_ right. wav -filter ~complex ”[ O:a) [l:a] (2:a) [3:a) (4:a) (S: a)
+	amerge=inputs=6(aout )”-map "(aout)" output.wav
+	
+	FFmpeg 音频音量探测：
+	在拿到音频文件播放音频时，有时会需要根据音频的音量绘制出音频的波形，而有时候会希望根据音频的音量来过滤音频文件
+	音频音量获得：
+	使用FFmpeg 可以获得音频的音量分贝，以及与音频相关的一些信息，可以使用滤镜volumedetect 获得
+	./ffmpeg -i output.wav -filter_complex volumedetect -c:v copy -f null /dev/null
+	绘制音频波形：
+	一些应用场景需要用到音频的波形图，随着声音分贝的增大，波形波动越强烈，使用FFmpeg 可以通过showwavespic 滤镜来绘制音频的波形图
+	. /ffmpeg -i output.wav -filter_complex ” showwavespic=s=640xl20" -frames: v 1 output.png
+	
+	如果希望看到每个声道的音频的波形图，则可以使用showwavepic 与split_ channel 滤镜配合绘制出不同声道的波形图。
+	. /ffmpeg -i output .wav -filter_complex ” s howwavespic=s=640x240:split
+	channels=!" -frames:v 1 output.png
+	由于现实的波形有些多，所以生成图片的宽高会发生一些改变，可以将高度设置得大一些，这条命令执行完之后会将音频的每一个声道进行拆分，然后绘制出图像
+	
+	FFmpeg 为视频加字幕
+	为视频添加字幕的方式有很多种，大概可以分为将字幕编码进视频流中以及在封装容器中加入字幕流。
+	将字幕编码进入视频流中的方式与为视频增加水印的方式基本相似，而在封装容器中加入字幕流的方式则需要封装容器支持加入字幕流，
+	下面就来看一下如何使用FFmpeg 为视频文件增添字幕。
+	ASS 字幕流写入视频流使用FFmpeg 可以将字幕流写人视频流，通过ASS 滤镜即可，首先需要将视频流进行解码，
+	然后将ASS 字幕写人视频流，编码压缩之后再进行容器封装即可完成
+	将字幕写入视频流中：
+	. /ffmpeg -i input.mp4 -vf ass=tl.ass -f mp4 outp ut.mp4
+	命令行执行之后即可根据input.mp4 的信息增加ASS 字幕，将字幕写入视频流中生成
+	从Input 信息中可以看到，输入与输出的封装容器格式基本相同，均为一个视频流和
+	一个音频流，并未包含字幕流，因为字幕已经通过ASS 容器将文字写入视频流中
+	
+	ASS 字幕流写入封装容器
+	在视频播放时显示字幕，除了将字幕加入至视频编码中，还可以在视频封装容器中增加字幕流只要封装容器格式支持字幕流即可
+	./ffmpeg -i input.mp4 -i tl.ass -acodec copy -vcodec copy -scodec copy output.mkv
+	命令行执行之后，会将i nput.mp4 中的音频流、视频流、tl.ass 中的字幕流在不改变
+	编码的情况下封装入o utput.mkv 文件中，而oμtput.mkv 文件将会包含三个流，分别为视
+	频流、音频流以及字幕流；而在input.mp4 中或者输入的视频文件中原本同样带有字幕流，
+	并希望使用tl.ass 字幕流时，可以通过map 功能将对应的字幕流指定封装入output.mkv,
+	例如：
+	./ffmpeg -i input.mp4 -i tl.ass -map 0:0 -map 0:1 -map 1:0 -acodec copy -vcodec
+	copy -scodec copy output.rnkv
+	会分别将第一个输入文件的第一个流和第二个流与第二个输入文件的第一个流写入output.mkv 中
+	
+	FFmpeg 视频抠图合并：227页
+	
+	FFmpeg 3d 视频处理：228页
+	
+	FFmpeg 定时视频截图 230页
+	
+	FFmpeg 生成音频测试流 232页
+	
+	FFmpeg 生成视频测试流 234页
+	
+	FFmpeg 对音视频倍速处理
+	  常见的处理还包括音视频的倍速处理，如2 倍速播放、4 倍速播放，
+	常见的处理方式包含跳帧播放与不跳帧播放，两种处理方式FFmpeg 均可支持，跳帧处理
+	方式的用户体验稍差一些，本节将重点介绍不跳帧的倍速播放，例如音频倍速播放将会很
+	平滑、很快速或者很慢速地播放音频，视频倍速播放将会很快速地播放视频或者很慢速地
+	播放视频而非丢帧，下面就来了解两个滤镜： atempo 与setpts
+	  atempo 音频倍速处理：
+	    在FFmpeg 的音频处理滤镜中， atempo 是用来处理倍速的滤镜，能够控制音频播放速
+		度的快与慢，这个滤镜只有一个参数： tempo ，将这个参数的值设置为浮点型，取值范围
+		从0 .5 到2, 0.5 则是原来速度的一半，调整为2 则是原来速度的2 倍
+		半速处理  
+		./ffmpeg -i input.wav -filter complex ” atempo=tempo=0.5" -acodec aac output.aac
+		2 倍速处理
+		./ffrnpeg -i input.wav -filter complex ” aternpo=ternpo=2. 。”－ acodec aac output.aac
+	  setpts 视频倍速处理
+		在FFmpeg 的视频处理滤镜中，通过setpts 能够控制视频速度的快与慢，这个滤镜只
+		有一个参数： expr ，这个参数可用来描述视频的每一帧的时间戳，下面就来看一下setpts
+		的可用的常见值
+		
+		FFmpeg 滤镜setpts 参数：
+		FRAME RATE  根据帧率设置帧率值，只用于固定帧率
+		PTS  输入的pts 时间戳
+		RTCTIME 使用RTC 的时间作为时间戳（即将弃用）
+		TB  输入的时间戳的时间基
+		
+		PTS半速处理：
+		./ffrnpeg -re -i input.mp4 -filter complex ” setpts=PTS*2" output.mp4
+		2 倍速处理
+		./ffrnpeg -re -i input.mp4 -filter complex ” setpts=PTS/2" output.mp4
+
+26  FFmpeg 采集设备
+    FFmpeg 申Linux 设备操作
+	FFmpeg 在Li nux 下支持的采集设备多种多样，包含FrameBuffer ( fbdev ）设备操作、
+	v412 设备操作、DV 139 4 设备操作、oss 设备操作、xllgrab 设备操作等。本章将重点介
+	绍Frame B uffer 设备操作、v4 1 2 设备操作、xllgrab 设备操作。操作设备之前，首先需要
+	查看当前系统中可以支持操作的设备，然后查看对应的设备所支持的参数
+	系统当前可以支持的设备：
+	./ffmpeg -hide_banner -devices
+	· 输入设备： dv1934 、tbdev 、lavfi 、oss 、vi deo4linux2 、x llgrab
+    · 输出设备： tbdev 、sdl 、v4l2
+	设备列表查看完毕之后，可以得到对应的设备名称
+	Linux 采集设备fbdev 参数说明
+		使用tbdev 设备之前，需要了解清楚tb dev 设备操作参数的情况， FFmpeg 可通过如下
+		命令来查询fbdev 支持的参数：
+		./ffmpeg -h demuxer=fbdev
+		framerate 帧率  采集时视频图像的刷新帧率，默认值为25
+		FrameBuffer 是一个比较有年份的设备， 专门用于图像展示操作，例如早期的图形界面也是基于Fra meBuffer 进行绘制的，有时在向外界展示
+		Linux 的命令行操作又不希望别人看到你的桌面时，可以通过获得FrameBuffer 设备图像数据进行编码然后推流或录制：
+		./ffmpeg -framerate 30 -f fbdev -i /dev/fbO output.mp4
+		
+	Linux 采集设备v412 参数说明
+	Linux 下，常见的视频设备还有video4linux ，现在是video41inux2 ，设备一般缩写为v412 ，尤其是用于摄像头设备，下面查看一下v412 设备的参数：
+	./ffmpeg -h demuxer=v412
+	命令行执行之后，将会输出v412 相关的操作参数
+    standard 字符串设置TV 标准，仅用于模拟器分析帧时使用
+	channel 整数设置TV 通道，仅用于模拟器分析帧时使用
+	video size 图像大小设置采集视频帧大小
+	pixel_ format 字符串设置采集视频的分辨率
+	mput_format 字符串设置采集视频的分辨率
+	framerate 字符串设置采集视频帧率
+	list formats 整数列举输入视频信号的信息
+	list standards 整数列举标准信息（与standard 配合使用）
+	timestamps 整数设置时间戳类型
+	ts 整数设置模拟器分析帧时使用的时间戳
+	use libv412 布尔使用第三方库libv41 2 选项
+		
+    使用FFmpeg 采集Linux 下的v412 设备时，主要用来采集摄像头，而摄像头通常支持
+	多种像素格式，有些摄像头还支持直接输出已经编码好的H.264 数据，下面看一下笔者所
+	用电脑的v412 摄像头所支持的色彩格式及分辨率：
+	./ffmpeg -hide_banner -f v412 -list_formats all -i /dev/videoO
+	命令行执行后输出内容如下：
+	[video4linux2,v412 @ Oxlff73a0 ] Raw : yuyv422 : YUYV 4:2:2
+	640x480 320x240 352x288 1280x720 960x540 800x448 640x360 424x240 640x480
+	[video4linux2,v412 @ Oxlff73a0] Compressed: mjpeg : Motion-JPEG
+	640x480 320x240 352x288 1280x720 960x540 800x448 640x360 424x240 640x480
+	正如输出的信息所展示的，输入设备／ dev/videoO 输出了raw 、yuyv422 、yuyv 4:2:2,
+	同时输出了支持采集的图像分辨率大小，如320 × 240 、1280 × 720 等；除了这些Raw 数
+	据之外，还支持摄像头常见的压缩格式MJPEG 格式，输出的分辨率与Raw 基本可以对应上。
+	
+	把这个摄像头采集为视频文件来看一下效果：
+	./ffmpeg -hide banner -s 1920xl080 -i /dev/videoO output.avi
+	
+	
+	Linux 采集设备x11 grab 参数说明
+		使用FFmpeg 采集Linux 下面的图形部分桌面图像时，通常采用xllgrab 设备采集图
+		像，下面就来了解一下xl lgrab 的参数，
+		draw mouse 整数支持绘制鼠标光标
+		follow mouse 整数跟踪鼠标轨迹数据
+		framerate 字符串输入采集的视频帧率
+		show region 整数获得输入桌面的指定区域
+		region_ border 整数当show_region 为1 时，设置输入指定区域的边框的粗细程度
+		video size 字符串输入采集视频的分辨率
+		
+		xllgrab 可以使用6 个参数，支持的功能主要有绘制鼠标光标，跟踪鼠标轨迹数据，设置采集视频帧率，指定采集桌面区域，
+		设置指定区域的变宽参数，设置采集视频的分辨率
+		
+		
+	LinuX 采集设备x11grab 使用举例
+		FFmpeg 通过xl lgrab 录制屏幕时，输入设备的设备名规则如下：
+		［ 主机名］ ： 显示编号id. 屏幕编号id ［＋ 起始x 轴， 起始y 轴］
+		其中主机名、起始x 轴与起始y 轴均为可选参数，下面看一下默认获取屏幕的例子。
+		( 1 ）桌面录制
+		在有些Linux 的教学或者演示时需要用到Linux 桌面的图像直播或者录制，参考本
+		节前面介绍的设备名规则可以使用如下命令对桌面进行录制：
+		./ffmpeg -f xllgrab -framerate 25 -video size 1366x768 -i :O.O out.mp4
+		我们设置输入帧率为25 ，图像分辨率为1366 × 768 ，采集的设备为“ 0. 。”，输出文件
+		为out.mp4
+		
+		桌面录制指定起始位置
+		前文我们录制的区域为整个桌面，有时候并不一定符合我们的要求， FFmpeg 提供了录制某个区域的方法：
+		./ffmpeg -f xllgrab -framerate 25 -video size 352x288 -i :0.0+300,200 out.mp4
+		我们通过参数“： 0.0+300,20。”指定了x 坐标为300, y 坐标为200 。需要注意的是，
+		video size 需要按实际大小指定，最好保证此大小不要超出实际采集区域的大小
+		
+		桌面录制带鼠标记录的视频
+		到此为止，我们已经介绍了录制整个桌面和录制某个区域的方法，有些情况下这仍然
+		不能满足我们的要求，比如演示视频，我们需要用鼠标来辅助， FFmpeg 同样也提供了录
+		制鼠标的方法：
+		./ffmpeg -f xllgrab -video size 1366x768 -follow mouse 1 -i :0.0 out.mp4
+		我们可以通过参数follow mouse 来指定视频录制中带鼠标
+		
+	FFmpeg 中OS X 设备操作
+	  在FFmpeg 中采集OS X 系统的输入输出设备，常规方式采用的是OS X 的avfoundation 设备进行采集，下面了解一下avfoundation 的参数
+	    list devices 布尔 列举当前可用设备信息
+	    video device index 整数视频设备索引编号
+		audio device index 整数音频设备索引编号
+		pixel_format 色彩格式色彩格式，例如yuv 420 、nv12 、rgb24 等
+		framerate 帧率视频帧率，例如25
+		video size 分辨率图像分辨率，类似于1280 × 720
+		capture_ cursor 整数获取屏幕上鼠标图像
+		capture_ mouse_ chcks 整数获得屏幕上鼠标点击的事件
+		主要涉及枚举设备、音视频设备编号、像素格式、帧率、图像分辨率等
+	
+	OS X 下查看设备列表
+	FFmpeg 可以直接从系统的采集设备中采集摄像头、桌面、麦克风等。在采集数据之前， 首先需要知道当前系统都支持哪些设备：
+	./ffmpeg -devices
+	输出如下，我们可以查看到当前OS X 支持的设备：
+	    通过ffmpeg -devices 查看的信息分为两大部分：
+		． 解封装或封装的支持情况
+		·  设备列表
+		从设备列表部分可以看到，这里共列出了3 个设备： avfoundation 、lavfi 和qtkit ，本
+		章将重点介绍avfoundation
+		OS X 下设备采集举例  246页
+		在使用avfoundation 操作设备采集之前，需要枚举avfoundation 支持的输入设备，可
+		以通过如下命令行查看：
+		./ffmpeg -f avfoundation -list devices true -i ””
+		
+	采集OS X 桌面
+		从设备列表中可以知道FFmpeg 除了可以获得OS X 的摄像头，还可以获得桌面图像，下面尝试一下获得桌面图像：
+		ffrnpeg -f avfoundation -i ” Capture screen 0 ”-r:v 30 out.rnp4
+		
+		参数Capture screen O 指定了桌面0 为输入设备，与xl lgrab 的方式类似，我们也可以录制鼠标， 在OS X 上通过capture_ cursor 来指定：
+		ffmpeg -f avfoundation -capture_cursor 1 -i ”Capture screen 。”－ r:v 30 out.rnp4
+		命令行执行后会将桌面图像带上鼠标一起录制下来
+	    
+	    
+	    采集麦克风
+		使用FFmpeg 的avfoundation 除了可以获得图像之外，还可以获得音频数据，从
+		av foundation 的设备列表中可以看到其能够识别麦克风，接下来考虑将音视频都采集下来
+		然后进行录制
+		ffmpeg -f avfoundation -i ” 0:0 ” out.aac
+        我们通过参数0:0 分别指定了第0 个视频设备和第0 个音频设备
+        
+        如以上输出信息所示，采集的数据包含了视频rawvideo 数据和音频pcm_f32le 数据，
+		但是编码输出只有AAC 的编码的数据。
+		除了这个方法，还可以使用设备索引参数指定设备采集：
+		ffmpeg -f avfoundation -video device index 0 -i ”：。” out.aac
+		ffmpeg -f avfoundation -video_device_index 0 -audio_device_index 0 out.aac
+		
+	FFmpeg 中Windows 设备操作: 249页
+
+
+27 FFmpeg 的API 使用篇
+    FFmpeg 接口libavformat 的使用
+    libavformat 是FFmpeg 中处理音频、视频以及字幕封装和解封装的通用框架，内置
+	了很多处理多媒体文件的Muxer 和Demuxer ，它支持如AVlnputF ormat 的输入容器和
+	AVOutputFormat 的输出容器，同时也支持基于网络的一些流媒体协议，如HTTP 、RTSP 、
+	RTMP 等。
+	本章主要介绍FFmpeg 的媒体格式、协议封装与解封装的API 函数使用方法， 重点
+	以API 使用的介绍为主，分别介绍从视频流封装为某种封装格式，视频文件封装为FLV 、
+	MP4 、MPEGTS 等封装格式，将FLV 、MP4 、MPEGTS 等封装格式解封装，将FLY 、
+	MP4 、MPEGTS 封装格式转变为另外一种封装格式，将FLV 、MP4 、MPEGTS 等多媒体
+	流封装为某种流媒体网络协议
+	
+	使用FFmpeg 的API 进行封装（ Muxing ）操作的主要步骤比较简单：
+	封装：av_register_all avformat_alloc_output_context2  avformat_new_stream avformat_write_header 
+	     av_interleaved_write_frame  av_write_all
+	     
+	( 1) API 注册
+		在使用FFmpeg 的API 之前，首先要注册使用FFmpeg 的API ，需要引用一些必要的
+		头文件：
+		#include <stdlib.h>
+		#include <stdio.h>
+		#include <string.h>
+		#include <math.h>
+		#include <libavutil/channel layout.h> ／／ 用户音频声道布局操作
+		#include <libavutil/opt.h> ／／ 设置操作选项操作
+		#include <libavutil/mathematics.h> ／／ 用于数学相关操作
+		#include <libavutil/timestamp.h> ／／ 用于时间戳操作
+		#include <libavformat/avformat.h> ／／ 用于封装与解封装操作
+		#include <libswscale/swscale.h> ／／ 用于缩放、转换颜色格式操作
+		#include <libswresample/swresample.h> ／／ 用于进行音频采样率操作
+		int main(int argc, char **argv){
+		av_register_all ();
+		  return O;
+		}
+		
+	( 2 ）申请AVFormatContext
+		在使用FFmpeg 进行，封装格式相关的操作时，需要使用AVF ormatContext 作为操作
+		的上下文的操作线索：
+		AVOutputFormat *fmt;
+		AVFormatContext *oc;
+		avformat_alloc_output_context2(&oc, NULL ,”flv", filename);
+		if ( !oc) {
+		printf ( “ cannot alloc flv format\n ”);
+		  return 1;
+		}
+		fmt = oc->oformat;
+	( 3 ）申请AVStream
+		申请一个将要写人的AVStream 流， AVStream 流主要作为存放音频、视频、字幕数据流使用：
+		AVStream *st;
+		AVCodecContext *c;
+		st= avformat_new_stream(oc, NULL);
+	    if ( ! ost->st) {
+			fprintf(stderr,”Could not allocate stream\n");
+			exit(l);
+		}
+		st->id = oc->nb_streams-1;
+		至此，需要将Codec 与AVStream 进行对应，可以根据视频的编码参数对AVCodecContβxt
+		的参数进行设置：
+		c->codec_id = codec_id
+		c->bit_rate = 400000;
+		c->width = 352;
+		c->height = 288;
+		st->time_base = (AVRational){1,25}
+		c->time_base = st->time_base
+		c->gop_size = 12
+		c->pix_fmt = AV_PIX_FMT_YUV420P
+		然后为了兼容新版本FFmpeg 的AVCodecparameters 结构，需要做一个参数copy 操作：
+		ret = avcodec_parameters_from_context(ost->st->codecpar, c);
+		if (ret < O) {
+		printf (”Could not copy the s tream parameters\n");
+		exit( 1);
+		}
+        至此，相关参数已经设置完毕，可以通过av_ dump_ format 接口看到参数信息。
+	    ( 4 ）增加目标容器头信息
+		在操作封装格式时，有些封装格式需要写入头部信息，所以在FFmpeg 写封装数据
+		时，需要先写封装格式的头部：
+		ret = avformat_write_header(oc, &opt);
+		if (ret < 0) {
+			printf("Error occurred when opening output file z 屯s\n ”， av_err2str(ret));
+			return 1;
+		}
+		( 5 ）写入帧数据
+		在FFmpeg 操作数据包时，均采用写帧操作进行音视频数据包的写人，而每一帧在
+		常规情况下均使用AVPacket 结构进行音视频数据的存储， AVPacket 结构中包含了PTS 、
+		DTS , Data 等信息，数据在写人封装中时，会根据封装的特性写入对应的信息：
+		AVFormatContext *ifmt ctx = NULL;
+		AVIOContext* read in =avio alloc context(inbuffer, 32 * 1024 ,O,NULL,
+		get input buffer,NULL,NULL);
+		if(read_in==NULL)
+		goto end;
+		ifmt ctx->pb=read in;
+		ifmt_ctx->flags=AVFMT_FLAG_CUSTOM_IO;
+		if ((ret = avformat_open_input(&ifmt_ctx, "h264”, NULL, NULL)) < 0) {
+		av一log(NULL, AV_LOG_ ERROR ,”Cannot get h264 memory data\n ”);
+		return ret;
+		}
+		while( 1) {
+		AVPacket pkt = { 0 } ;
+		av_init_packet(&pkt);
+		ret = av read frame(ifmt ctx, &pkt);
+		if (ret < 0)
+		break;
+		/* rescale output packet timestamp values from codec to stream timebase */
+		av_packet_rescale_ts(pkt, *time_base, st->time_base);
+		pkt->stream_index = st->index;
+		/* Write the compressed frame to the media file. */
+		return av_interleaved_write_frame(fmt_ctx, pkt);
+		}
+		
+		如上述这段代码所示，从内存中读取数据，需要将通过avio alloc context 接口中获得
+		的buffer 与AVF ormatConext 建立关联，然后再像操作文件一样进行操作即可，接下来就
+		可以从AVF ormatContext 中获得packet ，然后将packet 通过av一interleaved_write_frame 写
+		入到输出的封装格式中。
+		
+		( 6 ）写容器尾信息
+		在写人数据即将结束时，将会进行收尾工作，例如写入封装格式的结束标记等，例如
+		FLY 的sequence end 标识等：
+		av write t railer(oc);
+		至此，通过FFmpeg 将一段数据写入至封装容器中的实现原理已经讲解完毕， 具体的
+		代码demo ，可以下载FFmpeg 的源代码之后，从源代码的doc/examples/ muxing.c 中进行
+		查看， 也可以通过FFmpeg 的官方网站demo 进行查看： http ://ffmpeg.org/ doxygen/trunk/
+		muxing_ 8c-example.html 。
+		
+		
+		音视频文件解到装
+		音视频文件解封装为播放器、转码、转封装的常见操作
+		av_register_all  avformat_open_input avformat_find_stream_info 
+		av_read_frame avformat_close_input
+		
+		( 1 ) API 挂注册与前介绍的相同，在使用FFmpeg API 之前，需要先注册API ， 然后才可以使用API:
+		int main( i nt argc, char* argv[])
+		{
+			av_register_all()
+			return 0;
+        }
+        
+        ( 2 ）构建AVF ormatContext在注册过FFmpeg 之后，可以声明输入的封装结构体为主线，然后通过输入文件或者
+        输入流媒体流链接为封装结构的句柄：
+        static AVFormatContext *fmt ctx = NULL;
+		/* open input file, and allocate format context */
+		if (avformat open input(&fmt ctx , input filename, NULL, NULL) < 0) {
+			fprintf(stderr ,”Could not open source file %s\n ”， src_filename);
+			exit(1);
+		}
+		如上述代码所示，可通过avformat_open _input 接口将input _filename 句柄挂载至fmt_ctx 结构里，之后FFmpeg 即可对fmt_ctx 进行操作。
+		( 3 ）查找音视频流信息在输入封装与AVF ormatContext 结构做好关联之后，
+		即可通过avforrnat_find_ stream_info 从AVFormatContext 中建立输入文件的对应的流信息：
+		if (avformat find stream info(fmt ctx, NULL) < 0) {
+			fprintf(stderr ,”Could not find stream information\n”);
+			exit(1);
+		}	
+		从fmt_ctx 中可以获得音视频流信息
+		( 4 ）读取音视频流获得音视频流之后，即可通过av read frame 从fmt ctx 中读取音视频流数据包，将音
+		视频流数据包读取出来存储至AVPackets 中，然后就可以通过对AVPackets 包进行判断，确定其为音频、视频、字幕数据，最后进行解码，或者进行数据存储：
+		/* initialize packet, set data to NULL, let the demuxe r fill it */
+			av_init_packet (&pkt) ;
+			pkt.data = NULL;
+			pkt.size = O;
+			/* read frames from the file */
+			while (av_read_frame(fmt_ctx, &pkt) >= 0) {
+				AVPacket orig_pkt = pkt;
+				do {
+					ret = decodeyacket(&got_fr 臼ne, pkt);
+					if (ret < 0)
+					break;
+					pkt.data += ret;
+					pkt.size -= ret;
+			} while (pkt.size> O);
+					av_packet_unref(&origykt);
+			}
+			通过循环调用av_read_frame 读取fmt_ctx 中的数据至pkt 中，然后
+			解码pkt ，如果读取fmt _ctx 中的数据结束，则退出循环，开始执行结束操作
+			( 5 ）收尾  执行结束操作主要为关闭输入文件以及释放资源等：
+			avformat_close_input(&fmt_ctx);
+			至此，解封装操作已全部介绍完毕。具体的代码demo ，可以下载FFmpeg 的源代码，
+			从源代码的doc/examples/ demuxing_decoding.c 中进行查看，也可以通过FFmpeg 官方网
+			站demo 查看： http ://ffmpeg.org/ doxygen/trunk/ demuxing_ decoding_ 8c-example.html 。
+	
+	
+	   音视频文件转到装:
+	   音视频文件转封装操作是将一种格式转换为另一种格式的操作例如从FLV 格式转换为MP4 格式
+	   ( 1 ) API 注册
+       首先在使用FFmpeg 接口之前，需要进行FFmpeg 使用接口的注册操作：
+        int main(int argc, char *[argv])
+		{
+			av register all();
+			return O;
+		}
+		( 2 ）构建输入AVFormatContext注册之后，打开输入文件并与AVF ormatContext 建立关联：
+	    AVFormatContext *ifmt ctx = NULL ;
+		if ((ret = avformat open input(&ifmt ctx, in filename ，0，0） ) < 0) {
+			fprintf(stderr ,”Could not open input file · %s• ” ， in_filename);
+			goto end;
+		}
+		( 3 ）查找流信息建立关联之后，与解封装操作类似，可以通过接口avformat_find_stream_info 获得流
+		信息：
+		if ((ret = avformat find stream info(ifmt ctx ，。） ) < 0) {
+			fprintf(stderr ,”Failed to r etrieve input stream information");
+			goto end;
+		}
+		( 4 ）构建输出AVFormatContext输入文件打开完成之后，可以打开输出文件并与AVFormatContext 建立关联：
+        AVFormatContext *ofmt ctx = NULL ;
+			avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, out_filename);
+			if ( !ofmt_ctx) {
+			fprintf(stderr, "Could not create output context\n ”);
+			ret = AVERROR_UNKNOWN;
+			goto end;
+		}
+        ( 5 ）申请AVStream建立关联之后，需要申请输入的stream 信息与输出的stream 信息，输入stream 信息
+        可以从ifmt_ctx 中获得，但是存储至ofmt_ctx 中的stream 信息需要申请独立内存空间：
+        AVStream *out_stream = avformat_new_stream(ofmt_ctx, in_stream->codec->codec);
+		if ( !out_stream) {
+			fprintf(stderr ,”Failed allocating output stream\n");
+			ret = AVERROR_UNKNOWN;
+		}
+		( 6) stream 信息的复制输出的stream 信息建立完成之后，需要从输入的stream 中将信息复制到输出的
+		stream 中，由于本节重点介绍转封装，所以stream 的信息不变，仅仅是改变了封装格式：
+		ret = avcodec copy context(out stream->codec, in stream->codec);
+		if (ret < 0) {
+			fprintf(stderr, "Failed to copy context from input to output stream codec context\n”);
+		}
+	    在新版本的FFmpeg 中， AVStream 中的AVCodecContext 被逐步弃用，转而使用AVCodecParameters ，
+	    所以在新版本的FFmpeg 中可以增加一个操作步骤：
+	    ret = avcodec_parameters_from_context(out_stream->codecpar, out stream->codec ) ;
+		if (ret < 0) {
+			fprintf(stderr, "Could not copy the stre缸n parameters\n”);
+		}
+		( 7 ）写文件头信息输出文件打开之后，根据前面章节中介绍的封装方式，接下来可以进行写文件头的操作：
+		ret = avformat_write_header(ofmt_ctx, NULL);
+		if (ret < 0) {
+			fprintf(stderr, "Error occurred when openi ng output file\n");
+		}
+		( 8 ）数据包读取和写入
+		输入与输出均已经打开，并与对应的AVF ormatContext 建立了关联，接下来可以从输
+		入格式中读取数据包，然后将数据包写入至输出文件中，当然，随着输入的封装格式与输
+		出的封装格式的差别化，时间戳也需要进行对应的计算改变：
+		while (1) {
+		AVStream *in_stream, *out_stream;
+		ret =av_read_frame(ifmt_ctx, &pkt);
+			if (ret < 0);
+			break;
+			in_stream = ifmt ctx->streams[pkt.stream_index];
+			out stream = ofmt ctx->streams[pkt.strem_index];
+			/* copy packet */
+			pkt.pts = av_rescale_q_rnd(pkt.pts, in_stream->time_base,out_stream->time_base, AV_ROUND_NEAR＿INFIAV_ROUND_PASS_MINMAX);
+			pkt.dts = av_rescale_q_rnd(pkt.dts, in_str eam->time base, out_stream->time_base, AV_ROUND_NEAR＿INFIAV_ROUND_PASS_MINMAX);
+			pkt.duration = av rescale q (pkt. duration, in stream->time base, out stream->time_base);
+			pkt.pos = -1;
+			ret =av interleaved write frame(ofmt ctx , &pkt);
+			if (ret < 0) {
+			fprintf(stderr,”Error muxing packet\n”);
+			break;
+			av_packet_unref (&pkt) ;
+		}
+		( 9 ）写文件尾信息
+		解封装读取数据并将数据写入新的封装格式的操作已经完成，接下来即可进行写文件
+		尾至输出格式的操作：
+		av_write_trailer(ofmt_ctx);
+		
+		( 10 ）收尾输出格式写完之后即可关闭输入格式：
+		avformat_close_input(&ifmt_ctx);
+		至此，转封装操作结束。具体的代码demo ，可以下载FFmpeg 的源代码，从源代码
+		的doc/examples/remuxing.c 中进行查看，也可以通过FFmpeg 官方网站demo 查看： http: //
+		ffmpeg.org/doxygen/trunk/remuxing_8c-example.html 。
+	
+	
+	   视频截取：
+	     处理视频文件时，常常会用到视频片段的截取功能， FFmpeg 可以支持该功能，
+		其处理方式与转封装类似，仅仅是多了一个视频的起始时间定位以及截取视频长度的接口
+		调用av_seek_frame
+		int av_seek_frame(AVFormatContext *s, int stream_index, int64_t timestamp, int flags);
+		seek 接口中总共包含4 个参数:
+		AVFormatContext ：句柄
+		stream index ：流索引
+		timestamp ：时间戳
+		flags seek ：方法
+		而在传递flags 参数时，可以设置多种seek 策略，下面就来看一下flags 对应的多种策略定义：
+		#define AVSEEK FLAG BACKWARD   1
+		#define AVSEEK FLAG BYTE   2
+		#define AVSEEK FLAG ANY    4
+		#define AVSEEK FLAG FRAME  8
+		flags 总共包含四种策略，分别为向前查找方法，根据字节位置进行查找， seek 至
+		非关键帧查找，根据帧位置查找。在播放器进度条拖动时常见的查找策略为AVSEEK
+		FLAG BACKWARD 方式查找。如果需要更精确的seek ，则需要对应的封装格式支持，例
+		如MP4 格式，调用av_seek_frame 截取视频可以根据8.3 节的代码进行修改，在av_read_
+		frame 前调用av seek frame 即可：
+		av _seek_ frame( ifmt_ctx, ifmt_ctx->streams [pkt. stream_index), ts_start, AVSEEK_FLAG_ BACKWARD) ;
+		while (1) {
+			AVStream *in stream, *out stream;
+			ret = av_read_frame(ifmt_ctx, &pkt);
+			if (ret < 0)
+			break;
+			in_stream = ifmt_ctx->streams[pkt.stream_index);
+			out_stream = ofmt_ctx->streams[pkt.stream_index);
+			i f (av_compare_ts(pkt.pts, in_stream->time_base, 20, (AVRational){ 1, 1 }) >= 0)
+			break;
+			/* copy packet */
+			pkt.pts = av_rescale_q_rnd(pkt.pts, in_stream->time_base, out_stream->time_
+			base, AV_ROUND_NEAR_INFIAV_ROUND_PASS_MIN皿X);
+			pkt.dts = av rescale q rnd(pkt.dts, in stream->time base, out stream->time_
+			base, AV_ROUND_NEAR_INFIAV_ROUND_PASS_MINMAX);
+			pkt.duration = av_rescale_q(pkt.duration, in_stream->time_base, out stream-
+			>time_base);
+			pkt.pos = -1;
+			ret = av_interleaved_write_frame(ofmt_ctx, &pkt);
+			if (ret < 0) {
+			fprintf(stderr ,”Error muxing packet\n”);
+			break;
+			av _packet_ unref (&pkt) ;
+		}
+		从上述代码实现中可以看到，除了av_seek_ frame 之外，还多了一个av_compare_ ts ,
+		而av_compare_ ts 可用来比较是否到达设置的截取长度，在本例中截取的时间长度为20
+		秒。至此，视频截取功能已经介绍完毕。具体的代码demo 可以下载FFmpeg 的源代码，
+		从源代码的doc/examples/remuxing.c 中进行参考，也可以通过FFmpeg 官方网站demo 查
+		看： http: //ffmpeg.org/ doxygen/trunk/remuxing_ Sc-example .html 。
+		
+		
+	avio 内存数据操作:
+	   在一些应用场景中需要从内存数据中读取H.264 数据，然后将H.26 4 数据封装为FLY
+		格式或者MP4 格式，使用FFmpeg 的libavformat 中的avio 方法即可达到该目的，这样从
+		内存中直接操作数据的方式常常被应用于操作已经编码的视频数据或音频数据，然后希望
+		将数据通过FFmpeg 直接封装到文件中
+		
+		( 1) API 注册 
+		在使用FF mpeg 之前， 首先需要调用注册接口：
+		int main(int argc, char *(argv])
+		{
+		av_register_all();
+		return O;
+		( 2 ）读一个文件到内存
+		注册之后首先尝试将一个裸文件读取到内存中， FFm peg 提供了函数av_file_ map():
+		struct buffer data {
+		uintB_t *ptr;
+		size t size; ///< size left in the buffer
+		};
+		struct buffer data bd = { O };
+		char *input filename;
+		size t buffer size;
+		uint8 t *buffer = NULL;
+		ret = av_file_map(input_filename, &buffer, &buffer_size ，。， NULL);
+		if (ret < 0)
+		r eturn ret;
+		bd.ptr = buffer;
+		bd.size = buffer size;
+		，通过av file_map 可以将输入的文件input_filename 中的数据映射到内存buffer 中。
+		( 3 ）申请AVFormatContext
+		内存映射完毕后，可以申请一个AVFormatContext ，然后后面可以将avio 操作的句柄
+		挂在AVFormatContext 中：
+		AVFormatContext *fmt ctx = NULL;
+		if ( !( fmt_ctx = avformat_alloc_context ( ) ) ) {
+		ret = AVERROR(ENOMEM);
+		return r et;
+		如上述代码所示，申请AVF orrnatContext ，因为在FFmpeg 框架中，针对AVForrnat
+		Context 进行操作将会非常方便，所以可以将数据挂在AVFormatContext 中，然后使用
+		FFmpeg 进行操作
+		4 ）申请AVIOContext
+		申请AVIOContext ，同时将内存数据读取的回调接口注册给AVIOContext:
+		avio_ctx_buffer = av_malloc(avio_ctx_buffer_size);
+		if ( ! avio ctx buffer) {
+		ret = AVERROR(ENOMEM);
+		return ret;
+		}
+		avio ctx = avio_alloc context(avio_ctx_buffer, avio_ctx_buffer_size, O, &bd,
+		&read_packet, NULL, NULL);
+		if ( !avio ctx) {
+		ret = AVERROR(ENOMEM);
+		return ret;
+		}
+		fmt_ctx->pb = avio_ctx;
+		如上述代码所示，首先根据映射文件时映射的buffer 的空间与大小申请一段内存，
+		然后通过使用接口avio_alloc_context 申请AVIOContext 内存，申请的时候注册内存
+		数据读取的回调接口read_packet ，然后将申请的AVIOContext 句柄挂载至之前申请的
+		AVFormatContext 中，接下来就可以对AVFormatContext 进行操作了。
+		
+		(5 ）打开AVForrnatContext
+		基本操作已经完成，接下来与文件操作相同，使用avformat_open_ input 打开输入的
+		AVF orrnatContext:
+		ret = avformat_open_input(&fmt_ctx, NULL, NULL, NULL);
+		if (ret < 0) {
+		fprintf(stderr, "Could not open input\n ”);
+		return ret;
+		使用auformat_open _input 打开与常规的打开文件是有区别的，由于其是从内存读取数
+		据，所以可直接通过read _packet 读取数据，在调用avformat_open_ input 时不需要传递输
+		人文件。
+		( 6 ）查看音视频流信息
+		打开AVF ormatContext 之后，可以通过avformat find stream info 获得内存中的数据
+		的信息：
+		ret = avformat find stream info(fmt ctx, NULL);
+		if (ret < 0) {
+		fprintf(stderr ,”Could not find stream information\n”);
+		return ret;
+		( 7 ）读取帧
+		信息获取完毕之后，可以尝试通过av read frame 来获得内存中的数据，尝试将关键
+		帧打印出来：
+		while (av_read_frame(fmt_ctx, &pkt) >= 0) {
+		if (pkt.flags & AV一PKT_FLAG_KEY) {
+		fprintf(stderr ,”pkt.flags = KEY\n ”);
+		帧读取之后，就可以用于自己想要的操作了，如后期处理、转封装等操作。
+		至此，内存数据读取操作已介绍完毕，本节的参考代码可以从网络中获得： http ://
+		ffmpeg. org/ doxygen/trunk/avio reading一8c-example.html 。
+
+
+28  FFmpeg 接口libavcodec 的使用
+    libavcodec 为音视频的编码／解码提供了通用的框架，它包含了很多编码器和解码器，
+	这些编码器／解码器不仅可以用于音频、视频的处理，还能用于字幕流的处理，如H.264 、
+	H.265 的编解码、AAC 的编解码。
+	本章主要介绍FFmpeg 的编解码器、编码与解码的A P I 函数使用方法，重点以A P I 的
+	使用介绍为主，分别介绍从视频流解码为YUV 、视频YUV 编码为H . 264 ，音频AAC 解
+	码为PCM 、音频PCM 编码为AAC 编码格式等
+	
+	FFmpeg 旧接口的使用
+	在编译FFmpeg 或编译调用FFmpeg 的编解码接口实现的功能时，常常会遇到编译告
+	警，告警内容为调用的编码接口或者解码接口是被弃用的接口，虽然接口还可以使用，但
+	是在未来某个时间段将会被正式弃用，在编写本节时， F Fmp eg 的旧编解码接口仍然可以
+	继续使用，而且还有很大，一部分的FFmpeg 用户在使用旧版本的接口，所以本节将会重点
+	介绍FFmpeg 旧接口对音视频的编解码操作。
+	
+	FFmpeg旧接口视频解码
+	( 1) API 注册 
+	在使用FFmpeg 之前， 首先需要调用注册接口：
+	int main(int argc, char *(argv])
+	{
+	av_register_all();
+	return O;
+	}
+	( 2 ）查找解码器
+	为了便于理解解码API 的使用，基于第8 章的解封装的示例，增加解码方面的操作步
+	骤，解码之前需要根据封装中的视频编码压缩格式进行查找，找到对应的解码器：
+	AVCodecContext *dee ctx;
+	AVStream *st = fmt ctx->stre 缸ns (stream index J ;
+	AVCodec *dee = NULL;
+	dee= avcodec_find_decoder(st->codecpar->codec_id);
+	if (!dee) {
+	fprintf(stderr ,”Failed to find 毡s codec\n ”, av_get_media_type_
+	string(type));
+	return AVERROR(EINVAL);
+	首先从输入的AVF ormatContext 中得到Stream ，然后从Stream 中根据编码器的Codec ID 获得对应的Decoder
+	( 3 ）申请AVCodecContext
+	获得Decoder 之后，根据AVCodec 申请一个AVCodecContext ，然后将Decoder 挂在
+	AVCo decContext 下：
+	dec_ctx = avcodec_alloc_context3(dec);
+	if (l*dec_ctx) {
+	fprintf(stderr ,”Failed to allocate the 毡s codec context\n", av_get_rnedia_type_
+	string(type));
+	return AVERROR(ENOMEM);
+	( 4 ）同步AVC odecParameters
+	FFtnpeg 在解码或者获得音视频相关编码信息时，首先存储到AVCodecParameters
+	中，然后对AVCodecParameters 中存储的信息进行解析与处理，所以为了兼容，需要将
+	AVCodecParameters 的参数同步至AVCodecContext 中：
+	avcodecyar创neters_to_context(*dec_ctx, st->codecpar);
+	( 5 ）打开解码器
+	解码器参数设置完毕之后，接下来需要打开解码器：
+	if ( ( ret = avcodec一open2(*dec_ctx, dec, NULL ) < 0) {
+	fprintf(stderr ,”Failed to open 毡s codec\n”, av_get_rnedia_type_string(type));
+	return r et;
+	( 6 ）帧解码
+	在FF mpeg 进行解封装操作av_read_frame 之后，可以对读到的AVPacket 进行解码，
+	解码后的数据存储在台ame 中即可：
+	AVCodecContext *video dec ctx = dec ctx;
+	AVFrame *frame= av frame alloc();;
+	AVPacket pkt;
+	ret = avcodec decode_video2(video_dec ctx, frame, got_frame, &pkt);
+	if (ret < 0) {
+	fprintf(stderr,”Error decoding video frame ｛在s)\n ”， av_err2str(ret));
+	return ret;
+	}
+	( 7 ）帧存储
+	解码之后，数据将会被存储在frame 中，接下来可以对frame 中的数据进行操作，例
+	如将数据存储到文件中， 或者转换为硬件输出的buffer 支持的格式，例如RGB 等，解码
+	的最终目的是将压缩的数据解码为yuv420p 这类色彩数据：
+	/* copy decoded frame to destination buffer: */
+	/* this is r equired since rawvideo expects non aligned data */
+	av_irnage_copy(video_dst_data, video_dst_linesize, (const uint8_t **) (frame-
+	>data), frarne->linesize, pix_frnt, width, height);
+	fwrite(video dst data[O], 1, video dst bufsize, video dst file);
+	解码后的数据，通过av_image_ copy 将frame 中的数据复制到vi deo_d st_ data 中，然
+	后将数据写入输出的文件中，这个文件同样可以作为SDL 的输出buffer ，或者F ram eBuffer
+	等，为以后的缩放、滤镜操作、编码等做准备。
+	( 8 ）收尾解码操作完成之后，接下来即为释放之前申请过的资源，释放完成之后，解码操作即
+	全部完成。
+	
+	FFmpeg 旧接口视频编码  270页
+	
+	
+	
+	
+	
+	FFmpeg 接口libavfilter 的使用284页
+	libavfilter 是FFmpeg 中一个很重要的模块，其提供了很多音视频的滤镜，通过合理使
+	用这些滤镜，可以达到事半功倍的效果，第6 章介绍了使用FFmpeg 命令行为视频添加水
+	印、生成画中画、视频多宫格处理以及音频相关的操作这些特效就是使用avfilter 洁、镜
+	来完成的。
+	本章主要介绍FFmpeg 的滤镜avfilter 的API 函数使用方法，重点以API 使用为主，
+	通过使用滤镜对视频添加LOGO 这个例子展开叙述。本章介绍的滤镜操作为通用操作， 其
+	他滤镜操作均可以参考本章中介绍的步骤进行操作
+	
+	
