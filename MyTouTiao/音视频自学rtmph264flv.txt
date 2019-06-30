@@ -1,0 +1,461 @@
+理解H264编码：
+显示器正在播放一个视频，分辨率是1280*720，帧率是25，那么一秒所产生正常的数据大小为：
+1280*720(位像素)*25(张) / 8(1字节8位)(结果:B) / 1024(结果:KB) / 1024 (结果:MB) =  2.75MB
+1280*720(位像素)*25(张)：单位是bit，
+8(1字节8位)(结果:B) / 1024(结果:KB) / 1024 (结果:MB) ：把位转成字节，最终转成MB
+
+H264协议处理掉冗余的视图
+分帧内压缩和帧间压缩
+
+帧内预测:
+图片中通过1，2，3几个不同的块背景就能推算出其它背景
+
+帧间预测:
+块匹配：参考前面的图中最类似的块
+残差：最类似的块之间的区别
+运动补偿：把最类似的块和残差相加，得到原图
+
+在H264协议里定义了三种帧
+I帧：完整编码的帧叫I帧
+P帧：参考之前的I帧生成的只包含差异部分编码的帧叫P帧
+B帧：参考前后的帧编码的帧叫B帧 压缩率最高
+
+GOP(画面组)
+一个GOP由多个帧组成，这个帧中包括I帧，P帧，B帧。
+
+IDR帧(关键帧)
+IDR1 P4 B2 B3 P7 B5 B6 I10 B8 B9 P13 B11 B12 P16 B14 B15  这里的B8可以跨过I10去参考P7
+IDR1 P4 B2 B3 P7 B5 B6 IDR8 P11 B9 B10 P14 B11 B12  这里的B9就只能参照IDR8和P11，不可以参考IDR8前面的帧
+结论：程序把要参考的i,p帧都放入内存中，这时b帧参考内存中的i,p帧生成原数据b帧，但有可能i,p帧的数据有错误了，这时候插入
+IDR帧，告诉b帧只能参考idr帧以及idr以后的p帧。
+
+H264分层设计：
+
+视频编码层（VCL：Video Coding Layer 就是把视频数据编码成i,b,p帧，封装成压缩数据SODB，
+网络提取层（NAL：Network Abstraction Layer）把i,b,p帧的SODB数据包组装成NALU包，以便于不同网终协议的传输
+
+Start Code :用于标示这是一个NALU 单元的开始，必须是”00 00 00 01” 或”00 00 01”，属于nalu头里面的信息
+
+H264不同表示方式：
+1帧=多个NALU包,即NALU包1+NALU包2+..  NALU包1=（IDR1+I片1+B片1+P片1）NALU包2=（IDR2+I片2+B片2+P片2）
+VCL(Video Coding Layer) + NAL(Network Abstraction Layer).
+[StartCode]+[NALU]+[StartCode]+[NALU]+[StartCode]+[NALU] 
+NALU包：[NALU Header]+[RBSP]
+RBSP包：SPS+SEI+PPS+IDR+I帧+B帧+P帧   
+（说明：其中SPS,SEI,PPS,IDR会被”00 00 00 01” 或”00 00 01”分割开，SPS,SEI,PPS,IDR可看作三个NALU ）
+（说明：”00 00 00 01” 或”00 00 01”+头内容+PPS+IDR+I帧+B帧+P帧 可看作另一个NALU）  
+RBSP包：SPS+SEI+PPS+IDR+I片+B片+P片
+RBSP包：SPS+SEI+PPS+IDR+I宏块多个+B宏块多个+P宏块多个
+
+[NALU Header]：
+	1、F(forbiden):禁止位，占用NAL头的第一个位，当禁止位值为1时表示语法错误；则丢掉此NALU
+	2、NRI:参考级别，占用NAL头的第二到第三个位；值越大，该NAL越重要，强调该NALU的重要性
+	3、Type:Nal单元数据类型，也就是标识该NAL单元的数据类型是哪种，占用NAL头的第四到第8个位；如该NALU是不是最后一个NALU，是否有sps,pps,是否分片
+
+SPS（序列参数集）：是网络层nal产生，记录了标识符、帧数以及参考帧数目、解码图像尺寸和帧场模式  4个字节
+PPS（图像参数集）: 是网络层nal产生, 对如熵编码类型、有效参考图像的数目和初始化等解码参数进行标志记录
+SEI (补充增强信息)：不是必须的，是一些补充信息
+IDR （关键帧）：前面已经介绍
+I帧：包含
+
+片的概念：
+1帧=多片
+一个片 = Slice Header + Slice Data
+
+片类型：
+	I 片	只包含I宏块
+	P 片	包含P和I宏块
+	B 片	包含B和I宏块
+	SP 片	包含P 和/或 I宏块,用于不同码流之间的切换
+	SI 片	一种特殊类型的编码宏块
+
+因为一个非i片总是包含了i片信息，所以该片会参考内部的这个i片信息进行解码，更精确，不会产生解码问题，效率也更高
+
+宏：
+1一个宏块 = 一个16*16的亮度像素 + 一个8×8Cb + 一个8×8Cr彩色像素块组成。
+(YCbCr 是属于 YUV 家族的一员,在YCbCr 中 Y 是指亮度分量，Cb 指蓝色色度分量，而 Cr 指红色色度分量
+
+一片包含多个宏块，一个宏块也有子宏块
+宏块结构：
+    宏块类型（是帧类还是帧间编码） 预测类型（） cpb qp（量化参数的改变值）  宏块数据（yuv）
+    
+
+图像,场和帧：
+一帧表示一图像也代表一场，视频采集采用隔行扫描，奇偶扫描，形成顶场和底场
+隔行扫描产生的是场，适用于运动量少的视频图相编码
+逐行扫描产生的是帧，适用于运动量大的视频图相扫描
+
+pts/dts:
+
+                                         GOP
+				   i   b   b   p   b   b   p   b   b   p   b   b   p   b   p
+解码顺序：           1   3   4   2   6   7   5   9   10  8   12  13  11  15  14
+显示顺序：           1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
+dts解码顺序:         1   3   4   2   6   7   5   9   10  8   12  13  11  15  14
+pts显示顺序:         1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  
+
+
+判断是哪种类型的帧：
+00 00 00 01 06:  SEI信息   
+00 00 00 01 67:  SPS
+00 00 00 01 68:  PPS
+00 00 00 01 65:  IDR Slice
+00 00 00 01 61    (P帧)
+
+H264压缩数据分析：
+00 00 00 01 67 42 60 2A 95 A8 1E 00 89 F9 66 E6 20 20 20 40 
+00 00 00 01 68 CE 3C 80 
+00 00 00 01 06 ES 01 45 80 
+00 00 00 01 65 BS 00 00 09 BE DO 6F FF FF D4 50 00 10
+ZD FA AF AF SB C4 
+61 38 20 55 SD 26 13 88 AB 04 
+61 38 80 SE 74 98 7C 28 13 09 DO 23 84 C3 F4 04 62 4F ES SC ID Bl 
+AZ 31 36 IE 23 14 DB D4 EZ 67 4F 4C 50 CI OF 28 92 FO 05 ID EA 
+40 38 AS 07 13 27 B4 OD 40 gF 6C DS EE 03 FF FS 6C AE 75 C7 33 
+FF DD SE 62 FS El FF FF Bl FE 69 FF gA 45 C6 B7 DB 23 OD CE FI CB 6E AB BS BO 
+19 F3 SC 63 SD EF Fg 92 34 ZA 7C 4C IA 84 A4 C6 B4 26 24 FZ 61 55 49 89 FZ 62 BZ 61 
+7D 04 7A 93 OB 85 49 87 59 62 62 4F 26 3E D4 29 81 ZB DZ 27 BF FF 4D 37 FF F7 18 BE 15 BE 91 72 6D 6A … …          
+
+sps:4字节：
+第一个00 00 00 01是startcode，67是表示该帧sps帧
+从67到第二个00 00 00 00 01之前的内容为sps的内容
+
+pps:1字节：
+第二个00 00 00 01是startcode，68表示该帧是pps帧
+68 CE 3C 80是pps的帧内容
+
+sei补充增强信息：10位
+第三个00 00 00 01是startcode，06表示SEI信息
+ 06 ES 01 45 80 是sei的内容
+
+IDR 关键帧：
+第四个00 00 00 01是startcode，65表示idr帧
+
+
+
+nalu头最重要的一个参数nal_unit_type十进制：
+：
+                 0	未使用
+NALU_TYPE_SLICE  1	非IDR的片slice
+NALU_TYPE_DPA    2	片数据A分区slice
+NALU_TYPE_DPB    3	片数据B分区slice
+NALU_TYPE_DPC    4	片数据C分区slice
+NALU_TYPE_IDR    5	IDR图像的片slice
+NALU_TYPE_SEI    6	补充增强信息单元（SEI）
+NALU_TYPE_SPS    7	序列参数集(SPS)
+NALU_TYPE_PPS    8	图像参数集(PPS)
+NALU_TYPE_AUD    9	分界符
+NALU_TYPE_EOSEQ  10	序列结束
+NALU_TYPE_EOSTREAM 11	码流结束
+NALU_TYPE_FILL   12	填充
+13..23	保留
+24..31	不保留
+
+NALU_TYPE_PREFIX = 14, 
+NALU_TYPE_SUB_SPS = 15, 
+NALU_TYPE_SLC_EXT = 20, 
+NALU_TYPE_VDRD = 24 
+
+
+通过它可作为参考判断是sps或pps或idr关键帧
+
+sps的判断：
+十六进制的0x67 转成二进制为0110 0111，它的4-8位为00111，把00111转成二进制：
+1*2（0次方）+1*2（1次方）+1*2（2次方）+0*2（3次方）+0*2（4次方）= 1+2+4+0+0=7
+解释：1*2（0次方）  1为0110 0111中最右边的1，0次方代表它从右到左是第0位
+得到的结果7正好对应nal_unit_type的SPS
+
+PPS的判断：
+其中0x68的二进制码为：
+0110 1000
+4-8为01000，转为十进制8，参考第二幅图：8对应图像参数集PPS
+
+IDR关键帧判断：
+其中0x65的二进制码为：
+0110 0101
+4-8为00101，转为十进制5，参考第二幅图：5对应IDR图像中的片(I帧)
+
+
+在代码中判断idr关键帧：
+0110 0101    
+0001 1111
+0000 0101
+
+1*2（0次方）+0*2（1次方）+1*2（2次方）+0*2...(后面都是0*2的几次方省略) = 5
+
+
+说明：中0x65的二进制码为0110 0101 ， 十进制31转二进制为0001 1111， （0110 0101 & 0001 1111 =0000 0101）0000 0101的二进制为5
+算法为： （NALU类型  & 0001  1111） = 5   即   NALU类型  & 31 = 5  5为idr关键帧
+
+
+i,b,p帧这种方式无法判断：
+解释如下：
+0x61的二进制码为：0110 0001  ，与十进制31的二进制0001 1111  & 操作后得到二进制0000 0001，转十进制为1,1在nalu type中表示非关键帧，
+则有可能是i/p/b帧。所以无法判断61是什么帧。
+0110 0001
+0001 1111
+0000 0001
+
+如何判断i,b,p的帧类型呢？
+需要取出每个slice块，slice块中有slice头，头中有i/p/b帧的描述
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+flv协议结构：
+FLV是一个二进制媒体文件，由一个文件头（FLV header）和很多tag组成，tag又可以分成三类:audio,video,script，分别代表音频流，视频流，
+脚本流（如视频宽高，音频的采样率等），
+
+flv结构描述：
+FLV header  PreviousTagSize0（上一个tag大小为0） Tag1(script类型)  PreviousTagSize1(Tag1的大小)   Tag2(音频或视频类型)
+说明：
+由FLV header和多个tag组成，每个tag前面有一段二进制表示上一个tag的大小。第一个tag一般为script类型，
+描述视频的基本信息，后面的tag可能音频tag，可能视频tag。每个tag又有tag头和tag的数据
+
+tag头:
+TagType（tag类型）UI8
+				8: audio(音频）
+				9: video（视频）
+				18: script data（脚本数据）
+				all others: reserved（其他保留）
+DataSize（tag数据区大小）UI24
+				tag的数据区大小以字节为单位，注意字节序
+Timestamp（时间戳）UI24(原文漏写了)
+				本tag相对于FLV文件第一个tag的时间，以毫秒为单位，当然第一个tag的时间戳肯定为0（很重要）
+TimestampExtended（时间戳扩展） UI8
+				将时间戳扩展至32位，该字节代表高8位（很重要）
+StreamID（信息流ID) UI24
+				永远为0
+Data（tag数据区）
+				If TagType == 8
+				    AUDIODATA
+				If TagType == 9
+				    VIDEODATA
+				If TagType == 18
+				    SCRIPTDATAOBJECT
+				由第一个字节的tag类型决定：
+				    为8时代表音频
+				    为9时代表视频
+				    为18时代表脚本数据
+				
+				
+				    
+
+script data: 说明，script data的16进制数据可以参照它的类型分析出不同段的数据是属于下面什么类型，
+举例：视频t的data数据有一个编码id参数，当为7即AVC时表示h.264编码。所以在script data中找到类型8 = ECMA array type的数据段，
+这个数据段中包含了设置视频编码方式，把这个数据段中的video codec id设为7即AVC即h.264编码，又因为script data总是第一个tag，用于
+描述音频及视频的编码信息，所以设置后就能反应出该视频用的时什么编码方式。
+
+脚本数据的数据类型有：
+
+	0 = Number type (double型）
+
+	1 = Boolean type（bool型）
+
+	2 = String type（字符串型）
+
+	3 = Object type
+
+	4 = MovieClip type
+
+	5 = Null type
+
+	6 = Undefined type
+
+	7 = Reference type
+
+	8 = ECMA array type
+
+	10 = Strict array type
+
+	11 = Date type（时间类型）
+
+	12 = Long string type（长字符串）
+	
+	
+主要讨论8 = ECMA array type，是script data的第二个AMF包
+	duration 时长
+
+	width 视频宽度
+
+	heiht  视频高度
+
+	video data rate  视频码率
+
+	frame rate  视频帧率
+
+	video codec id  视频编码方式
+
+	audio sample rate  音频采样率
+
+	audio sample size  音频采样精度
+
+	stereo  是否为立体声
+
+	audio codec id  音频编码方式
+
+	filesize  文件大小
+
+
+
+抽取出script data中不同的数据类型案例：
+00 00 00 00 （flv第一帧数据的长度）
+第一个AMF包：
+第1个字节表示AMF包类型，一般总是0x02，表示字符串。第2-3个字节为UI16类型值，标识字符串的长度，一般总是0x000A（“onMetaData”长度）
+。后面字节为具体的字符串，一般总为“onMetaData”（6F,6E,4D,65,74,61,44,61,74,61）表示onMetaData的长度
+第二个AMF包：（这个包数据重要，其它的包可忽略，这个包用来设置视频音频的具体信息）
+第1个字节表示AMF包类型，一般总是0x08开头，08 00 00 00 0b ，表示ecma array类型，存放一些关于FLV视频和音频的元信息，
+比如：duration、width、height等。
+第三个AMF包：
+00 0f 6d 65 74 61 64 61 74 61 63 72 65 61 74 6f 72（key:string类型，类型字节省略, 长度为00 0f ,数据为metadatacreator）
+第四个AMF包：
+00 21后面的33个字节
+第五个AMF包：
+00 0c 68 61 73 4b 65 79 66 72 61 6d 65 73（key:string类型，长度00 0c，数据hasKeyframes
+
+其它的包可参考：FLV结构详解，FLV协议详解（泰山鲁 转载加修正）https://blog.csdn.net/luzubodfgs/article/details/78155117
+
+
+
+
+Audio Tag Data结构(音频类型)
+
+SoundFormat 音频格式 UB4
+	0 = Linear PCM, platform endian 
+	1 =ADPCM 
+	2 = MP3 
+	3 = Linear PCM, little endian 
+	4 = Nellymoser 16-kHz mono 
+	5 = Nellymoser 8-kHz mono 
+	6 = Nellymoser 
+	7 = G.711 A-law logarithmic PCM 
+	8 = G.711 mu-law logarithmic PCM 
+	9 = reserved 
+	10 = AAC 
+	11 = Speex14 = MP3 8-Khz
+	15 = Device-specific sound flv是不支持g711a的，如果要用，可能要用线性音频。
+
+
+SoundRate 采样率 UB2
+	0 = 5.5-kHz
+	1 = 11-kHz
+	2 = 22-kHz
+	3 = 44-kHz对于AAC总是3。由此可以看出FLV封装格式并不支持48KHz的采样率
+
+
+SoundSize 采样精度 UB1
+	0 = snd8Bit
+	1 = snd16Bit压缩过的音频都是16bit
+
+
+SoundType 音频声道 UB1
+	0 = sndMono 单声道
+	1 = sndStereo 立体声，双声道对于AAC总是1
+	
+	
+音频数据	UI[8*n]	
+	如果是PCM线性数据，存储的时候每个16bit小端存储，有符号。
+	如果音频格式是AAC，则存储的数据是AAC AUDIO DATA，否则为线性数组。
+
+
+
+
+
+
+video Tag Data结构(视频类型)：
+
+
+FrameType 帧类型 UB4
+	1: keyframe (for AVC, a seekable frame)——h264的IDR，关键帧，可重入帧。
+	2: inter frame (for AVC, a non- seekable frame)——h264的普通帧
+	3: disposable inter frame (H.263 only)
+	4: generated keyframe (reserved for server use only)
+	5: video info/command frame
+
+
+CodecID 编码ID UB4
+	使用哪种编码类型：
+	1: JPEG (currently unused) 
+	2: Sorenson H.263
+	3: Screen video
+	4: On2 VP6
+	5: On2 VP6 with alpha channel 
+	6: Screen video version 2
+	7: AVC   指h.264
+
+VideoData 视频数据	UI[8*n]	
+	如果是avc，则参考下面的介绍：AVC VIDEO PACKET
+	IfCodecID == 2 or UI8
+		H263VIDEOPACKET
+	IfCodecID == 3
+		SCREENVIDEOPACKET
+	IfCodecID == 4
+		VP6FLVVIDEOPACKET
+	IfCodecID == 5
+		VP6FLVALPHAVIDEOPACKET
+	IfCodecID == 6
+		SCREENV2VIDEOPACKET
+	ifCodecID == 7
+		AVCVIDEOPACKET
+
+
+
+
+
+
+AVC VIDEO PACKET的结构:
+
+
+
+AVC packet类型 UI8
+	0：AVC序列头1：AVC NALU单元2：AVC序列结束。低级别avc不需要。
+
+
+CTS UI24
+	如果AVC packet类型是1，则为cts偏移(见下面的解释)。如果AVC packet类型是0，则为0
+	说明：pts：显示时间，也就是接收方在显示器显示这帧的时间。单位为1/90000 秒。
+		 dts：解码时间，也就是rtp包中传输的时间戳，表明解码的顺序。单位单位为1/90000 秒。——根据后面的理解，pts就是标准中的CompositionTime
+         cts偏移：cts = (pts - dts) / 90 。cts的单位是毫秒。
+         一般只有出现b帧，才会打乱顺序，才会有时间差，否则pts和dts是一直相同的。则cts结果为0
+
+
+数据 UI[8*n]
+	如果AVC packet类型是0，则是解码器配置，sps，pps。如果是1，则是nalu单元，可以是多个。
+
+注意：
+如果AVC packet类型为0需要发送
+
+
+
+思考：为什么script data中描术了设置采样率，精度等信息，video tag和audio tag中还可以设置采样率，和精度等信息？
+    因为script data是统一设置的，但每个tag可以单独设置其精度，采样率，灵活的实现高清，标准播放等功能
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
