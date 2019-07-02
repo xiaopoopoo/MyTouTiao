@@ -221,13 +221,13 @@ flv协议结构：
 FLV是一个二进制媒体文件，由一个文件头（FLV header）和很多tag组成，tag又可以分成三类:audio,video,script，分别代表音频流，视频流，
 脚本流（如视频宽高，音频的采样率等），
 
-flv结构描述：
+flv结构组成描述：
 FLV header  PreviousTagSize0（上一个tag大小为0） Tag1(script类型)  PreviousTagSize1(Tag1的大小)   Tag2(音频或视频类型)
 说明：
 由FLV header和多个tag组成，每个tag前面有一段二进制表示上一个tag的大小。第一个tag一般为script类型，
 描述视频的基本信息，后面的tag可能音频tag，可能视频tag。每个tag又有tag头和tag的数据
 
-tag头:
+FLV header头:
 TagType（tag类型）UI8
 				8: audio(音频）
 				9: video（视频）
@@ -316,17 +316,25 @@ script data: 说明，script data的16进制数据可以参照它的类型分析
 抽取出script data中不同的数据类型案例：
 00 00 00 00 （flv第一帧数据的长度）
 第一个AMF包：
+12 00 04 f0 00 00 00 00 00 00 00（tag头，可以知道类型为18脚本数据@setDataFrame
+第二个AMF包：
 第1个字节表示AMF包类型，一般总是0x02，表示字符串。第2-3个字节为UI16类型值，标识字符串的长度，一般总是0x000A（“onMetaData”长度）
 。后面字节为具体的字符串，一般总为“onMetaData”（6F,6E,4D,65,74,61,44,61,74,61）表示onMetaData的长度
-第二个AMF包：（这个包数据重要，其它的包可忽略，这个包用来设置视频音频的具体信息）
+第三个AMF包：（这个包数据重要，其它的包可忽略，这个包用来设置视频音频的具体信息）
 第1个字节表示AMF包类型，一般总是0x08开头，08 00 00 00 0b ，表示ecma array类型，存放一些关于FLV视频和音频的元信息，
 比如：duration、width、height等。
-第三个AMF包：
-00 0f 6d 65 74 61 64 61 74 61 63 72 65 61 74 6f 72（key:string类型，类型字节省略, 长度为00 0f ,数据为metadatacreator）
 第四个AMF包：
-00 21后面的33个字节
+00 0f 6d 65 74 61 64 61 74 61 63 72 65 61 74 6f 72（key:string类型，类型字节省略, 长度为00 0f ,数据为metadatacreator）
 第五个AMF包：
+00 21后面的33个字节
+第六个AMF包：
 00 0c 68 61 73 4b 65 79 66 72 61 6d 65 73（key:string类型，长度00 0c，数据hasKeyframes
+
+03（object类型）
+
+00 00 09 (object的结尾）
+
+00 00 09（ecma array的结尾)
 
 其它的包可参考：FLV结构详解，FLV协议详解（泰山鲁 转载加修正）https://blog.csdn.net/luzubodfgs/article/details/78155117
 
@@ -346,7 +354,7 @@ SoundFormat 音频格式 UB4
 	7 = G.711 A-law logarithmic PCM 
 	8 = G.711 mu-law logarithmic PCM 
 	9 = reserved 
-	10 = AAC 
+	10 = AAC (代表aac)
 	11 = Speex14 = MP3 8-Khz
 	15 = Device-specific sound flv是不支持g711a的，如果要用，可能要用线性音频。
 
@@ -368,9 +376,138 @@ SoundType 音频声道 UB1
 	1 = sndStereo 立体声，双声道对于AAC总是1
 	
 	
-音频数据	UI[8*n]	
-	如果是PCM线性数据，存储的时候每个16bit小端存储，有符号。
-	如果音频格式是AAC，则存储的数据是AAC AUDIO DATA，否则为线性数组。
+AAPacketType:  UI8
+	      IF soundFormat = 10 UI8    
+	            0=AAC sequence header
+	            1=AAC raw
+    如果声音格式soundFormat = 10，格式为aac类型时
+    则需要设置AAC sequence header或AAC raw  ，
+    AAC sequence header是编码配置信息AVCDecoderConfigurationRecord，设置为AAC raw 表示要传真正的aac数据
+    
+    
+Aduio Tag Data音频数据	UI[8*]	
+	说明：如果是PCM线性数据，存储的时候每个16bit小端存储，有符号。
+	    如果音频格式是AAC，则存储的数据是AAC AUDIO DATA，否则为线性数组。
+    aduio Data：音频数据
+    
+    
+    
+
+
+Audio音频编码配置信息AudioSpecificConfig
+
+怎么把audio音频编码配置设置到rtmp包中：
+    首先：找到aac头中的Profile，sampling和channel通道的位置，再根据AudioSpecificConfig()中
+    objectProfile，samplingFrequencyIndex，channelConfiguration所占的位数取出它的数据，设置到
+    rtmp中
+
+ISO14496-3-2001：
+
+aligned (8) class AudioSpecificConfig() {
+	uint(4) objectProfile;//aac的编码结构类型
+	uint(4) samplingFrequencyIndex;//采样率的索引，如果是44k采样率则对应的选项是3
+	if (samplingFrequencyIndex==0xf){
+		uint(24) samplingFrequency;/* 这个不需要设置给rtmp，因为我们是用的采样率的选项3 */  
+	}
+	uint(4) channelConfiguration;//音频的输出通道4位
+	if (objectProfile==2) { /* this is T/F (AAC/TwinVq)* aac的编码结构类型，在底层已经设置了objectProfile==2，则是aac，因此要设置下面这项/
+		GASpecificConfig(samplingFrequencyIndex,channelConfiguration,objectProfile);//这个需要配置，因为我们是aac的配置
+	}
+    .....
+}
+
+
+
+
+
+GASpecificConfig (samplingFrequencyIndex,channelConfiguration,audioObjectType)
+{
+	frameLengthFlag; 1 bslbf   //每一帧窗口长度标志位 我们不依赖 不依赖的标志位在rtmp配置信息中设为0
+	dependsOnCoreCoder; 1 bslbf //标志位，是否依赖coder，我们不依赖 不依赖的标志位在rtmp配置信息中设为0
+	if (dependsOnCoreCoder) {
+		coreCoderDelay; 14 uimsbf
+	}
+	extensionFlag; 1 bslbf  //不依赖的标志位在rtmp配置信息中设为0
+	if (! channelConfiguration) {
+		program_config_element ();
+	}
+	if ((audioObjectType == 6) || (audioObjectType == 20)) {
+		layerNr; 3 uimsbf
+	}
+	if (extensionFlag) {
+		if (audioObjectType == 22) {
+			numOfSubFrame; 5 bslbf
+			layer_length; 11 bslbf
+		}
+		if (audioObjectType == 17 || audioObjectType == 19 ||
+		audioObjectType == 20 || audioObjectType == 23) {
+			aacSectionDataResilienceFlag; 1 bslbf
+			aacScalefactorDataResilienceFlag; 1 bslbf
+			aacSpectralDataResilienceFlag; 1 bslbf
+		}
+		extensionFlag3; 1 bslbf
+		if (extensionFlag3) {
+		/* tbd in version 3 */
+		}
+	}
+}
+
+
+   
+AAC配置信息通过rtmp打一个配置包发过去，然后接收到后通过aac的头 adts读回来
+AAC音频文件的组成：
+	ADTS Frame(ADTS Header（头） + AACEC(音频数据))+ADTS Frame(ADTS Header（头） + AACEC(音频数据))ADTS Frame(ADTS Header（头） + AACEC(音频数据))
+AAC头：
+Fixed Header of ADTS  固定头
+	adts_fixed_header()
+	{
+		syncword; 12 bslbf
+		    说明：总是0xFFF, 帧同步标识一个帧的开始，代表一个ADTS帧的开始, 用于同步.解码器可通过0xFFF确定每个ADTS的开始位置.
+            因为它的存在，解码可以在这个流中任何位置开始, 即可以在任意帧解码。
+		ID; 1 bslbf  
+		    说明：MPEG 标示符。0表示MPEG-4，1表示MPEG-2
+		layer; 2 uimsbf 
+		    说明：总是'00'
+		protection_absent; 1 bslbf
+		    说明：标识是否进行误码校验。0表示有CRC校验，1表示没有CRC校验
+		profile_ObjectType; 2 uimsbf
+		    说明：标识使用哪个级别的AAC。1: AAC Main 2:AAC LC (Low Complexity) 
+		         3:AAC SSR (Scalable Sample Rate) 4:AAC LTP (Long Term Prediction)
+		sampling_frequency_index; 4 uimsbf
+		    说明：标识使用的采样率的下标
+		private_bit; 1 bslbf
+		    说明：私有位，编码时设置为0，解码时忽略
+		channel_configuration; 3 uimsbf
+		    说明：标识声道数
+		original_copy; 1 bslbf
+		    说明：编码时设置为0，解码时忽略
+		home; 1 bslbf
+		    说明：编码时设置为0，解码时忽略
+	}
+
+Variable Header of ADTS
+adts_variable_header()  可变头
+{
+		copyright_identification_bit; 1 bslbf
+		    说明：编码时设置为0，解码时忽略
+		copyright_identification_start; 1 bslbf
+		    说明：编码时设置为0，解码时忽略
+		aac_frame_length; 13 bslbf
+		    说明：ADTS帧长度包括ADTS长度和AAC声音数据长度的和。即 
+		         aac_frame_length = (protection_absent == 0 ? 9 : 7) + audio_data_length
+		adts_buffer_fullness; 11 bslbf
+		    说明：固定为0x7FF。表示是码率可变的码流
+		number_of_raw_data_blocks_in_frame; 2 uimsbf
+		    说明：表示当前帧有number_of_raw_data_blocks_in_frame + 
+		      1 个原始帧(一个AAC原始帧包含一段时间内1024个采样及相关数据)。
+}
+
+
+aac的data数据：
+   总是以FF F1 50 80  进行分割
+
+
+
 
 
 
@@ -380,7 +517,7 @@ SoundType 音频声道 UB1
 video Tag Data结构(视频类型)：
 
 
-FrameType 帧类型 UB4
+FrameType 帧类型 U4
 	1: keyframe (for AVC, a seekable frame)——h264的IDR，关键帧，可重入帧。
 	2: inter frame (for AVC, a non- seekable frame)——h264的普通帧
 	3: disposable inter frame (H.263 only)
@@ -388,7 +525,7 @@ FrameType 帧类型 UB4
 	5: video info/command frame
 
 
-CodecID 编码ID UB4
+CodecID 编码ID U4
 	使用哪种编码类型：
 	1: JPEG (currently unused) 
 	2: Sorenson H.263
@@ -397,62 +534,983 @@ CodecID 编码ID UB4
 	5: On2 VP6 with alpha channel 
 	6: Screen video version 2
 	7: AVC   指h.264
+	
+	
+	
+AVC视频封装:AVC VIDEO PACKET的结构:
 
-VideoData 视频数据	UI[8*n]	
-	如果是avc，则参考下面的介绍：AVC VIDEO PACKET
-	IfCodecID == 2 or UI8
-		H263VIDEOPACKET
-	IfCodecID == 3
-		SCREENVIDEOPACKET
-	IfCodecID == 4
-		VP6FLVVIDEOPACKET
-	IfCodecID == 5
-		VP6FLVALPHAVIDEOPACKET
-	IfCodecID == 6
-		SCREENV2VIDEOPACKET
-	ifCodecID == 7
-		AVCVIDEOPACKET
+	AVC packet类型 UI8  如果发送的这个tag是视频配置信息tag，则需要发送此字段告诉是否是关键帧
+		0：AVC序列头   在发送完元数据scriptdata后第一帧发这个视频配置信息
+		1：AVC NALU单元(视频发nalu)
+		2：AVC序列结束。低级别avc不需要。
 
 
+	CTS（CompositionTime (24Bits) 取值） UI24  如果发送的这个tag是视频配置信息tag，则需要发送此字段告诉是否有b帧
+		如果AVC packet类型是1，则为cts偏移(见下面的解释)。如果AVC packet类型是0，则为0
+		说明：pts：显示时间，也就是接收方在显示器显示这帧的时间。单位为1/90000 秒。
+			 dts：解码时间，也就是rtp包中传输的时间戳，表明解码的顺序。单位单位为1/90000 秒。——根据后面的理解，pts就是标准中的CompositionTime
+			 cts偏移：cts = (pts - dts) / 90 。cts的单位是毫秒。
+			 一般只有出现b帧，才会打乱顺序，才会有时间差，否则pts和dts是一直相同的。则cts结果为0
+
+
+	数据data UI[8bits]
+			注意：
+			如果AVCPacketType=0x00, 需要发送AVCDecorderConfigurationRecord;配置编码信息sps，pps，且在scriptdata第一个tag发送完后发送它
+			如果AVCPacketType=0x01, 为NALUs;发送的是视频数据
+			如果AVCPacketType=0x02, 为空.
+		如果AVC packet类型是0，则是编码器配置，sps，pps。如果是1，则是nalu单元，可以是多个。
+		我们播放数据的时候，如果AVC packet类型是0，需要发送下面 AVCDecoderConfigurationRecord	
+		
+	nalu的size大小 UI[8bits] 一次采样用多少位去存储
+	
+	
+	
+参考配置编码信息AVCDecoderConfigurationRecord详细说明:
+
+一般第一个视频Tag会封装视频编码的总体描述信息(AVC sequence header), 就是AVCDecoderConfigurationRecord结构(ISO/IEC 14496-15 AVC file format中规定). 其结构如下:
+
+aligned(8) class AVCDecoderConfigurationRecord {
+    unsigned int(8) configurationVersion = 1;//版本号
+    //sps
+    unsigned int(8) AVCProfileIndication;
+    unsigned int(8) profile_compatibility;
+    unsigned int(8) AVCLevelIndication;
+    //描述nalu大小的那个字段占位计算=reserved（保留位）+lengthSizeMinusOn（nalu表示长度的字段占多少位）
+    bit(6) reserved = ‘111111’b;//6个字节的1
+    unsigned int(2) lengthSizeMinusOne;//2个字节的1
+   
+    //描述有多少个sps
+    bit(3) reserved = ‘111’b;
+    unsigned int(5) numOfSequenceParameterSets;
+    //描述一个sps的数据大小，以及写入sps数据
+    for (i=0; i< numOfSequenceParameterSets; i++) {
+        unsigned int(16) sequenceParameterSetLength ;
+        bit(8*sequenceParameterSetLength) sequenceParameterSetNALUnit;
+    }
+    //描述有多少个pps
+    unsigned int(8) numOfPictureParameterSets;
+    //描述一个pps的大小，并把它的数据写入
+    for (i=0; i< numOfPictureParameterSets; i++) {
+        unsigned int(16) pictureParameterSetLength;
+        bit(8*pictureParameterSetLength) pictureParameterSetNALUnit;
+    }
+} 
+例如:
+
+下面高亮的部分就是 FLV 文件中的 AVCDecoderConfigurationRecord 部分.
+
+00000130h: 00 00 00 17 00 00 00 00 01 4D 40 15 FF E1 00 0A ; .........M@.?.
+
+00000140h: 67 4D 40 15 96 53 01 00 4A 20 01 00 05 68 E9 23 ; gM@.朣..J ...h?
+
+00000150h: 88 00 00 00 00 2A 08 00 00 52 00 00 00 00 00 00 ; ?...*...R......
+
+根据 AVCDecoderConfigurationRecord 结构的定义:
+
+configurationVersion = 01
+AVCProfileIndication = 4D
+profile_compatibility = 40
+AVCLevelIndication = 15
+lengthSizeMinusOne = FF : 非常重要, 是 H.264 视频中 NALU 的长度, 计算方法是 1 + (lengthSizeMinusOne & 3), NALU的长度怎么会一直都是4呢? 其实这不是NALU的长度, 而是NALU中, 表示长度的那个字段的长度是4字节(真绕啊).
+numOfSequenceParameterSets = E1 : SPS 的个数, 计算方法是 numOfSequenceParameterSets & 0x1F, 结果为1
+sequenceParameterSetLength = 00 0A : SPS 的长度
+sequenceParameterSetNALUnits = 67 4D 40 15 96 53 01 00 4A 20 : SPS内容
+numOfPictureParameterSets = 01 : PPS 的个数, 结果为1
+pictureParameterSetLength = 00 05 : PPS 的长度
+pictureParameterSetNALUnits = 68 E9 23 88 00 : PPS内容
+
+当scriptdata元数据发送完成后，紧接着需要发送视频配置信息 profile-level-id字段定义如下：
+configurationVersion = 1; //版本
+//sps
+sps[1]  AVCProfileIndication
+sps[2]  profile_compatibility
+sps[3]  AVCLevlIndication
+//参数序列集
+numOfSequenceParameterSets  包含sps
+//图像参数集
+ numOfPictureParameterSets  包含pps
+
+rtmp消息块的封装：
+	第一个消息块的封装：
+	消息块头的封装：
+	    csid：在消息块基础头中设置音视频通道4
+	    fmt: 在消息块基础头中设置为11，用于控制消息块消息头的大小及编码方式
+	    time:在消息块消息头中设置time为0，因为是每一个消息块的时间	
+	    streamid: 在消息块消息头中设置streamid
+	    决对时间：在消息块消息头中设置扩展时间为0
+	消息块体的封装：
+	    说明：把flv中scriptdata元信息封装到消息体中，因为元信息中描述了视频的信息
+	    把flv头中描述的TAG类型封装进行18 scriptdata  18=OX12 封装到消息体中
+	    把flv的元数据amf包1 @setDataFrame 封装到消息体中
+	    把flv的元数据amf包2 onMetaData 封装到消息体中
+	    把flv的元数据amf包3 设置它的类型为AMF_ECMA_ARRAY封装到消息体中
+	    在flv的元数据amf包3 AMF_ECMA_ARRAY字段后设置视频时长，封装到消息体中
+	    在flv的元数据amf包3 AMF_ECMA_ARRAY字段后设置视频宽，封装到消息体中
+	    在flv的元数据amf包3 AMF_ECMA_ARRAY字段后设置视频高，封装到消息体中
+	    在flv的元数据amf包3 AMF_ECMA_ARRAY字段后设置视频帧率，封装到消息体中
+	    在flv的元数据amf包3 AMF_ECMA_ARRAY字段后设置视频编码方式，封装到消息体中
+	
+	第二个消息块的封装：
+	    说明：把视频的编码信息sps,pps等封装到消息块中
+	    说明：如果每一个消息块中存的flv元数据AMF_ECMA_ARRAY字段后设置视频编码方式7: AVC，说明这个消息中会有flv视频tag的封装
+	         则第二个消息块中会封装视频
+	    说明：这里会出现两种视频类型，第一种视频类型是里面只包含的视频的编码信息，其实是amf原数据类型，另一种视频类型时里面包含flv封装的多个nalu包
+	         很显然必须先封装第一种视频类型，才能知道视频的编解码方式，之后才可以传真正的第二种类型视频数据
+	    
+	    第一种视频编码格式flv中的AMF数据包封装到消息块中：
+	       消息头的封装：
+		     csid：在消息块基础头中设置音视频通道4 
+		     fmt: 在消息块基础头中设置大小可能为11，7，3，0，用于控制消息块消息头的大小及编码方式如果是编码数据这里可用7的大小
+		     time:在消息块消息头中设置time为0，因为真正的数据没发送过去，这里时间设为0
+			 streamid: 在消息块消息头中设置streamid
+			 绝对时间：在消息块消息头中设置扩展时间为0
+		   消息体的封装:
+		     videotag中FrameType：帧类型设为关键帧keyframe 
+		     编码id设为AVC h264
+		     AVCPacketType=0x00,未使用nalu，而是发送的序列AVC sequence header，设置此类型后则需设置AVCDecorderConfigurationRecord编码信息
+		     设置CompositionTime 如果AVCPacketType=0x00，它的三个字节为0表示没有b帧
+		     sps,pps信息的具体封装：
+		        configurationVersion  编码信息版本号
+				AVCProfileIndication  sps的组成
+				profile_compatibility  sps的组成
+				AVCLevelIndication   sps的组成
+				lengthSizeMinusOne(h264中nalu存长度变量的大小) 计算方式：
+					bit(6) reserved(111111) 与上（加上） int(2) lengthSizeMinusOne（11） = 0xff
+				sps个数：计算方式：
+					 bit(3)reserved = ‘111’ 与上（加上）int(5)numOfSequenceParameterSets（00001）=0xe1
+				sps data length ：lpMetaData->nSpsLen>>8;
+				sps data length ：lpMetaData->nSpsLen&0xff;//低8位
+				sps data  的内容
+				pps nums  的个数 unsigned int(8) numOfPictureParameterSets; 8位
+				pps data length ：lpMetaData->nSpsLen>>8;
+				pps data length ：lpMetaData->nSpsLen&0xff;//低8位
+				pps data  的内容
+		    注意：以下是对 AVCDecoderConfigurationRecord参考配置信息结构体的设置及下面bool SendSpsPps(LPRTMPMetadata lpMetaData) 函数
+		    可参照http://www.mikewootc.com/wiki/dtv/codec/flv_format.html
+	    
+
+	第三个消息块的封装
+	    第一步：把h264的正常视频数据nalu数据封装到flv中：
+		 封装flv视频tag头的FrameType 帧类型 UB4，描述它是关键帧还是非关键帧
+		 封装flv视频tag头的CodecID编码类型 UB4 为7，是h.264编码
+		 封装flv视频tag体中AVC packet类型为1：AVC NALU单元(视频发nalu)，表示这是个正常的视频数据，里面有多个nalu单元组成
+		 封装flv视频tag体中CompositionTime为0,表示没有b帧
+		 封装flv视频tag体中nalu的size，即采样一次用多少位存储，这个占8位
+		 封装flv视频tag体中data数据
+		第二步：把flv封装到消息块中
+		  消息头的封装：
+		     csid：在消息块基础头中设置音视频通道4 
+		     fmt: 在消息块基础头中设置大小可能为11，7，3，0，用于控制消息块消息头的大小及编码方式如果是元数据就用最大的头，否则不用最大头
+		     time:在消息块消息头中设置time为0，因为是每一个消息块的时间	
+			 streamid: 在消息块消息头中设置streamid
+			 绝对时间：在消息块消息头中设置扩展时间为0
+		  消息体的封装：
+		     AVC packet类型id为1  表示多个nalu是视频集
+		     发送nalu消息块的大小
+		     发送flv的具体数据
+		     
+	第四个消息块的封装：
+	    说明：第四个消息块发送的是aac编码的信息
+	    第一步：消息头的封装
+	    	 Message Header  消息类型id 8  用于传输音频 
+			 Chunk Basic Header   csid占6个bit 04    Audio和Vidio通道
+			 消息块基础头fmt描述消息块消息头的大小这里是11
+			 消息块消息头中时间设置
+			 设置消息块信息头中消息流id
+			 设置消息块信息头中的扩展时间
+			 soundformat 0=AAC sequence header（需发送aac编码配置数据）   1=AAC raw（需发送aac普通数据）这里选0
+		第二步：通过aac消息头fix header找到profile，sampling，channel的在aac消息数据中的具体位置
+			profile：哪个级别的AAC
+			sampling：标识使用的采样率
+			channel：标识声道数
+		第三步：消息体的封装
+		     soundformat音频格式10代表aac
+			 soundrate采样率3=44khz
+			 soundsize采样精度1=16bit
+			 soundtype单双声道1=setereo双声道
+			 soundformat 0=AAC sequence header（需发送aac编码配置数据）   1=AAC raw（需发送aac普通数据）这里选1发普通数据
+			data的普通数据到消息体中：
+			  查看AudioSpecificConfig() 中的audioObjectType， samplingFrequencyIndex，channelConfiguration
+			  通过它们所占的字节数取出里面的数据，设置到data中，这三个参数对应着aac的tag中的profile，sampling，channel
+			  例： buff[profile] = audioObjectType;//找到profile的位置,把audioObjectType中的数据设置到profile中
+			     
+	
+	第五个消息块的封装：
+	     说明：发送普通的aac数据，aac数据由帧组成，每一帧都有一个aac头和aac数据
+	     第一步：消息头的封装
+			 Message Header  消息类型id 8  用于传输音频 
+			 Chunk Basic Header   csid占6个bit 04    Audio和Vidio通道
+			 消息块基础头fmt描述消息块消息头的大小这里是11
+			 消息块消息头中时间设置
+			 设置消息块信息头中消息流id
+			 设置消息块信息头中的扩展时间
+			 设置rtmp消息块消息头中中aac的data长度
+	     第二步：消息体的封装
+			 soundformat音频格式10代表aac
+			 soundrate采样率3=44khz
+			 soundsize采样精度1=16bit
+			 soundtype单双声道1=setereo双声道
+			 soundformat 0=AAC sequence header（需发送aac编码配置数据）   1=AAC raw（需发送aac普通数据）这里选1发普通数据
+			 data的普通数据封装到消息体中
+	      
 
 
 
 
-AVC VIDEO PACKET的结构:
 
 
 
-AVC packet类型 UI8
-	0：AVC序列头1：AVC NALU单元2：AVC序列结束。低级别avc不需要。
-
-
-CTS UI24
-	如果AVC packet类型是1，则为cts偏移(见下面的解释)。如果AVC packet类型是0，则为0
-	说明：pts：显示时间，也就是接收方在显示器显示这帧的时间。单位为1/90000 秒。
-		 dts：解码时间，也就是rtp包中传输的时间戳，表明解码的顺序。单位单位为1/90000 秒。——根据后面的理解，pts就是标准中的CompositionTime
-         cts偏移：cts = (pts - dts) / 90 。cts的单位是毫秒。
-         一般只有出现b帧，才会打乱顺序，才会有时间差，否则pts和dts是一直相同的。则cts结果为0
-
-
-数据 UI[8*n]
-	如果AVC packet类型是0，则是解码器配置，sps，pps。如果是1，则是nalu单元，可以是多个。
-
-注意：
-如果AVC packet类型为0需要发送
-
-
+	
+	    
 
 思考：为什么script data中描术了设置采样率，精度等信息，video tag和audio tag中还可以设置采样率，和精度等信息？
     因为script data是统一设置的，但每个tag可以单独设置其精度，采样率，灵活的实现高清，标准播放等功能
+    
+
+
+
+    
+    
+RTMP协议：
+RTMP协议是Adobe被Flash用于对象,视频,音频的传输.该协议建立在TCP协议或者轮询HTTP协议之上.
+RTMP协议就像一个用来装[数据包]的容器,这些数据可以是AMF格式的数据,也可以是FLV中的视/音频数据.
+一个单一的连接可以[通过不同的通道]传输多路网络流.这些通道中的包都是按照固定大小的包传输的
+
+1 消息：
+RTMP协议中基本的数据单元,一个视频可拆分成n多个消息，通过多路进行发送。消息分消息头和消息体
+2 消息头：
+Message Header： 可分解成 Basi Message Header
+	消息类型id（Message Type ID）： 1bit
+			带表不同的消息类型，有视频，音频，其它信令消息（网络描述，视频，音频描述的消息）
+			if Message Type ID == 1-7
+				  用于协议控制,RTMP协议自身管理要使用的消息
+			if Message Type ID == 8
+				  用于传输音频
+			if Message Type ID == 9
+				  用于传输视频
+			if Message Type ID == 15-20
+				  用于发送AMF编码的命令，负责用户与服务器之间的交互，比如播放，暂停
+   （消息长度）Payload Length: 3 bit
+   （时间）Time Stamp:     4 bit
+	(消息流id)Stream ID       3 bit
+
+3 消息体：
+Message Body:
+    Message Body由许多消息块（Chunk）组成，因为tcp一个包最多可能传1M,如果Message Body太大，就可以拆分成多个消息块
+
+4 消息块chunk：
+消息块由消息块头chunk header 和消息数据chunk data组成
+5 消息块头chunk header
+其中Chunk Message Header其实就是消息头message header，以定位这个消息块是属于这个消息的
+    Chunk Basic Header: 
+        大小可能是占1，2，3字节
+        fmt占2个bit：
+                 说明：决定了Chunk Message Header的编码方式和大小
+                  case0: chunk msg header长度为11
+                  case1: chunk msg header长度为7
+                  case2: chunk msg header长度为3
+                  case3: chunk msg header长度为0
+        csid占6个bit：
+                 说明：chunk stream id一般被简写为csid,用于表示一个类型的流通道
+                   02    Ping 和ByteRead通道
+                   03    Invoke通道 我们的connect() publish()和自字写的NetConnection.Call() 数据都是在这个通道的
+                   04    Audio和Vidio通道
+                   05 06 07     服务器保留,经观察FMS2用这些Channel也用来发送音频或视频数据
+    Chunk Message Header: 
+         说明：0，3，7，11个字节  如果其它块的头都相同，则这个头可弃掉，为0字节，节约空间
+         chunk base header的fmt为0的消息头长度为11：
+                        时间：3字节
+                               说明：发送消息时，必须填为0xffffff，如果小于0xffffff,此消息不发送
+                               如果大于0xffffff时，用扩展时间Extened TimeStamp存放，因为时间太大
+                               放不下
+                        消息长度：3字节  
+                               说明：表示这个chunkdata的长度
+                        消息类型id：1字节
+                               type=1,2,3,4,5代表协议控制消息
+                               type=4代表用户控制消息，包括事件类型（事件开始，流传输，流结束..）和事件数据
+                               type=8 音频数据
+                               type=9 视频数据
+                               type=18 元数据消息[AMF0]
+                               type=20 命令消息 Command Message(RPC Message)如连接，播放，暂停命令
+                               connect，call，close，createStream命令可以在NetConnection中发送
+                               coonect(name，TranscationID,Command Object pair)play，publish,seek,pause等命令可以在NetStream中发送
+                        消息流id： 4个字节
+                               说明：多个消息块流id保证了多个消息块属于同一个消息，且消息块按流id顺序可合并成消息
+                               消息块id，通过这个id把消息块组装成数据
+							   有的消息块没有id，则复用了前一个消息块的id
+							   消息块必须一个传送完再传送下一个
+							   传输是大端顺序，即0位先发送
+							   说明：这种情况没有消息流id，将会复用了上一个消息的流id
+         chunk base header的fmt为1的消息头长度为7：
+                        时间：3字节
+                        消息长度：3字节
+                        消息类型id：1字节
+         chunk base header的fmt为2的消息头长度为3：  
+                        时间：3字节
+                            说明：这种情况没有消息流id，将会复用了上一个消息的流id
+                               
+         
+    Extened TimeStamp:  0或4字节
+    Chunk Data:
+
+6 消息分块过程
+例：
+ 消息：   message header          message body（300字节）
+ 分块：   块一128字节：（chunk header  chunkdata） 块二128字节：（chunk header  chunkdata）  块三44字节：（chunk header  chunkdata）
+ 说明：其中chunk header包含了 Chunk Basic Header和 Chunk Message Header， Chunk Basic Header其实就是message header分解后的，用于描述消息块属于哪个消息
+      分配过程中前面的块都固定128字节，最后一个块可小于128字节
+      把一个flvvideotag封装成message，通过rtmp协议分成多个chunk块，通过tcp协议传输过去，再把接收到的消息块重新组合成消息，恢复出媒体数据
+      
+7 总结：
+  消息：一个视频产生多个消息，一个消息分为消息头和消息体
+  消息头：消息头包括时间，消息长度，消息流id，消息类型
+  消息时间：消息发送的时间
+  消息长度：消息数据的长充
+  消息类型：包括音频，视频，系统控制，用户控制（控制暂停，连接等）
+  消息体：消息体又由128字节的消息块组成，最后一个消息块可小于128字节
+  消息块：消息块中又分消息块头和消息数据。
+  消息块头：消息块头包含消息块基础头，消息块信息头
+  消息块基础头：决定消息块信息头的大小，和编码方式
+  消息块信息头：其实就是前面的消息头，可能包括时间，消息长度，消息流id，消息类型
+         
 
 
 
 
+代码案例：
+推流思路：
+1.要封装h.264数据到flv中，首先要组装第一个flvtag，每一个tag为script data tag，它由许多AMF包组成，
+每个AMF包都是一个元数据，其中ECMA array type的AMF包描述了视频编码等信息
+2.采集到的h.264数据，先解析出一个nalu包,因为原有的nalu包会包含0x0001等startcode，
+  解析后的nalu只包含sps,pps,i,b,p
+2.把nalu写入到FLV的videotagdata中，组装成vediotag
+3。把FLV的videotagdata包封装到rtmp的消息块中再发送出去
+
+
+ //发送元数据作为rtmp的第一个包发送进去，因为script data tag为flv的第一帧，它里面的ECMA array type描述了视频宽高，码率等信息，
+ //script data tag由AMF包组成，将作为每一个包封装到rtmp中
+bool SendMetadata(LPRTMPMetadata lpMetaData)    
+{  
+	if(lpMetaData == NULL)  
+	{  
+		return FALSE;  
+	}  
+
+	RTMPPacket packet;  
+	RTMPPacket_Reset(&packet);  
+	RTMPPacket_Alloc(&packet,1024); //为rtmp分配一个内存
+    //消息块头的封装：
+	packet.m_nChannel = 0x04;//csid：在消息块基础头中设置音视频通道4
+	packet.m_headerType = RTMP_PACKET_SIZE_LARGE;// fmt: 在消息块基础头中设置为11，用于控制消息块消息头的大小及编码方式
+	packet.m_nTimeStamp = 0; //time:在消息块消息头中设置time为0，因为是每一个消息块的时间
+	packet.m_nInfoField2 = g_rtmp->m_stream_id;//建立rtmp连接时创建的	g_rtmp = RTMP_Alloc(); RTMP_Init(g_rtmp);在消息块消息头中设置streamid
+	packet.m_hasAbsTimestamp = 0;//  绝对时间：在消息块消息头中设置扩展时间为0
+	
+	//消息块体的封装：把flv中scriptdata元信息封装到消息体中，因为元信息中描述了视频的信息
+	
+	// 把flv头中描述的TAG类型封装进行18 scriptdata  18=OX12 封装到消息体中
+	packet.m_packetType = RTMP_PACKET_TYPE_INFO;
+	
+	char * p = (char *)packet.m_body; //rtmp中消息块data内存
+	char * pend = p + 1024;//结尾的时候通过p的偏移把余下的空间留给头信息
+
+	static const AVal av_setDataFrame = AVC("@setDataFrame");//把flv的元数据amf包1 @setDataFrame 封装到消息体中
+	p = AMF_EncodeString(p, pend, &av_setDataFrame);
+
+	static const AVal av_onMetaData = AVC("onMetaData");// 把flv的元数据amf包2 onMetaData 封装到消息体中
+	p = AMF_EncodeString(p, pend, &av_onMetaData);
+
+	*p++ = AMF_ECMA_ARRAY;//在这个位置是amf包3，把flv的元数据amf包3 设置它的类型为AMF_ECMA_ARRAY封装到消息体中
+	p = AMF_EncodeInt32(p, pend, 5);//总共要设5个参数
+
+	static const AVal av_duration = AVC("duration");// 在flv的元数据amf包3 AMF_ECMA_ARRAY字段后设置视频时长，封装到消息体中
+	p = AMF_EncodeNamedNumber(p, pend, &av_duration, 0);
+
+	static const AVal av_width = AVC("width");//在flv的元数据amf包3 AMF_ECMA_ARRAY字段后设置视频宽，封装到消息体中
+	p = AMF_EncodeNamedNumber(p, pend, &av_width, lpMetaData->nWidth);
+
+	static const AVal av_height = AVC("height");//在flv的元数据amf包3 AMF_ECMA_ARRAY字段后设置视频高，封装到消息体中
+	p = AMF_EncodeNamedNumber(p, pend, &av_height, lpMetaData->nHeight);
+
+	static const AVal av_framerate = AVC("framerate");//在flv的元数据amf包3 AMF_ECMA_ARRAY字段后设置视频帧率，封装到消息体中
+	p = AMF_EncodeNamedNumber(p, pend, &av_framerate, lpMetaData->nFrameRate);
+
+	static const AVal av_videocodecid = AVC("videocodecid");//在flv的元数据amf包3 AMF_ECMA_ARRAY字段后设置视频编码方式，封装到消息体中
+	p = AMF_EncodeNamedNumber(p, pend, &av_videocodecid, 7);
+	
+	//结束标记符
+	*p++ = 0;
+	*p++ = 0;
+	*p++ = AMF_OBJECT_END;
+    //设置包的大小
+	packet.m_nBodySize = p - packet.m_body;
+	RTMP_SendPacket(g_rtmp,&packet,0);//序列为0
+	RTMPPacket_Free(&packet);
+} 
+
+
+//发送编码信息的消息块，参数也是传入的一个元数据amf
+bool SendSpsPps(LPRTMPMetadata lpMetaData)  
+{
+	if(lpMetaData == NULL)  
+	{  
+		return FALSE;  
+	}  
+    //创建一个RTMP包，内存大小为1024
+	RTMPPacket packet;  
+	RTMPPacket_Reset(&packet);  
+	RTMPPacket_Alloc(&packet,1024); 
+    //消息头
+	packet.m_nChannel = 0x04;// csid：在消息块基础头中设置音视频通道4 
+	//fmt: 在消息块基础头中设置大小可能为11，7，3，0，用于控制消息块消息头的大小及编码方式如果是编码数据这里可用7的大小  
+	packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
+	//time:在消息块消息头中设置time为0，因为真正的数据没发送过去，这里时间设为0
+	packet.m_nTimeStamp = 0;    
+	// streamid: 在消息块消息头中设置streamid
+	packet.m_nInfoField2 = g_rtmp->m_stream_id;
+	//绝对时间：在消息块消息头中设置扩展时间为0
+	packet.m_hasAbsTimestamp = 0;	
+	//把flv头中描述的TAG类型封装进行9 video 封装到消息体中
+	packet.m_packetType = RTMP_PACKET_TYPE_VIDEO;
+      
+    //消息体中
+	char * p = (char *)packet.m_body; 
+	int i = 0;  
+	p[i++] = 0x17; //  videotag中FrameType：帧类型为关键帧   编码id为h264  1:keyframe  7:AVC 
+	p[i++] = 0x00; // AVC sequence header  AVCPacketType=0x00, 需要发送AVCDecorderConfigurationRecord配置信息
+
+    //CompositionTime 如果AVCPacketType=0x00，它的三个字节为0否则不为0
+	p[i++] = 0x00;  
+	p[i++] = 0x00;  
+	p[i++] = 0x00; // fill in 0;  
+
+	// AVCDecoderConfigurationRecord.  发送sps,pps编码信息，参考配置信息结构体
+	p[i++] = 0x01; 				// configurationVersion  编码信息版本号
+	p[i++] = lpMetaData->Sps[1]; // AVCProfileIndication  sps的组成
+	p[i++] = lpMetaData->Sps[2]; // profile_compatibility  sps的组成
+	p[i++] = lpMetaData->Sps[3]; // AVCLevelIndication   sps的组成
+	
+	/*说明：sps，pps都会被startcode分隔开，说明sps是一个nalu,pps是一个nalu
+	  1：bit(6) reserved = ‘111111’b;（保留位，保留6个字节的二进制，用于存储最小单位的sps）
+      2：unsigned int(2) lengthSizeMinusOne;（nalu最小长度如果是2字节，值为1）
+	  3： 1与2项二进制相加:
+				  111111
+				  00000011
+				  11111111
+	  4：11111111转换成16进制，最终得到0xff，nalu的表示长度的那个字段占的空间
+	*/
+	
+	  p[i++] = 0xff; 				// lengthSizeMinusOne     
+
+
+	// sps nums  sps有多少个 numOfSequenceParameterSets
+	/*
+		 bit(3) reserved = ‘111’b;
+		unsigned int(5) 与上numOfSequenceParameterSets;//它的值是00001
+		      111
+		         00001
+		      11100001转为16进制是0xE1，表sps的长度     
+	*/
+	p[i++] = 0xE1; //&0xe1
+	
+	// sps data length  把长度右移八位，高的8位给到p[i++]第一个字节上面 unsigned int(16) sequenceParameterSetLength ;
+	p[i++] = lpMetaData->nSpsLen>>8;  
+	//p[i++]第二个字节取到长度的低8位
+	p[i++] = lpMetaData->nSpsLen&0xff;  
+	
+	
+	// sps data  的内容
+	//  bit(8*sequenceParameterSetLength) sequenceParameterSetNALUnit; 把sps数据拷贝进来
+	memcpy(&p[i],lpMetaData->Sps,lpMetaData->nSpsLen);  
+	
+	//p此时的偏移i计算出来
+	i = i + lpMetaData->nSpsLen;  
+
+	// pps nums  的个数
+	//unsigned int(8) numOfPictureParameterSets; 8位
+	p[i++] = 0x01; //&0x1f  
+	
+	// pps data length    同上，偏移8个，代表有多少个数据
+	p[i++] = lpMetaData->nPpsLen>>8;  
+	p[i++] = lpMetaData->nPpsLen&0xff;  
+	// pps data  的内容
+	memcpy(&p[i], lpMetaData->Pps, lpMetaData->nPpsLen);  
+	i = i + lpMetaData->nPpsLen; 
+
+   //pps的扩展
+	packet.m_nBodySize = i;
+    //发包
+	RTMP_SendPacket(g_rtmp,&packet,0);
+	RTMPPacket_Free(&packet);
+} 
+
+//解析nalu的方法，传入一个h.264的nalu，解析出它的nalu数据部份nalu包含sps,pps,i,b,p
+unsigned char* m_h264Buf;  
+unsigned int  m_h264BufSize;  
+unsigned int  m_nCurPos;
+bool ReadOneNaluFromBuf(NaluUnit *nalu) {
+	int i = m_nCurPos;
+	while( i < m_h264BufSize  )
+	{
+		if(m_h264Buf[i++] == 0x00 && m_h264Buf[i++] == 0x00)
+		{
+			unsigned char c = m_h264Buf[i++];
+			if((c == 0x1) || ((c == 0) && ( m_h264Buf[i++] == 0x01)) )
+			{
+				//printf("hand found nalu######################################>\n");
+				int pos = i;
+				int num = 4;
+				while (pos < m_h264BufSize)
+				{
+					if(m_h264Buf[pos++] == 0x00 &&m_h264Buf[pos++] == 0x00)
+					{
+						c = m_h264Buf[pos++];
+						if(c == 0x1)
+						{
+							num = 3;
+							break;
+						}
+						else if( (c == 0) && ( m_h264Buf[pos++] == 0x01) )
+						{
+							num = 4;
+							break;
+						}						
+					}
+				}
+				if(pos == m_h264BufSize)
+				{
+					nalu->size = pos-i;	
+				}
+				else
+				{
+					nalu->size = (pos-num)-i;
+				}
+				nalu->type = m_h264Buf[i]&0x1f;
+				nalu->data = &m_h264Buf[i];//拿到一个nalu
+				m_nCurPos = pos - num;//剪掉”00 00 00 01” 或”00 00 01”的开始码个数
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+
+}
+
+//封装nalu到flv中封装h264数据一个nalu到flvtag, data表1帧h.264数据，数据大小，是否是关键帧，时间cuo
+bool SendH264Packet(unsigned char *data,unsigned int size,bool bIsKeyFrame,unsigned int nTimeStamp) {
+	if(data == NULL && size<11)  
+		{  
+			return FALSE;  
+		}  
+    //根据一个videotag的大小创建tag对象，预留9个字节：（FrameType 帧类型 UB4）+（CodecID 编码ID UB4）+
+    （AVC packet类型 UI8）+（CTS UI24）+（视频nalu的大小4个字节）
+	unsigned char *body = (unsigned char*) malloc(size+9); 
+	int i = 0; 
+	
+	//第一个字节赋值因为FrameType和CodecID总共8位  1:Iframe  7:AVC  ,2:Pframe  7:AVC
+	body[i++] = (bIsKeyFrame)?0x17:0x27; 
+	
+	//第二个字节AVC packet类型 UI8  选1 AVC NALU单元
+	body[i++] = 0x01;// AVC NALU  
+	
+	//CTS UI24这三个字节都是cts，暂写0,表示无关键帧
+	body[i++] = 0x00;  
+	body[i++] = 0x00;  
+	body[i++] = 0x00; 
+
+	// NALU size   占四个字节 ，最低的是8位，即采样一次存8位 
+	body[i++] = size>>24;  
+	body[i++] = size>>16;  
+	body[i++] = size>>8;  
+	body[i++] = size&0xff;;  
+
+	// NALU data    把nalu data放进去
+	memcpy(&body[i],data,size);  
+    //组包完成，发送视频包
+	bool bRet = SendPacket(RTMP_PACKET_TYPE_VIDEO,body,i+size,nTimeStamp);  
+
+	if(body)
+	{
+		free(body);  
+	}
+	return bRet;  
+}
+
+
+//使用RTMPDump发送一个flv封装一个nalu的videotag数据，需要先把videotag封装成rtmp消息块再发送，参数：包类型 数据  大小  时间
+int SendPacket(unsigned int nPacketType,unsigned char *data,unsigned int size,unsigned int nTimestamp)  
+{  
+	if(g_rtmp == NULL)  
+	{  
+		return FALSE;  
+	}  
+
+	RTMPPacket packet;  
+	RTMPPacket_Reset(&packet);  
+	RTMPPacket_Alloc(&packet,size);  
+	packet.m_nChannel = 0x04;//消息块基础头中的csid为4，通道为音视频通道
+	//设置消息块中Chunk Basic Header的fmt，即描述消息块信息头的大小可能为11，7，3，0，如果是元数据就用最大的头，否则不用最大头
+	packet.m_headerType = (nPacketType == RTMP_PACKET_TYPE_INFO)?RTMP_PACKET_SIZE_LARGE:RTMP_PACKET_SIZE_MEDIUM;
+	 //RTMP_PACKET_TYPE_VIDEO 设置消息块信息头中消息id为视频	
+	packet.m_packetType = nPacketType;
+	//设置消息块信息头发送时间
+	packet.m_nTimeStamp = nTimestamp;  
+	//设置消息块信息头中消息流id  
+	packet.m_nInfoField2 = g_rtmp->m_stream_id;
+	//绝对值时间为0
+	packet.m_hasAbsTimestamp = 0;	
+    //消息块的大小
+	packet.m_nBodySize = size;
+	//把videotag中的data封装到消息块中  
+	memcpy(packet.m_body,data,size); 
+	//发送rtmp消息块
+	int nRet = RTMP_SendPacket(g_rtmp,&packet,0);  
+
+	RTMPPacket_Free(&packet);  
+
+	return nRet;  
+} 
+
+发送音频数据：
+
+
+小知识：
+
+运算符含义描述
+
+
+& 按位与
+如果两个相应的二进制位都为1，则该位的结果值为1，否则为0
+
+I 按位或
+两个相应的二进制位中只要有一个为1，该位的结果值为1
+
+^ 按位异或
+若参加运算的两个二进制位值相同则为0，否则为1
+
+~ 取反
+~是一元运算符，用来对一个二进制数按位取反，即将0变1，将1变0
+
+<< 左移
+用来将一个数的各二进制位全部左移N位，右补0 
+
+>> 右移
+将一个数的各二进制位右移N位，移到右端的低位被舍弃，对于无符号数，高位补0
+
+
+&0xf的作用：如：1001 & 0xf 结果还是1001 得到的还是原来的数据，一个数与上 0xf后不变
+&0x0的作用：如：1001 & 0x0 结果是0110  把原有的数据每一位都返过来
+
+与的作用：如：1001 | 0010 结果为 1011  作用就是把两个不同的二进制合并到一起，经常在ios中if(color = green|red|yellow)就说明了
+green|red|yellow的数据已经合并到一起了。
+
+高低位：
+1 0000 1
+高位  低位
+
+  
+//通过rtmp包发送aac音频编码信息，需传入一帧带头的aac数据
+bool SendAacCfgPack(char *pAacBuf)  
+{ 
+    /*
+	  profile_ObjectType设置aac级别：
+		   Fixed Header头中syncword占12位; ID占1位; layer占2位; protection_absent占1位;
+							profile_ObjectType占2位
+		   如何读出profile_ObjectType进行设置：
+		   profile_ObjectType前面的头参数总共占字节大小为12+1+2+1=2个字节，所以profile_ObjectType是从第三个字节开始的，
+		   则从第三个字节开始右移（8-2）位，即可找到profile_ObjectType
+	*/
+	unsigned profileId = pAacBuf[2]>>6;
+	/*
+	
+		   sampling_frequency_index设置采样率：
+		   sampling_frequency_index在第三个字节的从第3位开始，长度为4
+		   右移2位与上0xf可取到它的4个字节
+   */
+	unsigned sampleRate = (pAacBuf[2]>>2)&0xf;
+	//pAacBuf[2]&0x01表示拿到第二个字节的数据，<<2则变成了第三个字节的最低两位 从而得到profileId存放在第三个字节中的两位数据
+	//pAacBuf[3]>>6 从第三个字节的最高位右移6位，则恰好是channel的位置 
+	//|是表示合并sampleRate和channel到内存中
+	unsigned channel = ((pAacBuf[2]&0x01)<<2)|(pAacBuf[3]>>6);
+
+	RTMPPacket pack;
+	//分配4个字节的空间，因为aac的头会占2个字节，同时flv的videotag占2个字节
+	RTMPPacket_Alloc(&pack, 4);
+	//Message Header  消息类型id 8  用于传输音频  
+	pack.m_packetType = RTMP_PACKET_TYPE_AUDIO;
+	//Message Header  消息类型id 8  用于传输音频 
+	pack.m_nChannel = 0x04;
+	//消息块基础头fmt描述消息块消息头的大小这里是11
+	pack.m_headerType = RTMP_PACKET_SIZE_LARGE;
+	//消息块消息头中时间设置
+	pack.m_nTimeStamp = 0;
+	///设置消息块信息头中消息流id	
+	pack.m_nInfoField2 = 1;
+	//设置rtmp消息块消息头中中aac的data长度
+	pack.m_nBodySize = 4;
+	//设置消息块信息头中的扩展时间
+	pack.m_hasAbsTimestamp = 0;
+    //soundformat占4个bit  十进制10=aac   10的2进制=1010
+    //soundrate采样率占2个bit  十进制3=44khz  3转2进制=11
+    //soundsize采样精度占1个bit  十进制1=16bit 1转2进制=01 每个采样用16bit去存
+    //soundtype单双精度占1个bit  十进制1=setereo双声道  1转2进制=01
+    //第一个字节数据结果：1010连接11连接1连接1 = 10101111 转16进制为0Xaf;
+	pack.m_body[0] = 0xaf;
+	//第二个字节AAPacketType 十进制1=AAC raw 普通数据 1转16进制 0x01;
+	pack.m_body[1] = 0x00;
+	//第三个字节存放了AudioSpecificConfig() 中audioObjectType占的5位信处，以及AudioSpecificConfig中samplingFrequencyIndex
+	 中的4位信息的前三个字节  
+	pack.m_body[2] = (profileId<<3)|(sampleRate>>1);
+	//第四个字节存放了AudioSpecificConfig中samplingFrequencyIndex的一个字节和channelConfiguration中占的四个字节数据
+	//sampleRate<<7是取出它的数据  channel<<3也是取出它的数据  |表示数据合并到一起
+	pack.m_body[3] = (sampleRate<<7)|(channel<<3);
+	RTMP_SendPacket(g_rtmp,&pack,0);
+	RTMPPacket_Free(&pack);
+}
+
+//通过rtmp包对aac音频数据封装发送，pAacBuf是二进制的aac数据
+//注意：这里是直接把aac的数据组包到了rtmp包的消息头和消息体中，而不是先转flv再组包到rtmp包中
+bool SendAacPack(char *pAacBuf, int aacLen,unsigned int nTimeStamp)  
+{ 
+	int i = 0;
+	RTMPPacket pack;
+	//创建一个aac长度的rtmp包,aacLen是aac头长度+内容长度，头有7个字节，内容两个字节，一般发送aac都会去掉7个字节的头，这里的空间中够存储了
+	RTMPPacket_Alloc(&pack, aacLen);
+	//Message Header  消息类型id 8  用于传输音频  
+	pack.m_packetType = RTMP_PACKET_TYPE_AUDIO;
+	//Chunk Basic Header   csid占6个bit 04    Audio和Vidio通道
+	pack.m_nChannel = 0x04;
+	//消息块基础头fmt描述消息块消息头的大小这里是11
+	pack.m_headerType = RTMP_PACKET_SIZE_LARGE;
+	//消息块消息头中时间设置
+	pack.m_nTimeStamp = nTimeStamp;
+	///设置消息块信息头中消息流id
+	pack.m_nInfoField2 = 1;
+	//设置消息块信息头中的扩展时间
+	pack.m_hasAbsTimestamp = 0;
+    
+    //soundformat占4个bit  十进制10=aac   10的2进制=1010
+    //soundrate采样率占2个bit  十进制3=44khz  3转2进制=11
+    //soundsize采样精度占1个bit  十进制1=16bit 1转2进制=01 每个采样用16bit去存
+    //soundtype单双精度占1个bit  十进制1=setereo双声道  1转2进制=01
+    //第一个字节数据结果：1010连接11连接1连接1 = 10101111 转16进制为0Xaf;
+	pack.m_body[i++] = 0xaf;//10101111
+	//第二个字节AAPacketType 十进制1=AAC raw 普通数据 1转16进制 0x01;
+	pack.m_body[i++] = 0x01;
+	//从aac数据中偏移7个字节，拷贝长度为：长度-7  封装message的数据到aac中
+	memcpy(&pack.m_body[i], pAacBuf+7, aacLen-7);  
+    //设置rtmp消息块消息头中中aac的data长度
+	pack.m_nBodySize = i + (aacLen - 7);
+	RTMP_SendPacket(g_rtmp,&pack,0);
+	RTMPPacket_Free(&pack);
+}
 
 
 
 
+获取提取H.264&AAC数据
 
+项目文件：rtmp_publish/avcapture 实现了h.264和aac的采集和编码
+        rtmp_publish/fdk-aac-0.1.4 是把pcm编码成aac
+	    libavstream.c 采集视频
+	     aacstream.c 采集音频,aac_init()设置了采样频率 16000
+	     h264encoder 设置了帧率
+在linux上搭建采集视频
+	1 Linux视频采集 V4L
+	2 x264 编码H.264
+	3 Linux音频采集 ALSA 
+	4. fdk-aac  把pcm编码成aac
+	5. ringbuf 发送rtmp包的时候是发一个包含视频naul的rtmp包，再发一个包含音频aac包，为了保证音视频同步，
+	   这里用了环形缓冲区,缓冲这两个包同一时间发送
+	6.rtmpdump底层是librtmp库作为rtmp协议发包推流作用
+	//可用于推流，播流，也可作为服务器，是一个c语言开发的，可用于ios，android推流。
+	7.Srs-librtmp:https://github.com/ossrs/srs/wiki/v2_CN_SrsLibrtmp
+
+
+v4l视频采集
+video4linx主要在linux嵌入式中用于视频采集yuv，
+底层是音视频设备在内核中的驱动，上层是api
+
+
+x264编码H.264数据
+x264是h.264/mpeg-4开源的编码器，是最好的有损视频编码器
+1.h264_stream_init()
+2. h264_stream_get(video_frame_info *pv_info)  获取帧
+3. h264_stream_deinit()
+4. h264_stream_param_get(h264_param *pv_param)  编码的图像参数的获取，视频长度宽度帧率
+
+alsa 音频采集
+alas是用于linux上的声音上的框架，全称 advanced linux sound architecture
+用于音频采集，openal也可以用于音频采集，只是alas是linux自带的采集音频方式
+Samplerate:16000 samplesize:16bit channels:1  算出：每次读取2048的PCM数据
+	aac_stream_init()
+	aac_stream_get(char *pAacBuf, int aacBufLen)
+	aac_stream_deinit()
+
+
+Video: 1s*1000/15(fps) = 66ms
+Audio: 1s*1000/((16000*16bit/8bit*1(channel))/2048) = 64(ms) 
+
+
+//一个消息块大小128k，为提高效率，可以把这个消息块大小调大
+bool SendChunkSize(int newSize)
+{
+	RTMPPacket  packet;
+	RTMPPacket_Alloc(&packet, 4);//分配四个字节
+	packet.m_packetType = RTMP_PACKET_TYPE_CHUNK_SIZE;//设置包的大小
+	packet.m_nChannel = 0x02;//rtmp包的控制通道
+	packet.m_headerType = RTMP_PACKET_SIZE_LARGE;//包头的大小，在消息块基础头中设置为11，用于控制消息块消息头的大小及编码方式
+	packet.m_nTimeStamp = 0;
+	packet.m_nInfoField2 = 0;//流id为0
+	packet.m_nBodySize = 4;//消息块的大小
+	g_rtmp->m_outChunkSize = newSize;//更改消息块的大小不再是1024字节 
+    //把这个新的包大小值赋给它
+	packet.m_body[0] = newSize >> 24;
+	packet.m_body[1] = newSize >> 16;
+	packet.m_body[2] = newSize >> 8;
+	packet.m_body[3] = newSize & 0xff;
+	RTMP_SendPacket(g_rtmp, &packet, 0);
+}
+
+//采集和推流
+//说明：定义一个元数据，定义一个h.264的nalu，定义一个aac的frame
+//第一个循环采集一帧h264数据，先发一帧元素据，再发一帧sps,pps数据，再循环发送它里面的nalu
+//循环一次发完h264数据后再采集一帧aac数据，再发送这一帧aac数据，完成后再进入下次循环重复发送
+//也就是说循环一次，会发送一帧里面多个naul视频包，发送完视频帧后再发送音频配置信息，最后再发送音频aac包。
+bool rtmpAvPublish()  
+{  
+	unsigned int sendFrameCounter = 0;
+	bool isSendMeta = FALSE;
+	//定义rtmp的源数据
+	RTMPMetadata metaData;  
+	memset(&metaData,0,sizeof(RTMPMetadata));  
+
+   //h.264的nalu
+	NaluUnit naluUnit;  
+	unsigned int tick = 0;
+
+	//h.264初始化 v4l中的用于采集yuv帧 libavstream.c
+	video_frame_info video_info;
+	h264_stream_init();
+
+	//aac初始化  fdk-aac用于采集音频数据 在aacstream.c中
+	char aacBuf[1024];
+	int aacLen = 0;
+	int aacCfgIsSend = 0;
+	aac_stream_init();
+
+	//循环获取音视频数据，handler函数捕到crtl+c就退出循环
+	while(g_quit == FALSE)
+	{
+		h264_stream_get(&video_info);//获取到一帧视频video_info.frame_type 能得到是i,p,b帧，这些在x.264库中自动判断的
+		m_h264Buf = video_info.pframe_data;//一帧的数据，
+		m_h264BufSize = video_info.frame_len;
+		m_nCurPos = 0;
+        //一帧数据中可能有向个nalu，这里需要把nalu提取出来，m_h264Buf是全局变量，这里会循环把m_h264Buf的nalu读到naluUnit中
+        //ReadOneNaluFromBuf然后去掉startcode，拿到nalu的sps,pps,i,b,p
+        //一次发送是先把一帧数据中所有nalu发送完后，再发一个音频帧
+		while(ReadOneNaluFromBuf(&naluUnit))  
+		{  
+			if(isSendMeta == FALSE)//如果没有发送过sps,pps，则这里会发送
+			{
+			    //如果视频的宽，高，帧率任何一个为0,则表示之前还没有赋过值
+				if(metaData.nWidth == 0 || metaData.nHeight == 0 || metaData.nFrameRate == 0)
+				{
+					h264_param v_param;
+					memset(&v_param, 0, sizeof(v_param));
+					if(0 == h264_stream_param_get(&v_param))//==0，则获取取了刚定义的元数据参数
+					{
+						metaData.nWidth = v_param.width;
+						metaData.nHeight = v_param.height;
+						metaData.nFrameRate = v_param.fps;
+					}
+				}
+
+				if(naluUnit.type == H264NT_SPS)//获取到sps
+				{
+					metaData.nSpsLen = naluUnit.size;//sps的长度  
+					memcpy(metaData.Sps,naluUnit.data,naluUnit.size);//把naluUnit中的sps拷到这个元数据的sps中
+					printf("sps(%d):",naluUnit.size);
+					int i = 0;
+					for(i = 0; i < naluUnit.size; i++)
+					printf("%02x ", metaData.Sps[i]);//保持打印2位，如果不够2位补齐，看起来美观打印出它的sps十六进制数据
+					printf("\n");
+				}
+				else if(naluUnit.type == H264NT_PPS)//获取到pps
+				{
+					metaData.nPpsLen = naluUnit.size;  //pps的长度
+					memcpy(metaData.Pps,naluUnit.data,naluUnit.size); //把naluUnit中的pps拷到这个元数据的pps中
+					printf("pps(%d):",naluUnit.size);
+					int i = 0;
+					for(i = 0; i < naluUnit.size; i++)
+					printf("%02x ", metaData.Pps[i]);
+					printf("\n");
+				}
+                //如果元数据中的值都获取到了，就发送它
+				if(metaData.nSpsLen > 0 && metaData.nPpsLen > 0 && metaData.nWidth > 0 
+				&& metaData.nHeight > 0 && metaData.nFrameRate > 0)
+				{
+				    
+					SendChunkSize(1024);//修改rtmp块大小，不再是128一个块，以提高效率
+					//元数据的发送 第一个包
+					SendMetadata(&metaData); 
+					//发送视频的图像参数集，序列参数集sps pps
+					SendSpsPps(&metaData);
+					isSendMeta = TRUE;//设置为已经发过元数据了
+				}
+			}
+			else if(naluUnit.type == H264NT_SLICE || naluUnit.type == H264NT_SLICE_IDR)//如果是非关键帧或关键帧
+			{
+				bool bKeyframe  = (naluUnit.type == H264NT_SLICE_IDR) ? TRUE : FALSE;  //如果是关键帧，下面的包需要发送关键帧的类型
+				//发送一个nalu数据到服务器，这个函数是把nalu封装到了flv中，再调用SendPacket（）函数，此函数把flv封装到了rtmp包中发送
+				//tick是时间 1000耗秒/15帧 = 1帧66毫秒，在最后每获取一帧加66耗秒
+				SendH264Packet(naluUnit.data,naluUnit.size,bKeyframe,tick); 
+				usleep(40);//15fps
+			}
+		}
+
+		//aac 先发送完一帧视频，里面包含发送多个nalu，发送完这一帧后再发音频aac的帧
+		aacLen = aac_stream_get(aacBuf, 1024);//获取到一个aac帧 ADTS Frame(ADTS Header（头） + AACEC(音频数据))
+		if(aacCfgIsSend == 0)//如果aac的编码信息没有发送过，这里就发送一次
+		{
+			SendAacCfgPack(aacBuf) ;
+			aacCfgIsSend = 1;
+		}
+
+		if(aacCfgIsSend == 1)//已经发送了配置信息，则发送封装了aac的rtmp包
+		{
+			SendAacPack(aacBuf, aacLen, tick+5)  ;
+			//为什么tick+32
+			//1000耗秒*  16（采样率每秒采样16000次）*采样精度16位（每一次采样2字节）*1(单声道) = 32000字节（每秒采样32000字节）;
+			//每一次这里程序读取2048个字节的pcm数据  32000/2048=15.6  说明程序要用15.6次才能读完每一千耗秒采集的数据。
+			//1000耗秒/15.6 = 64 表示每次采集pcm数据耗时64耗秒
+			//采集一帧视频要耗时66耗秒，可判断出采集一帧视频和采集一帧音频之前会相差2耗秒的时间
+			//也就是会出现发送多少次音视频帧过后，发送的视频帧和音频帧不同步，出现当前的音频帧对应的是上一个视频帧
+			//视频帧与音频帧不同步的解决方案：
+			//定义一个 sendFrameCounter计录总共发了多少次视频帧和视频帧
+			//当发送了32次后，视频帧将与音频帧不同步，这时候再补发一次音频帧
+			//32次是怎么算出来的？因为音频每次采集1帧64耗秒，视频每次采集1帧66秒,音频会比视频每次采集快2秒，
+			//第一次快2秒+第二次快2秒+第三次快2秒+第四次快2秒+...， 多个2秒相加，当等于64耗秒的时候，音频就会快了一帧，因为音频每次采集1帧64耗秒
+			//所以64/2 得到当采集32次时，音频会快一帧，所以需要重新采集当前这一音频帧再发送一次音频帧
+		}
+
+		sendFrameCounter++;
+
+		if(sendFrameCounter == 32)//如果
+		{
+			aacLen = aac_stream_get(aacBuf, 1024);
+			SendAacPack(aacBuf, aacLen, tick+64)  ;//视频帧发送完成后，等耗秒再发一次音频帧，5耗秒
+			sendFrameCounter = 0;//视频帧与音频帧同步后再重新开始记录发送音频视频帧的次数
+		}
+
+		tick += 66; 
+	}
+	//结束采集后反初始化
+  	h264_stream_deinit();
+	aac_stream_deinit();
+  	
+    return TRUE;  
+} 
 
 
 

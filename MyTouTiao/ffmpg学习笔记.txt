@@ -1720,9 +1720,9 @@ bool SendAacCfgPack(char *pAacBuf)  //传入一帧带头的adtc数据，配置�
 获取摄像头数据的h.264和aac帧
 video:V4L-x264  Linux上视频采集 V4L  参数：w:640 h:360 fps:15
 1.h264_stream_init()
-2. h264_stream_get(video_frame_info *pv_info)
+2. h264_stream_get(video_frame_info *pv_info)  获取帧
 3. h264_stream_deinit()
-4. h264_stream_param_get(h264_param *pv_param)
+4. h264_stream_param_get(h264_param *pv_param)  编码的图像参数的获取，视频长度宽度帧率
 AAC: ALSA->PCM->AAC alas是用于linux上的声音上的框架
 Samplerate:16000 samplesize:16bit channels:1 
 每次读取2048的PCM数据
